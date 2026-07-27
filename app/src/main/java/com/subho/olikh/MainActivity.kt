@@ -906,44 +906,32 @@ class MainActivity : AppCompatActivity() {
         popup.menu.add("Find in page")
         popup.menu.add("Share page")
         popup.menu.add("Copy URL")
-        popup.menu.add("Zoom in")
-        popup.menu.add("Zoom out")
-        popup.menu.add("Reset zoom")
-        popup.menu.add("Clear browsing data")
+        popup.menu.add("Zoom")
 
-        val desktopItem = popup.menu.add(
-            if (webView.settings.userAgentString?.contains("OLIKH_DESKTOP") == true) {
+        popup.menu.add(
+            if (
+                webView.settings.userAgentString
+                    ?.contains("OLIKH_DESKTOP") == true
+            ) {
                 "Mobile site"
             } else {
                 "Desktop site"
             }
         )
 
+        popup.menu.add("Clear browsing data")
+
         popup.setOnMenuItemClickListener { item ->
             when (item.title.toString()) {
                 "New incognito tab" -> {
                     createNewTab(incognito = true)
+
                     Toast.makeText(
                         this,
                         "Incognito tab opened",
                         Toast.LENGTH_SHORT
                     ).show()
-                    true
-                }
 
-                "Zoom in" -> {
-                    webView.zoomIn()
-                    true
-                }
-
-                "Zoom out" -> {
-                    webView.zoomOut()
-                    true
-                }
-
-                "Reset zoom" -> {
-                    webView.setInitialScale(0)
-                    webView.reload()
                     true
                 }
 
@@ -962,8 +950,8 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
-                "Clear browsing data" -> {
-                    confirmClearBrowsingData()
+                "Zoom" -> {
+                    showZoomMenu()
                     true
                 }
 
@@ -973,11 +961,46 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
+                "Clear browsing data" -> {
+                    confirmClearBrowsingData()
+                    true
+                }
+
                 else -> false
             }
         }
 
         popup.show()
+    }
+
+    private fun showZoomMenu() {
+        val options = arrayOf(
+            "Zoom in",
+            "Zoom out",
+            "Reset zoom"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Page zoom")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> webView.zoomIn()
+                    1 -> webView.zoomOut()
+
+                    2 -> {
+                        webView.setInitialScale(0)
+                        webView.reload()
+
+                        Toast.makeText(
+                            this,
+                            "Zoom reset",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun confirmClearBrowsingData() {
