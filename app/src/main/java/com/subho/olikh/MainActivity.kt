@@ -1,7 +1,6 @@
 package com.subho.olikh
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -232,7 +231,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnTabs.setOnClickListener {
-            showTabSwitcher()
+            showTabManager()
         }
 
         btnTabs.setOnLongClickListener {
@@ -243,36 +242,58 @@ class MainActivity : AppCompatActivity() {
         updateNavigationButtons()
     }
 
-    private fun showTabSwitcher() {
+    private fun showTabManager() {
         if (tabs.isEmpty()) return
 
-        val items = tabs.mapIndexed { index, tab ->
-            val marker = if (index == activeTabIndex) "●" else "○"
+        TabManagerDialog(
+            browserTabs = tabs.toList(),
+            activeIndex = activeTabIndex,
 
-            val displayTitle = tab.title
-                .replace("\n", " ")
-                .trim()
-                .ifBlank {
-                    tab.url.ifBlank { "New Tab" }
-                }
-                .take(45)
-
-            "$marker ${index + 1}. $displayTitle"
-        }.toTypedArray()
-
-        AlertDialog.Builder(this)
-            .setTitle("Tabs · ${tabs.size}")
-            .setItems(items) { _, index ->
+            onSelectTab = { index ->
                 switchToTab(index)
-            }
-            .setPositiveButton("+ New tab") { _, _ ->
+            },
+
+            onCloseTab = { index ->
+                closeTab(index)
+            },
+
+            onNewTab = {
                 createNewTab()
             }
-            .setNegativeButton("Close current") { _, _ ->
-                closeCurrentTab()
+        ).show()
+    }
+
+    private fun closeTab(index: Int) {
+        val closingTab = tabs.getOrNull(index) ?: return
+        val wasActive = index == activeTabIndex
+
+        tabs.removeAt(index)
+
+        (closingTab.webView.parent as? android.view.ViewGroup)
+            ?.removeView(closingTab.webView)
+
+        closingTab.webView.stopLoading()
+        closingTab.webView.webChromeClient = null
+        closingTab.webView.webViewClient = WebViewClient()
+        closingTab.webView.removeAllViews()
+        closingTab.webView.destroy()
+
+        if (tabs.isEmpty()) {
+            activeTabIndex = 0
+            createNewTab()
+            return
+        }
+
+        if (wasActive) {
+            val nextIndex = index.coerceAtMost(tabs.lastIndex)
+            switchToTab(nextIndex)
+        } else {
+            if (index < activeTabIndex) {
+                activeTabIndex--
             }
-            .setNeutralButton("Cancel", null)
-            .show()
+
+            btnTabs.text = tabs.size.toString()
+        }
     }
 
     private fun closeCurrentTab() {
