@@ -821,6 +821,7 @@ class MainActivity : AppCompatActivity() {
         popup.menu.add("Find in page")
         popup.menu.add("Share page")
         popup.menu.add("Copy URL")
+        popup.menu.add("Clear browsing data")
 
         val desktopItem = popup.menu.add(
             if (webView.settings.userAgentString?.contains("OLIKH_DESKTOP") == true) {
@@ -847,6 +848,11 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
+                "Clear browsing data" -> {
+                    confirmClearBrowsingData()
+                    true
+                }
+
                 "Desktop site",
                 "Mobile site" -> {
                     toggleDesktopSite()
@@ -858,6 +864,36 @@ class MainActivity : AppCompatActivity() {
         }
 
         popup.show()
+    }
+
+    private fun confirmClearBrowsingData() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Clear browsing data?")
+            .setMessage("This will clear history, cookies, WebView cache and form data.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Clear") { _, _ ->
+                historyManager.clear()
+
+                CookieManager.getInstance().apply {
+                    removeAllCookies(null)
+                    flush()
+                }
+
+                tabs.forEach { tab ->
+                    tab.webView.clearCache(true)
+                    tab.webView.clearFormData()
+                    tab.webView.clearHistory()
+                }
+
+                Toast.makeText(
+                    this,
+                    "Browsing data cleared",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                updateNavigationButtons()
+            }
+            .show()
     }
 
     private fun showFindInPage() {
