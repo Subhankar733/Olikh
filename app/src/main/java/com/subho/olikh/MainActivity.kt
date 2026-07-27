@@ -42,6 +42,10 @@ class MainActivity : AppCompatActivity() {
         getSharedPreferences("olikh_tabs", MODE_PRIVATE)
     }
 
+    private val historyManager by lazy {
+        HistoryManager(this)
+    }
+
     private var failedUrl: String? = null
     private var showingErrorPage = false
 
@@ -61,6 +65,7 @@ class MainActivity : AppCompatActivity() {
         val btnForward = findViewById<Button>(R.id.btnForward)
         val btnHome = findViewById<Button>(R.id.btnHome)
         val btnReload = findViewById<Button>(R.id.btnReload)
+        val btnHistory = findViewById<Button>(R.id.btnHistory)
 
         tabs.add(
             BrowserTab(
@@ -224,6 +229,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        btnHistory.setOnClickListener {
+            showHistory()
+        }
+
         val restoredPersistentTabs = restoreTabs()
 
         if (!restoredPersistentTabs) {
@@ -248,6 +257,62 @@ class MainActivity : AppCompatActivity() {
         }
 
         updateNavigationButtons()
+    }
+
+    private fun showHistory() {
+        val history = historyManager.getAll()
+
+        if (history.isEmpty()) {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("History")
+                .setMessage("No browsing history yet.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        val items = history.map { entry ->
+            val cleanTitle = entry.title
+                .replace("\n", " ")
+                .trim()
+                .ifBlank { entry.url }
+                .take(60)
+
+            "$cleanTitle\n${entry.url}"
+        }.toTypedArray()
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("History · ${history.size}")
+            .setItems(items) { _, index ->
+                val entry = history.getOrNull(index)
+                    ?: return@setItems
+
+                showingErrorPage = false
+                failedUrl = null
+
+                activeTab?.apply {
+                    showingError = false
+                    failedUrl = null
+                }
+
+                webView.loadUrl(entry.url)
+            }
+            .setNegativeButton("Clear") { _, _ ->
+                confirmClearHistory()
+            }
+            .setPositiveButton("Close", null)
+            .show()
+    }
+
+    private fun confirmClearHistory() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Clear history?")
+            .setMessage("All saved browsing history will be removed.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Clear") { _, _ ->
+                historyManager.clear()
+            }
+            .show()
     }
 
     private fun showTabManager() {
@@ -455,6 +520,8 @@ class MainActivity : AppCompatActivity() {
                     tab.url = it
                 }
 
+                recordHistory(tab, url)
+
                 if (activeTab === tab) {
                     progressBar.visibility = View.VISIBLE
 
@@ -507,6 +574,27 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun recordHistory(tab: BrowserTab, url: String?) {
+        val pageUrl = url ?: return
+
+        if (
+            !pageUrl.startsWith("https://") &&
+            !pageUrl.startsWith("http://")
+        ) {
+            return
+        }
+
+        val pageTitle = tab.webView.title
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: tab.title.ifBlank { pageUrl }
+
+        historyManager.add(
+            title = pageTitle,
+            url = pageUrl
+        )
     }
 
     private fun openInput(rawInput: String) {

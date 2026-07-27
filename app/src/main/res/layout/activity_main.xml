@@ -120,6 +120,17 @@
             android:backgroundTint="#111317" />
 
         <Button
+            android:id="@+id/btnHistory"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="H"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#111317"
+            android:contentDescription="History" />
+
+        <Button
             android:id="@+id/btnReload"
             android:layout_width="0dp"
             android:layout_height="48dp"
