@@ -1,10 +1,6 @@
 package com.subho.olikh
 
 import android.annotation.SuppressLint
-import android.content.Intent
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -22,8 +18,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ProgressBar
-import android.widget.PopupMenu
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.net.URLEncoder
 
@@ -72,7 +66,6 @@ class MainActivity : AppCompatActivity() {
         browserContainer = findViewById(R.id.browserContainer)
         btnTabs = findViewById(R.id.btnTabs)
         btnNewTab = findViewById(R.id.btnNewTab)
-        val btnMenu = findViewById<Button>(R.id.btnMenu)
 
         val btnBack = findViewById<Button>(R.id.btnBack)
         val btnForward = findViewById<Button>(R.id.btnForward)
@@ -281,10 +274,6 @@ class MainActivity : AppCompatActivity() {
 
         btnNewTab.setOnClickListener {
             createNewTab()
-        }
-
-        btnMenu.setOnClickListener {
-            showBrowserMenu(btnMenu)
         }
 
         btnTabs.setOnClickListener {
@@ -813,165 +802,6 @@ class MainActivity : AppCompatActivity() {
                 mimeType = mimeType
             )
         }
-    }
-
-    private fun showBrowserMenu(anchor: View) {
-        val popup = PopupMenu(this, anchor)
-
-        popup.menu.add("Find in page")
-        popup.menu.add("Share page")
-        popup.menu.add("Copy URL")
-
-        val desktopItem = popup.menu.add(
-            if (webView.settings.userAgentString?.contains("OLIKH_DESKTOP") == true) {
-                "Mobile site"
-            } else {
-                "Desktop site"
-            }
-        )
-
-        popup.setOnMenuItemClickListener { item ->
-            when (item.title.toString()) {
-                "Find in page" -> {
-                    showFindInPage()
-                    true
-                }
-
-                "Share page" -> {
-                    shareCurrentPage()
-                    true
-                }
-
-                "Copy URL" -> {
-                    copyCurrentUrl()
-                    true
-                }
-
-                "Desktop site",
-                "Mobile site" -> {
-                    toggleDesktopSite()
-                    true
-                }
-
-                else -> false
-            }
-        }
-
-        popup.show()
-    }
-
-    private fun showFindInPage() {
-        val input = EditText(this).apply {
-            hint = "Find text on this page"
-            setSingleLine(true)
-        }
-
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Find in page")
-            .setView(input)
-            .setPositiveButton("Find", null)
-            .setNegativeButton("Close") { _, _ ->
-                webView.clearMatches()
-            }
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
-                .setOnClickListener {
-                    val query = input.text.toString().trim()
-
-                    if (query.isNotEmpty()) {
-                        webView.findAllAsync(query)
-                        webView.findNext(true)
-                    }
-                }
-        }
-
-        dialog.show()
-    }
-
-    private fun shareCurrentPage() {
-        val url = webView.url
-            ?.takeIf {
-                it.startsWith("http://") ||
-                    it.startsWith("https://")
-            }
-            ?: return
-
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, webView.title ?: "OLIKH")
-            putExtra(Intent.EXTRA_TEXT, url)
-        }
-
-        startActivity(
-            Intent.createChooser(
-                shareIntent,
-                "Share page"
-            )
-        )
-    }
-
-    private fun copyCurrentUrl() {
-        val url = webView.url
-            ?.takeIf {
-                it.startsWith("http://") ||
-                    it.startsWith("https://")
-            }
-            ?: return
-
-        val clipboard =
-            getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-        clipboard.setPrimaryClip(
-            ClipData.newPlainText(
-                "OLIKH URL",
-                url
-            )
-        )
-
-        Toast.makeText(
-            this,
-            "URL copied",
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-
-    private fun toggleDesktopSite() {
-        val settings = webView.settings
-        val currentUa = settings.userAgentString ?: ""
-
-        val desktopEnabled =
-            currentUa.contains("OLIKH_DESKTOP")
-
-        if (desktopEnabled) {
-            settings.userAgentString = null
-            settings.useWideViewPort = true
-            settings.loadWithOverviewMode = true
-
-            Toast.makeText(
-                this,
-                "Mobile site",
-                Toast.LENGTH_SHORT
-            ).show()
-        } else {
-            val desktopUa =
-                "Mozilla/5.0 (X11; Linux x86_64) " +
-                "AppleWebKit/537.36 (KHTML, like Gecko) " +
-                "Chrome/138.0.0.0 Safari/537.36 OLIKH_DESKTOP"
-
-            settings.userAgentString = desktopUa
-            settings.useWideViewPort = true
-            settings.loadWithOverviewMode = true
-
-            Toast.makeText(
-                this,
-                "Desktop site",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        webView.reload()
     }
 
     private fun openInput(rawInput: String) {
