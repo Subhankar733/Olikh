@@ -632,6 +632,7 @@ class MainActivity : AppCompatActivity() {
         title = tab.title.ifBlank { "OLIKH" }
 
         updateNavigationButtons()
+        updateBookmarkButton()
     }
 
     private fun createTabWebViewClient(tab: BrowserTab): WebViewClient {
@@ -681,6 +682,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     updateNavigationButtons()
+                    updateBookmarkButton()
                 }
             }
 
