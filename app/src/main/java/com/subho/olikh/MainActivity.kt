@@ -237,7 +237,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnHistory.setOnClickListener {
-            showHistory()
+            showLibrary()
         }
 
         btnBookmark.setOnClickListener {
@@ -245,7 +245,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnBookmark.setOnLongClickListener {
-            showBookmarks()
+            showLibrary()
             true
         }
 
@@ -385,6 +385,46 @@ class MainActivity : AppCompatActivity() {
                 updateBookmarkButton()
             }
             .show()
+    }
+
+    private fun showLibrary() {
+        LibraryDialog(
+            context = this,
+            history = historyManager.getAll(),
+            bookmarks = bookmarkManager.getAll(),
+
+            onOpenHistory = { entry ->
+                showingErrorPage = false
+                failedUrl = null
+
+                activeTab?.apply {
+                    showingError = false
+                    failedUrl = null
+                }
+
+                webView.loadUrl(entry.url)
+            },
+
+            onOpenBookmark = { entry ->
+                showingErrorPage = false
+                failedUrl = null
+
+                activeTab?.apply {
+                    showingError = false
+                    failedUrl = null
+                }
+
+                webView.loadUrl(entry.url)
+            },
+
+            onClearHistory = {
+                confirmClearHistory()
+            },
+
+            onClearBookmarks = {
+                confirmClearBookmarks()
+            }
+        ).show()
     }
 
     private fun showHistory() {
