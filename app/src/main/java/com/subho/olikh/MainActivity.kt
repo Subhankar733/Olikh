@@ -38,6 +38,10 @@ class MainActivity : AppCompatActivity() {
 
     private val homePage = "https://www.google.com"
 
+    private val tabPrefs by lazy {
+        getSharedPreferences("olikh_tabs", MODE_PRIVATE)
+    }
+
     private var failedUrl: String? = null
     private var showingErrorPage = false
 
@@ -220,10 +224,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (savedInstanceState == null) {
-            webView.loadUrl(homePage)
-        } else {
-            webView.restoreState(savedInstanceState)
+        val restoredPersistentTabs = restoreTabs()
+
+        if (!restoredPersistentTabs) {
+            if (savedInstanceState == null) {
+                webView.loadUrl(homePage)
+            } else {
+                webView.restoreState(savedInstanceState)
+            }
         }
 
         btnNewTab.setOnClickListener {
@@ -790,6 +798,163 @@ class MainActivity : AppCompatActivity() {
             .replace("'", "&#39;")
     }
 
+    private fun saveTabs() {
+        val editor = tabPrefs.edit()
+
+        editor.clear()
+        editor.putInt("tab_count", tabs.size)
+        editor.putInt(
+            "active_tab",
+            activeTabIndex.coerceIn(0, (tabs.size - 1).coerceAtLeast(0))
+        )
+
+        tabs.forEachIndexed { index, tab ->
+            val currentUrl = tab.webView.url
+                ?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+                ?: tab.url.takeIf {
+                    it.startsWith("http://") || it.startsWith("https://")
+                }
+                ?: homePage
+
+            editor.putString("tab_${index}_url", currentUrl)
+            editor.putString(
+                "tab_${index}_title",
+                tab.title.ifBlank { "New Tab" }
+            )
+        }
+
+        editor.apply()
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun restoreTabs(): Boolean {
+        val count = tabPrefs.getInt("tab_count", 0)
+
+        if (count <= 0) return false
+
+        val urls = (0 until count).map { index ->
+            tabPrefs.getString("tab_${index}_url", homePage)
+                ?.takeIf {
+                    it.startsWith("http://") ||
+                        it.startsWith("https://")
+                }
+                ?: homePage
+        }
+
+        val titles = (0 until count).map { index ->
+            tabPrefs.getString("tab_${index}_title", "New Tab")
+                ?: "New Tab"
+        }
+
+        val wantedActiveIndex = tabPrefs
+            .getInt("active_tab", 0)
+            .coerceIn(0, urls.lastIndex)
+
+        tabs.forEach { tab ->
+            (tab.webView.parent as? android.view.ViewGroup)
+                ?.removeView(tab.webView)
+
+            tab.webView.stopLoading()
+            tab.webView.webChromeClient = null
+            tab.webView.webViewClient = WebViewClient()
+            tab.webView.destroy()
+        }
+
+        tabs.clear()
+        browserContainer.removeAllViews()
+
+        urls.forEachIndexed { index, url ->
+            val restoredWebView = WebView(this)
+
+            restoredWebView.layoutParams =
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+
+            restoredWebView.settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                databaseEnabled = true
+
+                loadsImagesAutomatically = true
+                blockNetworkImage = false
+
+                useWideViewPort = true
+                loadWithOverviewMode = true
+
+                builtInZoomControls = true
+                displayZoomControls = false
+
+                cacheMode = WebSettings.LOAD_DEFAULT
+                mediaPlaybackRequiresUserGesture = true
+
+                allowContentAccess = true
+                allowFileAccess = false
+
+                javaScriptCanOpenWindowsAutomatically = false
+                setSupportMultipleWindows(false)
+            }
+
+            CookieManager.getInstance().apply {
+                setAcceptCookie(true)
+                setAcceptThirdPartyCookies(restoredWebView, true)
+            }
+
+            val tab = BrowserTab(
+                webView = restoredWebView,
+                title = titles[index],
+                url = url
+            )
+
+            tabs.add(tab)
+
+            restoredWebView.webViewClient =
+                createTabWebViewClient(tab)
+
+            restoredWebView.webChromeClient =
+                object : WebChromeClient() {
+
+                    override fun onProgressChanged(
+                        view: WebView?,
+                        newProgress: Int
+                    ) {
+                        if (activeTab === tab) {
+                            progressBar.progress = newProgress
+                            progressBar.visibility =
+                                if (newProgress >= 100) {
+                                    View.GONE
+                                } else {
+                                    View.VISIBLE
+                                }
+                        }
+                    }
+
+                    override fun onReceivedTitle(
+                        view: WebView?,
+                        title: String?
+                    ) {
+                        tab.title = title ?: "New Tab"
+
+                        if (activeTab === tab) {
+                            this@MainActivity.title =
+                                tab.title
+                        }
+                    }
+                }
+        }
+
+        activeTabIndex = wantedActiveIndex
+        switchToTab(activeTabIndex)
+
+        tabs.forEach { tab ->
+            tab.webView.loadUrl(tab.url)
+        }
+
+        btnTabs.text = tabs.size.toString()
+        return true
+    }
+
     private fun updateNavigationButtons() {
         findViewById<Button>(R.id.btnBack).isEnabled =
             webView.canGoBack()
@@ -808,8 +973,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
+        saveTabs()
         webView.saveState(outState)
         super.onSaveInstanceState(outState)
+    }
+
+    override fun onStop() {
+        saveTabs()
+        super.onStop()
     }
 
     override fun onDestroy() {
