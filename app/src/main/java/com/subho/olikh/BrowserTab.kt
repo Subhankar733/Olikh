@@ -7,5 +7,6 @@ data class BrowserTab(
     var title: String = "New Tab",
     var url: String = "",
     var failedUrl: String? = null,
-    var showingError: Boolean = false
+    var showingError: Boolean = false,
+    var incognito: Boolean = false
 )

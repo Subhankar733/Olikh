@@ -97,6 +97,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         installDownloadListener(webView)
+        installLongPressActions(webView)
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -592,7 +593,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun createNewTab() {
+    private fun createNewTab(
+        incognito: Boolean = false,
+        initialUrl: String = homePage
+    ) {
         val newWebView = WebView(this)
 
         newWebView.layoutParams = FrameLayout.LayoutParams(
@@ -630,11 +634,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         installDownloadListener(newWebView)
+        installLongPressActions(newWebView)
 
         val tab = BrowserTab(
             webView = newWebView,
-            title = "New Tab",
-            url = homePage
+            title = if (incognito) "Incognito" else "New Tab",
+            url = initialUrl,
+            incognito = incognito
         )
 
         tabs.add(tab)
@@ -661,7 +667,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         switchToTab(activeTabIndex)
-        newWebView.loadUrl(homePage)
+        newWebView.loadUrl(initialUrl)
     }
 
     private fun switchToTab(index: Int) {
@@ -773,6 +779,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun recordHistory(tab: BrowserTab, url: String?) {
+        if (tab.incognito) return
+
         val pageUrl = url ?: return
 
         if (
@@ -791,6 +799,82 @@ class MainActivity : AppCompatActivity() {
             title = pageTitle,
             url = pageUrl
         )
+    }
+
+    private fun installLongPressActions(targetWebView: WebView) {
+        targetWebView.setOnLongClickListener {
+            val result = targetWebView.hitTestResult
+            val linkUrl = when (result.type) {
+                WebView.HitTestResult.SRC_ANCHOR_TYPE,
+                WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE ->
+                    result.extra
+
+                else -> null
+            }
+
+            if (linkUrl.isNullOrBlank()) {
+                return@setOnLongClickListener false
+            }
+
+            val items = arrayOf(
+                "Open link",
+                "Open in new tab",
+                "Open in incognito tab",
+                "Copy link",
+                "Share link"
+            )
+
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Link")
+                .setItems(items) { _, which ->
+                    when (which) {
+                        0 -> targetWebView.loadUrl(linkUrl)
+
+                        1 -> createNewTab(
+                            incognito = false,
+                            initialUrl = linkUrl
+                        )
+
+                        2 -> createNewTab(
+                            incognito = true,
+                            initialUrl = linkUrl
+                        )
+
+                        3 -> {
+                            val clipboard =
+                                getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                                    as android.content.ClipboardManager
+
+                            clipboard.setPrimaryClip(
+                                android.content.ClipData.newPlainText(
+                                    "OLIKH link",
+                                    linkUrl
+                                )
+                            )
+
+                            Toast.makeText(
+                                this,
+                                "Link copied",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        4 -> {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, linkUrl)
+                            }
+
+                            startActivity(
+                                Intent.createChooser(intent, "Share link")
+                            )
+                        }
+                    }
+                }
+                .show()
+
+            true
+        }
     }
 
     private fun installDownloadListener(targetWebView: WebView) {
@@ -818,9 +902,13 @@ class MainActivity : AppCompatActivity() {
     private fun showBrowserMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
 
+        popup.menu.add("New incognito tab")
         popup.menu.add("Find in page")
         popup.menu.add("Share page")
         popup.menu.add("Copy URL")
+        popup.menu.add("Zoom in")
+        popup.menu.add("Zoom out")
+        popup.menu.add("Reset zoom")
         popup.menu.add("Clear browsing data")
 
         val desktopItem = popup.menu.add(
@@ -833,6 +921,32 @@ class MainActivity : AppCompatActivity() {
 
         popup.setOnMenuItemClickListener { item ->
             when (item.title.toString()) {
+                "New incognito tab" -> {
+                    createNewTab(incognito = true)
+                    Toast.makeText(
+                        this,
+                        "Incognito tab opened",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    true
+                }
+
+                "Zoom in" -> {
+                    webView.zoomIn()
+                    true
+                }
+
+                "Zoom out" -> {
+                    webView.zoomOut()
+                    true
+                }
+
+                "Reset zoom" -> {
+                    webView.setInitialScale(0)
+                    webView.reload()
+                    true
+                }
+
                 "Find in page" -> {
                     showFindInPage()
                     true
@@ -1303,13 +1417,25 @@ class MainActivity : AppCompatActivity() {
         val editor = tabPrefs.edit()
 
         editor.clear()
-        editor.putInt("tab_count", tabs.size)
+
+        val persistentTabs = tabs.filterNot { it.incognito }
+
+        editor.putInt("tab_count", persistentTabs.size)
+
+        val currentTab = activeTab
+        val persistentActiveIndex =
+            if (currentTab != null && !currentTab.incognito) {
+                persistentTabs.indexOf(currentTab).coerceAtLeast(0)
+            } else {
+                0
+            }
+
         editor.putInt(
             "active_tab",
-            activeTabIndex.coerceIn(0, (tabs.size - 1).coerceAtLeast(0))
+            persistentActiveIndex
         )
 
-        tabs.forEachIndexed { index, tab ->
+        persistentTabs.forEachIndexed { index, tab ->
             val currentUrl = tab.webView.url
                 ?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
                 ?: tab.url.takeIf {
@@ -1403,6 +1529,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             installDownloadListener(restoredWebView)
+            installLongPressActions(restoredWebView)
 
             val tab = BrowserTab(
                 webView = restoredWebView,
