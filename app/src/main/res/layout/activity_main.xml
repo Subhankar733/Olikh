@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -12,15 +13,16 @@
         android:layout_width="match_parent"
         android:layout_height="2dp"
         android:max="100"
-        android:visibility="gone"/>
+        android:visibility="gone" />
 
+    <!-- Omnibox -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="68dp"
+        android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:orientation="horizontal">
+        android:paddingEnd="12dp">
 
         <EditText
             android:id="@+id/addressBar"
@@ -36,16 +38,48 @@
             android:paddingStart="18dp"
             android:paddingEnd="18dp"
             android:inputType="textUri"
-            android:imeOptions="actionGo"/>
+            android:imeOptions="actionGo" />
+
+        <Button
+            android:id="@+id/btnTabs"
+            android:layout_width="52dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="6dp"
+            android:text="1"
+            android:textSize="15sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#1A1D22"
+            android:contentDescription="Open tabs" />
+
+        <Button
+            android:id="@+id/btnNewTab"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="2dp"
+            android:text="+"
+            android:textSize="24sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#0B0D10"
+            android:contentDescription="New tab" />
 
     </LinearLayout>
 
-    <WebView
-        android:id="@+id/webView"
+    <!-- Active tab's WebView is placed here -->
+    <FrameLayout
+        android:id="@+id/browserContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1">
 
+        <!-- Kept temporarily for compatibility with current MainActivity -->
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
+
+    <!-- Navigation -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="64dp"
@@ -63,7 +97,7 @@
             android:text="‹"
             android:textSize="26sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#111317"/>
+            android:backgroundTint="#111317" />
 
         <Button
             android:id="@+id/btnForward"
@@ -73,7 +107,7 @@
             android:text="›"
             android:textSize="26sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#111317"/>
+            android:backgroundTint="#111317" />
 
         <Button
             android:id="@+id/btnHome"
@@ -83,7 +117,7 @@
             android:text="⌂"
             android:textSize="22sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#111317"/>
+            android:backgroundTint="#111317" />
 
         <Button
             android:id="@+id/btnReload"
@@ -93,7 +127,7 @@
             android:text="↻"
             android:textSize="22sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#111317"/>
+            android:backgroundTint="#111317" />
 
     </LinearLayout>
 
