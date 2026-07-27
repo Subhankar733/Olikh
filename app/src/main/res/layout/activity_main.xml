@@ -131,6 +131,17 @@
             android:contentDescription="History" />
 
         <Button
+            android:id="@+id/btnBookmark"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="☆"
+            android:textSize="24sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#111317"
+            android:contentDescription="Add bookmark" />
+
+        <Button
             android:id="@+id/btnReload"
             android:layout_width="0dp"
             android:layout_height="48dp"

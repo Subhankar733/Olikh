@@ -46,6 +46,12 @@ class MainActivity : AppCompatActivity() {
         HistoryManager(this)
     }
 
+    private val bookmarkManager by lazy {
+        BookmarkManager(this)
+    }
+
+    private lateinit var btnBookmark: Button
+
     private var failedUrl: String? = null
     private var showingErrorPage = false
 
@@ -66,6 +72,7 @@ class MainActivity : AppCompatActivity() {
         val btnHome = findViewById<Button>(R.id.btnHome)
         val btnReload = findViewById<Button>(R.id.btnReload)
         val btnHistory = findViewById<Button>(R.id.btnHistory)
+        btnBookmark = findViewById(R.id.btnBookmark)
 
         tabs.add(
             BrowserTab(
@@ -233,6 +240,17 @@ class MainActivity : AppCompatActivity() {
             showHistory()
         }
 
+        btnBookmark.setOnClickListener {
+            toggleCurrentBookmark()
+        }
+
+        btnBookmark.setOnLongClickListener {
+            showBookmarks()
+            true
+        }
+
+        updateBookmarkButton()
+
         val restoredPersistentTabs = restoreTabs()
 
         if (!restoredPersistentTabs) {
@@ -257,6 +275,116 @@ class MainActivity : AppCompatActivity() {
         }
 
         updateNavigationButtons()
+    }
+
+    private fun toggleCurrentBookmark() {
+        val currentUrl = webView.url
+            ?.takeIf {
+                it.startsWith("https://") ||
+                    it.startsWith("http://")
+            }
+            ?: return
+
+        if (bookmarkManager.contains(currentUrl)) {
+            bookmarkManager.remove(currentUrl)
+        } else {
+            val pageTitle = webView.title
+                ?.replace("\n", " ")
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: activeTab?.title?.ifBlank { currentUrl }
+                ?: currentUrl
+
+            bookmarkManager.add(
+                title = pageTitle,
+                url = currentUrl
+            )
+        }
+
+        updateBookmarkButton()
+    }
+
+    private fun updateBookmarkButton() {
+        if (!::btnBookmark.isInitialized) return
+
+        val currentUrl = webView.url
+            ?.takeIf {
+                it.startsWith("https://") ||
+                    it.startsWith("http://")
+            }
+
+        val saved =
+            currentUrl != null &&
+                bookmarkManager.contains(currentUrl)
+
+        btnBookmark.text =
+            if (saved) "★" else "☆"
+
+        btnBookmark.contentDescription =
+            if (saved) {
+                "Remove bookmark"
+            } else {
+                "Add bookmark"
+            }
+    }
+
+    private fun showBookmarks() {
+        val bookmarks = bookmarkManager.getAll()
+
+        if (bookmarks.isEmpty()) {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Bookmarks")
+                .setMessage("No bookmarks saved yet.")
+                .setPositiveButton("Close", null)
+                .show()
+
+            return
+        }
+
+        val items = bookmarks.map { entry ->
+            val cleanTitle = entry.title
+                .replace("\n", " ")
+                .trim()
+                .ifBlank { entry.url }
+                .take(60)
+
+            "$cleanTitle\n${entry.url}"
+        }.toTypedArray()
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Bookmarks · ${bookmarks.size}")
+            .setItems(items) { _, index ->
+                val entry =
+                    bookmarks.getOrNull(index)
+                        ?: return@setItems
+
+                showingErrorPage = false
+                failedUrl = null
+
+                activeTab?.apply {
+                    showingError = false
+                    failedUrl = null
+                }
+
+                webView.loadUrl(entry.url)
+            }
+            .setNegativeButton("Clear") { _, _ ->
+                confirmClearBookmarks()
+            }
+            .setPositiveButton("Close", null)
+            .show()
+    }
+
+    private fun confirmClearBookmarks() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Clear bookmarks?")
+            .setMessage("All saved bookmarks will be removed.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Clear") { _, _ ->
+                bookmarkManager.clear()
+                updateBookmarkButton()
+            }
+            .show()
     }
 
     private fun showHistory() {
@@ -1049,6 +1177,8 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnForward).isEnabled =
             webView.canGoForward()
+
+        updateBookmarkButton()
     }
 
     override fun onBackPressed() {
