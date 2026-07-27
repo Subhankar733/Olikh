@@ -126,6 +126,11 @@ class MainActivity : AppCompatActivity() {
 
                 if (!showingErrorPage) {
                     progressBar.visibility = View.VISIBLE
+
+                    activeTab?.let { tab ->
+                        url?.let { tab.url = it }
+                        recordHistory(tab, url)
+                    }
                 }
 
                 url?.takeIf { !it.startsWith("data:text/html") }?.let {
