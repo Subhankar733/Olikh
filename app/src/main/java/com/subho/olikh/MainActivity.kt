@@ -89,6 +89,8 @@ class MainActivity : AppCompatActivity() {
             setAcceptThirdPartyCookies(webView, true)
         }
 
+        installDownloadListener(webView)
+
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -607,6 +609,8 @@ class MainActivity : AppCompatActivity() {
             setAcceptThirdPartyCookies(newWebView, true)
         }
 
+        installDownloadListener(newWebView)
+
         val tab = BrowserTab(
             webView = newWebView,
             title = "New Tab",
@@ -765,6 +769,28 @@ class MainActivity : AppCompatActivity() {
             title = pageTitle,
             url = pageUrl
         )
+    }
+
+    private fun installDownloadListener(targetWebView: WebView) {
+        targetWebView.setDownloadListener {
+            url,
+            userAgent,
+            contentDisposition,
+            mimeType,
+            _ ->
+
+            if (url.isNullOrBlank()) {
+                return@setDownloadListener
+            }
+
+            DownloadHelper.download(
+                context = this,
+                url = url,
+                userAgent = userAgent,
+                contentDisposition = contentDisposition,
+                mimeType = mimeType
+            )
+        }
     }
 
     private fun openInput(rawInput: String) {
@@ -1158,6 +1184,8 @@ class MainActivity : AppCompatActivity() {
                 setAcceptCookie(true)
                 setAcceptThirdPartyCookies(restoredWebView, true)
             }
+
+            installDownloadListener(restoredWebView)
 
             val tab = BrowserTab(
                 webView = restoredWebView,
