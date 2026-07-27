@@ -1,6 +1,7 @@
 package com.subho.olikh
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -16,6 +17,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import java.net.URLEncoder
@@ -25,6 +27,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var addressBar: EditText
     private lateinit var progressBar: ProgressBar
+    private lateinit var browserContainer: FrameLayout
+    private lateinit var btnTabs: Button
+    private lateinit var btnNewTab: Button
+
+    private val tabs = mutableListOf<BrowserTab>()
+    private var activeTabIndex = 0
+
+    private val activeTab: BrowserTab?
+        get() = tabs.getOrNull(activeTabIndex)
 
     private val homePage = "https://www.google.com"
 
@@ -39,11 +50,24 @@ class MainActivity : AppCompatActivity() {
         webView = findViewById(R.id.webView)
         addressBar = findViewById(R.id.addressBar)
         progressBar = findViewById(R.id.progressBar)
+        browserContainer = findViewById(R.id.browserContainer)
+        btnTabs = findViewById(R.id.btnTabs)
+        btnNewTab = findViewById(R.id.btnNewTab)
 
         val btnBack = findViewById<Button>(R.id.btnBack)
         val btnForward = findViewById<Button>(R.id.btnForward)
         val btnHome = findViewById<Button>(R.id.btnHome)
         val btnReload = findViewById<Button>(R.id.btnReload)
+
+        tabs.add(
+            BrowserTab(
+                webView = webView,
+                title = "OLIKH",
+                url = homePage
+            )
+        )
+        activeTabIndex = 0
+        btnTabs.text = tabs.size.toString()
 
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
@@ -203,7 +227,257 @@ class MainActivity : AppCompatActivity() {
             webView.restoreState(savedInstanceState)
         }
 
+        btnNewTab.setOnClickListener {
+            createNewTab()
+        }
+
+        btnTabs.setOnClickListener {
+            showTabSwitcher()
+        }
+
+        btnTabs.setOnLongClickListener {
+            closeCurrentTab()
+            true
+        }
+
         updateNavigationButtons()
+    }
+
+    private fun showTabSwitcher() {
+        if (tabs.isEmpty()) return
+
+        val items = tabs.mapIndexed { index, tab ->
+            val marker = if (index == activeTabIndex) "●" else "○"
+
+            val displayTitle = tab.title
+                .replace("\n", " ")
+                .trim()
+                .ifBlank {
+                    tab.url.ifBlank { "New Tab" }
+                }
+                .take(45)
+
+            "$marker ${index + 1}. $displayTitle"
+        }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle("Tabs · ${tabs.size}")
+            .setItems(items) { _, index ->
+                switchToTab(index)
+            }
+            .setPositiveButton("+ New tab") { _, _ ->
+                createNewTab()
+            }
+            .setNegativeButton("Close current") { _, _ ->
+                closeCurrentTab()
+            }
+            .setNeutralButton("Cancel", null)
+            .show()
+    }
+
+    private fun closeCurrentTab() {
+        if (tabs.isEmpty()) return
+
+        val closingIndex = activeTabIndex
+        val closingTab = tabs.removeAt(closingIndex)
+
+        if (closingTab.webView.parent != null) {
+            (closingTab.webView.parent as? android.view.ViewGroup)
+                ?.removeView(closingTab.webView)
+        }
+
+        closingTab.webView.stopLoading()
+        closingTab.webView.webChromeClient = null
+        closingTab.webView.webViewClient = WebViewClient()
+        closingTab.webView.destroy()
+
+        if (tabs.isEmpty()) {
+            activeTabIndex = 0
+            createNewTab()
+            return
+        }
+
+        val nextIndex =
+            if (closingIndex >= tabs.size) {
+                tabs.lastIndex
+            } else {
+                closingIndex
+            }
+
+        switchToTab(nextIndex)
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun createNewTab() {
+        val newWebView = WebView(this)
+
+        newWebView.layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        )
+
+        newWebView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            databaseEnabled = true
+
+            loadsImagesAutomatically = true
+            blockNetworkImage = false
+
+            useWideViewPort = true
+            loadWithOverviewMode = true
+
+            builtInZoomControls = true
+            displayZoomControls = false
+
+            cacheMode = WebSettings.LOAD_DEFAULT
+            mediaPlaybackRequiresUserGesture = true
+
+            allowContentAccess = true
+            allowFileAccess = false
+
+            javaScriptCanOpenWindowsAutomatically = false
+            setSupportMultipleWindows(false)
+        }
+
+        CookieManager.getInstance().apply {
+            setAcceptCookie(true)
+            setAcceptThirdPartyCookies(newWebView, true)
+        }
+
+        val tab = BrowserTab(
+            webView = newWebView,
+            title = "New Tab",
+            url = homePage
+        )
+
+        tabs.add(tab)
+        activeTabIndex = tabs.lastIndex
+
+        newWebView.webViewClient = createTabWebViewClient(tab)
+
+        newWebView.webChromeClient = object : WebChromeClient() {
+            override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                if (activeTab === tab) {
+                    progressBar.progress = newProgress
+                    progressBar.visibility =
+                        if (newProgress >= 100) View.GONE else View.VISIBLE
+                }
+            }
+
+            override fun onReceivedTitle(view: WebView?, title: String?) {
+                tab.title = title ?: "New Tab"
+
+                if (activeTab === tab) {
+                    this@MainActivity.title = tab.title
+                }
+            }
+        }
+
+        switchToTab(activeTabIndex)
+        newWebView.loadUrl(homePage)
+    }
+
+    private fun switchToTab(index: Int) {
+        val tab = tabs.getOrNull(index) ?: return
+
+        activeTabIndex = index
+        webView = tab.webView
+
+        browserContainer.removeAllViews()
+
+        if (webView.parent != null) {
+            (webView.parent as? android.view.ViewGroup)?.removeView(webView)
+        }
+
+        browserContainer.addView(
+            webView,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        addressBar.setText(
+            webView.url ?: tab.url.ifBlank { homePage }
+        )
+
+        btnTabs.text = tabs.size.toString()
+
+        showingErrorPage = tab.showingError
+        failedUrl = tab.failedUrl
+
+        title = tab.title.ifBlank { "OLIKH" }
+
+        updateNavigationButtons()
+    }
+
+    private fun createTabWebViewClient(tab: BrowserTab): WebViewClient {
+        return object : WebViewClient() {
+
+            override fun onPageStarted(
+                view: WebView?,
+                url: String?,
+                favicon: Bitmap?
+            ) {
+                super.onPageStarted(view, url, favicon)
+
+                url?.let {
+                    tab.url = it
+                }
+
+                if (activeTab === tab) {
+                    progressBar.visibility = View.VISIBLE
+
+                    url?.let {
+                        if (!addressBar.hasFocus()) {
+                            addressBar.setText(it)
+                        }
+                    }
+                }
+            }
+
+            override fun onPageFinished(
+                view: WebView?,
+                url: String?
+            ) {
+                super.onPageFinished(view, url)
+
+                url?.let {
+                    tab.url = it
+                }
+
+                if (activeTab === tab) {
+                    progressBar.visibility = View.GONE
+
+                    url?.let {
+                        if (!addressBar.hasFocus()) {
+                            addressBar.setText(it)
+                        }
+                    }
+
+                    updateNavigationButtons()
+                }
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                super.onReceivedError(view, request, error)
+
+                if (request?.isForMainFrame != true) return
+
+                tab.failedUrl = request.url?.toString()
+                tab.showingError = true
+
+                if (activeTab === tab) {
+                    failedUrl = tab.failedUrl
+                    showingErrorPage = true
+                }
+            }
+        }
     }
 
     private fun openInput(rawInput: String) {
