@@ -129,7 +129,6 @@ class MainActivity : AppCompatActivity() {
 
                     activeTab?.let { tab ->
                         url?.let { tab.url = it }
-                        recordHistory(tab, url)
                     }
                 }
 
@@ -151,6 +150,11 @@ class MainActivity : AppCompatActivity() {
                             addressBar.setText(it)
                         }
                     }
+                }
+
+                activeTab?.let { tab ->
+                    url?.let { tab.url = it }
+                    recordHistory(tab, url)
                 }
 
                 updateNavigationButtons()
@@ -698,7 +702,7 @@ class MainActivity : AppCompatActivity() {
                     tab.url = it
                 }
 
-                recordHistory(tab, url)
+
 
                 if (activeTab === tab) {
                     progressBar.visibility = View.VISIBLE
@@ -720,6 +724,8 @@ class MainActivity : AppCompatActivity() {
                 url?.let {
                     tab.url = it
                 }
+
+                recordHistory(tab, url)
 
                 if (activeTab === tab) {
                     progressBar.visibility = View.GONE
