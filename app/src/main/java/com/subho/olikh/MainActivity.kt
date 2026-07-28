@@ -285,7 +285,7 @@ class MainActivity : AppCompatActivity() {
             setSupportMultipleWindows(areMultipleWindowsEnabled())
         }
 
-        applyReadingDisplaySettings(newWebView)
+        applyReadingDisplaySettings(webView)
 
         applyReadingDisplaySettings(webView)
 
@@ -1743,8 +1743,6 @@ class MainActivity : AppCompatActivity() {
             offscreenPreRaster =
                 isOffscreenPreRasterEnabled()
 
-            needInitialFocus =
-                isInitialFocusEnabled()
         }
 
         if (isAutoFitScaleEnabled()) {
