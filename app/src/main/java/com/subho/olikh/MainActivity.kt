@@ -59,6 +59,18 @@ class MainActivity : AppCompatActivity() {
         return browserPrefs.getBoolean("javascript_enabled", true)
     }
 
+    private fun areCookiesEnabled(): Boolean {
+        return browserPrefs.getBoolean("cookies_enabled", true)
+    }
+
+    private fun areThirdPartyCookiesEnabled(): Boolean {
+        return browserPrefs.getBoolean("third_party_cookies_enabled", true)
+    }
+
+    private fun isDoNotTrackEnabled(): Boolean {
+        return browserPrefs.getBoolean("do_not_track_enabled", false)
+    }
+
     private fun currentSearchEngine(): String {
         return browserPrefs.getString("search_engine", "Google") ?: "Google"
     }
@@ -122,8 +134,8 @@ class MainActivity : AppCompatActivity() {
         btnTabs.text = tabs.size.toString()
 
         CookieManager.getInstance().apply {
-            setAcceptCookie(true)
-            setAcceptThirdPartyCookies(webView, true)
+            setAcceptCookie(areCookiesEnabled())
+            setAcceptThirdPartyCookies(webView, areCookiesEnabled() && areThirdPartyCookiesEnabled())
         }
 
         installDownloadListener(webView)
@@ -659,8 +671,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         CookieManager.getInstance().apply {
-            setAcceptCookie(true)
-            setAcceptThirdPartyCookies(newWebView, true)
+            setAcceptCookie(areCookiesEnabled())
+            setAcceptThirdPartyCookies(newWebView, areCookiesEnabled() && areThirdPartyCookiesEnabled())
         }
 
         installDownloadListener(newWebView)
@@ -1116,7 +1128,8 @@ class MainActivity : AppCompatActivity() {
         val options = arrayOf(
             "Search engine",
             "Homepage",
-            "JavaScript"
+            "JavaScript",
+            "Privacy & security"
         )
 
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1126,10 +1139,109 @@ class MainActivity : AppCompatActivity() {
                     0 -> showSearchEngineSelector()
                     1 -> showHomepageSettings()
                     2 -> showJavaScriptSetting()
+                    3 -> showPrivacySecuritySettings()
                 }
             }
             .setNegativeButton("Close", null)
             .show()
+    }
+
+    private fun showPrivacySecuritySettings() {
+        val options = arrayOf(
+            "Cookies: " + if (areCookiesEnabled()) "On" else "Off",
+            "Third-party cookies: " +
+                if (areThirdPartyCookiesEnabled()) "On" else "Off",
+            "Do Not Track: " + if (isDoNotTrackEnabled()) "On" else "Off"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Privacy & security")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> setCookiesEnabled(!areCookiesEnabled())
+                    1 -> setThirdPartyCookiesEnabled(!areThirdPartyCookiesEnabled())
+                    2 -> setDoNotTrackEnabled(!isDoNotTrackEnabled())
+                }
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun setCookiesEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("cookies_enabled", enabled)
+            .apply()
+
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.setAcceptCookie(enabled)
+
+        tabs.forEach { tab ->
+            cookieManager.setAcceptThirdPartyCookies(
+                tab.webView,
+                enabled && areThirdPartyCookiesEnabled()
+            )
+        }
+
+        if (!enabled) {
+            cookieManager.removeAllCookies(null)
+            cookieManager.flush()
+        }
+
+        Toast.makeText(
+            this,
+            if (enabled) "Cookies enabled" else "Cookies disabled and cleared",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun setThirdPartyCookiesEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("third_party_cookies_enabled", enabled)
+            .apply()
+
+        val cookieManager = CookieManager.getInstance()
+
+        tabs.forEach { tab ->
+            cookieManager.setAcceptThirdPartyCookies(
+                tab.webView,
+                areCookiesEnabled() && enabled
+            )
+        }
+
+        Toast.makeText(
+            this,
+            if (enabled) {
+                "Third-party cookies enabled"
+            } else {
+                "Third-party cookies disabled"
+            },
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun setDoNotTrackEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("do_not_track_enabled", enabled)
+            .apply()
+
+        tabs.forEach { tab ->
+            if (enabled) {
+                tab.webView.settings.userAgentString =
+                    tab.webView.settings.userAgentString
+                        ?.replace(" OLIKH_DNT", "")
+                        .orEmpty() + " OLIKH_DNT"
+            } else {
+                tab.webView.settings.userAgentString =
+                    tab.webView.settings.userAgentString
+                        ?.replace(" OLIKH_DNT", "")
+            }
+        }
+
+        Toast.makeText(
+            this,
+            if (enabled) "Do Not Track enabled" else "Do Not Track disabled",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun showJavaScriptSetting() {
@@ -1865,8 +1977,8 @@ class MainActivity : AppCompatActivity() {
             }
 
             CookieManager.getInstance().apply {
-                setAcceptCookie(true)
-                setAcceptThirdPartyCookies(restoredWebView, true)
+                setAcceptCookie(areCookiesEnabled())
+                setAcceptThirdPartyCookies(restoredWebView, areCookiesEnabled() && areThirdPartyCookiesEnabled())
             }
 
             installDownloadListener(restoredWebView)
