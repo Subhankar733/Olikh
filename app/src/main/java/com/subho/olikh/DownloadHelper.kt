@@ -68,7 +68,14 @@ object DownloadHelper {
                 context.getSystemService(Context.DOWNLOAD_SERVICE)
                     as DownloadManager
 
-            manager.enqueue(request)
+            val downloadId = manager.enqueue(request)
+
+            context.getSharedPreferences(
+                "olikh_downloads",
+                Context.MODE_PRIVATE
+            ).edit()
+                .putString("download_$downloadId", fileName)
+                .apply()
 
             Toast.makeText(
                 context,

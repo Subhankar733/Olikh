@@ -1,5 +1,7 @@
 package com.subho.olikh
 
+import android.app.DownloadManager
+
 import android.annotation.SuppressLint
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
@@ -1649,6 +1651,179 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showDownloads() {
+        val prefs = getSharedPreferences(
+            "olikh_downloads",
+            MODE_PRIVATE
+        )
+
+        val downloads = prefs.all
+            .mapNotNull { (key, value) ->
+                if (!key.startsWith("download_")) {
+                    return@mapNotNull null
+                }
+
+                val id = key
+                    .removePrefix("download_")
+                    .toLongOrNull()
+                    ?: return@mapNotNull null
+
+                val fileName = value as? String
+                    ?: return@mapNotNull null
+
+                id to fileName
+            }
+            .sortedByDescending { it.first }
+
+        if (downloads.isEmpty()) {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Downloads")
+                .setMessage("No downloads yet.")
+                .setPositiveButton("OK", null)
+                .show()
+
+            return
+        }
+
+        val manager =
+            getSystemService(Context.DOWNLOAD_SERVICE)
+                as DownloadManager
+
+        val labels = downloads.map { (id, fileName) ->
+            var statusText = "Unknown"
+
+            runCatching {
+                manager.query(
+                    DownloadManager.Query().setFilterById(id)
+                )?.use { cursor ->
+
+                    if (cursor.moveToFirst()) {
+                        val statusIndex =
+                            cursor.getColumnIndex(
+                                DownloadManager.COLUMN_STATUS
+                            )
+
+                        val downloadedIndex =
+                            cursor.getColumnIndex(
+                                DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR
+                            )
+
+                        val totalIndex =
+                            cursor.getColumnIndex(
+                                DownloadManager.COLUMN_TOTAL_SIZE_BYTES
+                            )
+
+                        val status =
+                            if (statusIndex >= 0) {
+                                cursor.getInt(statusIndex)
+                            } else {
+                                -1
+                            }
+
+                        val downloaded =
+                            if (downloadedIndex >= 0) {
+                                cursor.getLong(downloadedIndex)
+                            } else {
+                                0L
+                            }
+
+                        val total =
+                            if (totalIndex >= 0) {
+                                cursor.getLong(totalIndex)
+                            } else {
+                                -1L
+                            }
+
+                        statusText = when (status) {
+                            DownloadManager.STATUS_PENDING ->
+                                "Queued"
+
+                            DownloadManager.STATUS_RUNNING -> {
+                                if (total > 0L) {
+                                    val progress =
+                                        ((downloaded * 100L) / total)
+                                            .coerceIn(0L, 100L)
+
+                                    "Downloading • $progress%"
+                                } else {
+                                    "Downloading"
+                                }
+                            }
+
+                            DownloadManager.STATUS_PAUSED ->
+                                "Paused"
+
+                            DownloadManager.STATUS_SUCCESSFUL ->
+                                "Complete"
+
+                            DownloadManager.STATUS_FAILED ->
+                                "Failed"
+
+                            else ->
+                                "Unknown"
+                        }
+                    } else {
+                        statusText = "Not found"
+                    }
+                }
+            }
+
+            "$fileName\n$statusText"
+        }.toTypedArray()
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Downloads")
+            .setItems(labels) { _, which ->
+                val (id, fileName) = downloads[which]
+
+                runCatching {
+                    val uri =
+                        manager.getUriForDownloadedFile(id)
+
+                    if (uri == null) {
+                        Toast.makeText(
+                            this,
+                            "$fileName is not ready yet",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        return@runCatching
+                    }
+
+                    val mimeType =
+                        manager.getMimeTypeForDownloadedFile(id)
+                            ?: "*/*"
+
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, mimeType)
+
+                        addFlags(
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    }
+
+                    startActivity(intent)
+                }.onFailure {
+                    Toast.makeText(
+                        this,
+                        "Unable to open $fileName",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .setNeutralButton("Clear list") { _, _ ->
+                prefs.edit().clear().apply()
+
+                Toast.makeText(
+                    this,
+                    "Download list cleared",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
     private fun showBrowserMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
 
@@ -1656,6 +1831,7 @@ class MainActivity : AppCompatActivity() {
         popup.menu.add("Find in page")
         popup.menu.add("Share page")
         popup.menu.add("Copy URL")
+        popup.menu.add("Downloads")
         popup.menu.add("Page tools")
         popup.menu.add("Settings")
 
@@ -1701,7 +1877,12 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
-                "Page tools" -> {
+                "Downloads" -> {
+                showDownloads()
+                true
+            }
+
+            "Page tools" -> {
                     showPageToolsMenu()
                     true
                 }
