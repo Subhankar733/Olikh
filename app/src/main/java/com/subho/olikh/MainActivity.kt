@@ -55,6 +55,10 @@ class MainActivity : AppCompatActivity() {
             "https://www.google.com"
         ) ?: "https://www.google.com"
 
+    private fun isJavaScriptEnabled(): Boolean {
+        return browserPrefs.getBoolean("javascript_enabled", true)
+    }
+
     private fun currentSearchEngine(): String {
         return browserPrefs.getString("search_engine", "Google") ?: "Google"
     }
@@ -126,7 +130,7 @@ class MainActivity : AppCompatActivity() {
         installLongPressActions(webView)
 
         webView.settings.apply {
-            javaScriptEnabled = true
+            javaScriptEnabled = isJavaScriptEnabled()
             domStorageEnabled = true
             databaseEnabled = true
 
@@ -631,7 +635,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         newWebView.settings.apply {
-            javaScriptEnabled = true
+            javaScriptEnabled = isJavaScriptEnabled()
             domStorageEnabled = true
             databaseEnabled = true
 
@@ -1111,7 +1115,8 @@ class MainActivity : AppCompatActivity() {
     private fun showSettings() {
         val options = arrayOf(
             "Search engine",
-            "Homepage"
+            "Homepage",
+            "JavaScript"
         )
 
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1120,9 +1125,52 @@ class MainActivity : AppCompatActivity() {
                 when (which) {
                     0 -> showSearchEngineSelector()
                     1 -> showHomepageSettings()
+                    2 -> showJavaScriptSetting()
                 }
             }
             .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showJavaScriptSetting() {
+        val options = arrayOf(
+            "On",
+            "Off"
+        )
+
+        val selected =
+            if (isJavaScriptEnabled()) 0 else 1
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("JavaScript")
+            .setSingleChoiceItems(
+                options,
+                selected
+            ) { dialog, which ->
+                val enabled = which == 0
+
+                browserPrefs.edit()
+                    .putBoolean("javascript_enabled", enabled)
+                    .apply()
+
+                tabs.forEach { tab ->
+                    tab.webView.settings.javaScriptEnabled = enabled
+                }
+
+                Toast.makeText(
+                    this,
+                    if (enabled) {
+                        "JavaScript enabled"
+                    } else {
+                        "JavaScript disabled"
+                    },
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                webView.reload()
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
             .show()
     }
 
@@ -1793,7 +1841,7 @@ class MainActivity : AppCompatActivity() {
                 )
 
             restoredWebView.settings.apply {
-                javaScriptEnabled = true
+                javaScriptEnabled = isJavaScriptEnabled()
                 domStorageEnabled = true
                 databaseEnabled = true
 
