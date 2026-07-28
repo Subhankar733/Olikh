@@ -1420,6 +1420,393 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
+
+    private fun isSafeBrowsingEnabled(): Boolean =
+        browserPrefs.getBoolean("safe_browsing_enabled", true)
+
+    private fun isForceDarkEnabled(): Boolean =
+        browserPrefs.getBoolean("force_dark_enabled", false)
+
+    private fun isMixedContentAllowed(): Boolean =
+        browserPrefs.getBoolean("mixed_content_allowed", false)
+
+    private fun isFormDataEnabled(): Boolean =
+        browserPrefs.getBoolean("form_data_enabled", true)
+
+    private fun isPasswordSavingEnabled(): Boolean =
+        browserPrefs.getBoolean("password_saving_enabled", false)
+
+    private fun isNetworkLoadsBlocked(): Boolean =
+        browserPrefs.getBoolean("network_loads_blocked", false)
+
+    private fun currentTextZoom(): Int =
+        browserPrefs.getInt("text_zoom", 100)
+
+    private fun currentMinimumFontSize(): Int =
+        browserPrefs.getInt("minimum_font_size", 8)
+
+    private fun isUserAgentOverrideEnabled(): Boolean =
+        browserPrefs.getBoolean("custom_user_agent_enabled", false)
+
+    private fun isMediaGestureRequired(): Boolean =
+        browserPrefs.getBoolean("media_gesture_required", true)
+
+    private fun applyAdvancedSettings(target: WebView) {
+        target.settings.apply {
+            safeBrowsingEnabled = isSafeBrowsingEnabled()
+
+            mixedContentMode =
+                if (isMixedContentAllowed()) {
+                    WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                } else {
+                    WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                }
+
+            saveFormData = isFormDataEnabled()
+
+            blockNetworkLoads = isNetworkLoadsBlocked()
+
+            textZoom = currentTextZoom()
+
+            minimumFontSize = currentMinimumFontSize()
+
+            mediaPlaybackRequiresUserGesture =
+                isMediaGestureRequired()
+
+            if (isUserAgentOverrideEnabled()) {
+                userAgentString =
+                    browserPrefs.getString(
+                        "custom_user_agent",
+                        userAgentString
+                    )
+            }
+        }
+    }
+
+    private fun applyAdvancedSettingsToAllTabs() {
+        tabs.forEach {
+            applyAdvancedSettings(it.webView)
+        }
+
+        applyAdvancedSettings(webView)
+    }
+
+    private fun saveAdvancedBoolean(
+        key: String,
+        enabled: Boolean
+    ) {
+        browserPrefs.edit()
+            .putBoolean(key, enabled)
+            .apply()
+
+        applyAdvancedSettingsToAllTabs()
+    }
+
+    private fun showTextZoomSelector() {
+        val values = intArrayOf(
+            75, 90, 100, 110, 125, 150, 175, 200
+        )
+
+        val labels =
+            values.map { "$it%" }.toTypedArray()
+
+        val selected =
+            values.indexOf(currentTextZoom())
+                .takeIf { it >= 0 } ?: 2
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Text zoom")
+            .setSingleChoiceItems(
+                labels,
+                selected
+            ) { dialog, which ->
+
+                browserPrefs.edit()
+                    .putInt("text_zoom", values[which])
+                    .apply()
+
+                applyAdvancedSettingsToAllTabs()
+
+                Toast.makeText(
+                    this,
+                    "Text zoom ${values[which]}%",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showMinimumFontSelector() {
+        val values = intArrayOf(
+            6, 8, 10, 12, 14, 16, 18, 20
+        )
+
+        val labels =
+            values.map { "$it px" }.toTypedArray()
+
+        val selected =
+            values.indexOf(currentMinimumFontSize())
+                .takeIf { it >= 0 } ?: 1
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Minimum font size")
+            .setSingleChoiceItems(
+                labels,
+                selected
+            ) { dialog, which ->
+
+                browserPrefs.edit()
+                    .putInt(
+                        "minimum_font_size",
+                        values[which]
+                    )
+                    .apply()
+
+                applyAdvancedSettingsToAllTabs()
+
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showCustomUserAgentDialog() {
+        val input = EditText(this).apply {
+            setSingleLine(false)
+
+            setText(
+                browserPrefs.getString(
+                    "custom_user_agent",
+                    webView.settings.userAgentString
+                )
+            )
+        }
+
+        val padding =
+            (20 * resources.displayMetrics.density)
+                .toInt()
+
+        val container =
+            FrameLayout(this).apply {
+                setPadding(
+                    padding,
+                    0,
+                    padding,
+                    0
+                )
+
+                addView(
+                    input,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+            }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Custom User-Agent")
+            .setView(container)
+
+            .setNegativeButton(
+                "Cancel",
+                null
+            )
+
+            .setNeutralButton("Reset") { _, _ ->
+                browserPrefs.edit()
+                    .remove("custom_user_agent")
+                    .putBoolean(
+                        "custom_user_agent_enabled",
+                        false
+                    )
+                    .apply()
+
+                Toast.makeText(
+                    this,
+                    "Custom User-Agent disabled",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            .setPositiveButton("Save") { _, _ ->
+                val ua =
+                    input.text.toString().trim()
+
+                if (ua.isNotEmpty()) {
+                    browserPrefs.edit()
+                        .putString(
+                            "custom_user_agent",
+                            ua
+                        )
+                        .putBoolean(
+                            "custom_user_agent_enabled",
+                            true
+                        )
+                        .apply()
+
+                    applyAdvancedSettingsToAllTabs()
+
+                    Toast.makeText(
+                        this,
+                        "Custom User-Agent enabled",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .show()
+    }
+
+    private fun showAdvancedBrowsingSettings() {
+        val options = arrayOf(
+
+            "Safe Browsing: " +
+                if (isSafeBrowsingEnabled())
+                    "On"
+                else
+                    "Off",
+
+            "Dark page preference: " +
+                if (isForceDarkEnabled())
+                    "On"
+                else
+                    "Off",
+
+            "Allow mixed HTTP content: " +
+                if (isMixedContentAllowed())
+                    "On"
+                else
+                    "Off",
+
+            "Save form data: " +
+                if (isFormDataEnabled())
+                    "On"
+                else
+                    "Off",
+
+            "Password saving preference: " +
+                if (isPasswordSavingEnabled())
+                    "On"
+                else
+                    "Off",
+
+            "Block network loads: " +
+                if (isNetworkLoadsBlocked())
+                    "On"
+                else
+                    "Off",
+
+            "Text zoom: ${currentTextZoom()}%",
+
+            "Minimum font: " +
+                "${currentMinimumFontSize()} px",
+
+            "Custom User-Agent: " +
+                if (isUserAgentOverrideEnabled())
+                    "On"
+                else
+                    "Off",
+
+            "Media requires tap: " +
+                if (isMediaGestureRequired())
+                    "On"
+                else
+                    "Off"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Advanced browsing")
+            .setItems(options) { _, which ->
+
+                when (which) {
+
+                    0 -> saveAdvancedBoolean(
+                        "safe_browsing_enabled",
+                        !isSafeBrowsingEnabled()
+                    )
+
+                    1 -> {
+                        val enabled =
+                            !isForceDarkEnabled()
+
+                        browserPrefs.edit()
+                            .putBoolean(
+                                "force_dark_enabled",
+                                enabled
+                            )
+                            .apply()
+
+                        Toast.makeText(
+                            this,
+                            if (enabled)
+                                "Dark page preference enabled"
+                            else
+                                "Dark page preference disabled",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    2 -> saveAdvancedBoolean(
+                        "mixed_content_allowed",
+                        !isMixedContentAllowed()
+                    )
+
+                    3 -> saveAdvancedBoolean(
+                        "form_data_enabled",
+                        !isFormDataEnabled()
+                    )
+
+                    4 -> {
+                        val enabled =
+                            !isPasswordSavingEnabled()
+
+                        browserPrefs.edit()
+                            .putBoolean(
+                                "password_saving_enabled",
+                                enabled
+                            )
+                            .apply()
+
+                        Toast.makeText(
+                            this,
+                            "Password saving preference " +
+                                if (enabled)
+                                    "enabled"
+                                else
+                                    "disabled",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    5 -> saveAdvancedBoolean(
+                        "network_loads_blocked",
+                        !isNetworkLoadsBlocked()
+                    )
+
+                    6 -> showTextZoomSelector()
+
+                    7 -> showMinimumFontSelector()
+
+                    8 -> showCustomUserAgentDialog()
+
+                    9 -> saveAdvancedBoolean(
+                        "media_gesture_required",
+                        !isMediaGestureRequired()
+                    )
+                }
+            }
+
+            .setNegativeButton(
+                "Back",
+                null
+            )
+
+            .show()
+    }
+
     private fun showWebPageSettings() {
         val options = arrayOf(
             "Autoplay media: " +
