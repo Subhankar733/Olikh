@@ -13,155 +13,193 @@
         android:layout_width="match_parent"
         android:layout_height="2dp"
         android:max="100"
-        android:visibility="gone" />
+        android:visibility="gone"/>
 
-    <!-- Omnibox -->
+    <!-- Modern top browser bar -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="68dp"
+        android:layout_height="72dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp">
+        android:paddingStart="10dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:background="#0B0D10">
 
         <EditText
             android:id="@+id/addressBar"
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:background="@drawable/omnibox_background"
             android:hint="Search or enter address"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#858B93"
+            android:textColor="#F5F7FA"
+            android:textColorHint="#9298A1"
             android:textSize="15sp"
             android:singleLine="true"
             android:paddingStart="18dp"
-            android:paddingEnd="18dp"
+            android:paddingEnd="16dp"
             android:inputType="textUri"
-            android:imeOptions="actionGo" />
+            android:imeOptions="actionGo"
+            android:selectAllOnFocus="true"/>
 
         <Button
             android:id="@+id/btnTabs"
-            android:layout_width="52dp"
-            android:layout_height="48dp"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
             android:layout_marginStart="6dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="0dp"
             android:text="1"
-            android:textSize="15sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#1A1D22"
-            android:contentDescription="Open tabs" />
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#F5F7FA"
+            android:background="@drawable/browser_button"
+            android:contentDescription="Open tabs"/>
 
         <Button
             android:id="@+id/btnNewTab"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="2dp"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="0dp"
             android:text="+"
-            android:textSize="24sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#0B0D10"
-            android:contentDescription="New tab" />
+            android:textSize="25sp"
+            android:textColor="#F5F7FA"
+            android:background="@drawable/browser_button"
+            android:contentDescription="New tab"/>
 
         <Button
             android:id="@+id/btnMenu"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="2dp"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="0dp"
             android:text="⋮"
-            android:textSize="24sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#0B0D10"
-            android:contentDescription="Browser menu" />
+            android:textSize="25sp"
+            android:textColor="#F5F7FA"
+            android:background="@drawable/browser_button"
+            android:contentDescription="Browser menu"/>
 
     </LinearLayout>
 
-    <!-- Active tab's WebView is placed here -->
     <FrameLayout
         android:id="@+id/browserContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:background="#FFFFFF">
 
-        <!-- Kept temporarily for compatibility with current MainActivity -->
         <WebView
             android:id="@+id/webView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"/>
 
     </FrameLayout>
 
-    <!-- Navigation -->
-    <LinearLayout
+    <!-- Bottom navigation shell -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:background="#111317">
+        android:layout_height="76dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="7dp"
+        android:paddingBottom="9dp"
+        android:background="#0B0D10">
 
-        <Button
-            android:id="@+id/btnBack"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="‹"
-            android:textSize="26sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#111317" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:background="@drawable/browser_surface">
 
-        <Button
-            android:id="@+id/btnForward"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="›"
-            android:textSize="26sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#111317" />
+            <Button
+                android:id="@+id/btnBack"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="‹"
+                android:textSize="29sp"
+                android:textColor="#F5F7FA"
+                android:background="@drawable/browser_button"
+                android:contentDescription="Back"/>
 
-        <Button
-            android:id="@+id/btnHome"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="⌂"
-            android:textSize="22sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#111317" />
+            <Button
+                android:id="@+id/btnForward"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="›"
+                android:textSize="29sp"
+                android:textColor="#F5F7FA"
+                android:background="@drawable/browser_button"
+                android:contentDescription="Forward"/>
 
-        <Button
-            android:id="@+id/btnHistory"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="H"
-            android:textSize="18sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#111317"
-            android:contentDescription="History" />
+            <Button
+                android:id="@+id/btnHome"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="⌂"
+                android:textSize="22sp"
+                android:textColor="#F5F7FA"
+                android:background="@drawable/browser_button"
+                android:contentDescription="Home"/>
 
-        <Button
-            android:id="@+id/btnBookmark"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="☆"
-            android:textSize="24sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#111317"
-            android:contentDescription="Add bookmark" />
+            <Button
+                android:id="@+id/btnHistory"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="◷"
+                android:textSize="22sp"
+                android:textColor="#F5F7FA"
+                android:background="@drawable/browser_button"
+                android:contentDescription="History"/>
 
-        <Button
-            android:id="@+id/btnReload"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="↻"
-            android:textSize="22sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#111317" />
+            <Button
+                android:id="@+id/btnBookmark"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="☆"
+                android:textSize="24sp"
+                android:textColor="#F5F7FA"
+                android:background="@drawable/browser_button"
+                android:contentDescription="Bookmark"/>
 
-    </LinearLayout>
+            <Button
+                android:id="@+id/btnReload"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="↻"
+                android:textSize="23sp"
+                android:textColor="#F5F7FA"
+                android:background="@drawable/browser_button"
+                android:contentDescription="Reload"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
 
 </LinearLayout>
