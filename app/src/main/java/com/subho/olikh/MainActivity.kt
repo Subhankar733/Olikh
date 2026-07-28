@@ -45,11 +45,15 @@ class MainActivity : AppCompatActivity() {
     private val activeTab: BrowserTab?
         get() = tabs.getOrNull(activeTabIndex)
 
-    private val homePage = "https://www.google.com"
-
     private val browserPrefs by lazy {
         getSharedPreferences("olikh_browser", MODE_PRIVATE)
     }
+
+    private val homePage: String
+        get() = browserPrefs.getString(
+            "home_page",
+            "https://www.google.com"
+        ) ?: "https://www.google.com"
 
     private fun currentSearchEngine(): String {
         return browserPrefs.getString("search_engine", "Google") ?: "Google"
@@ -1106,7 +1110,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSettings() {
         val options = arrayOf(
-            "Search engine"
+            "Search engine",
+            "Homepage"
         )
 
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1114,9 +1119,90 @@ class MainActivity : AppCompatActivity() {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> showSearchEngineSelector()
+                    1 -> showHomepageSettings()
                 }
             }
             .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showHomepageSettings() {
+        val input = EditText(this).apply {
+            setText(homePage)
+            hint = "https://example.com"
+            setSingleLine(true)
+            selectAll()
+        }
+
+        val padding = (20 * resources.displayMetrics.density).toInt()
+
+        val container = FrameLayout(this).apply {
+            setPadding(padding, 0, padding, 0)
+
+            addView(
+                input,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Homepage")
+            .setMessage("Set the page opened by Home and new tabs.")
+            .setView(container)
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Reset") { _, _ ->
+                browserPrefs.edit()
+                    .remove("home_page")
+                    .apply()
+
+                Toast.makeText(
+                    this,
+                    "Homepage reset to Google",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setPositiveButton("Save") { _, _ ->
+                var url = input.text.toString().trim()
+
+                if (url.isBlank()) {
+                    Toast.makeText(
+                        this,
+                        "Homepage cannot be empty",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@setPositiveButton
+                }
+
+                if (!url.startsWith("http://", true) &&
+                    !url.startsWith("https://", true)
+                ) {
+                    url = "https://$url"
+                }
+
+                val parsed = Uri.parse(url)
+
+                if (parsed.host.isNullOrBlank()) {
+                    Toast.makeText(
+                        this,
+                        "Invalid homepage URL",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@setPositiveButton
+                }
+
+                browserPrefs.edit()
+                    .putString("home_page", url)
+                    .apply()
+
+                Toast.makeText(
+                    this,
+                    "Homepage saved",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
             .show()
     }
 
