@@ -1160,26 +1160,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun showPrivacySecuritySettings() {
         val options = arrayOf(
-            "Cookies: " + if (areCookiesEnabled()) "On" else "Off",
-            "Third-party cookies: " +
-                if (areThirdPartyCookiesEnabled()) "On" else "Off",
-            "Do Not Track: " + if (isDoNotTrackEnabled()) "On" else "Off",
-
-            "Block images: " +
-                if (!areImagesEnabled()) "On" else "Off",
-
-            "DOM storage: " +
-                if (isDomStorageEnabled()) "On" else "Off",
-
-            "Database storage: " +
-                if (isDatabaseStorageEnabled()) "On" else "Off",
-
-            "Clear cookies",
-            "Clear cache",
-            "Clear history",
-            "Clear form data",
-            "Clear website storage",
-            "Clear location permissions",
+            "Cookies",
+            "Tracking protection",
+            "Site permissions",
+            "Storage & data",
+            "Content settings",
             "Reset privacy settings"
         )
 
@@ -1187,24 +1172,141 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Privacy & security")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> setCookiesEnabled(!areCookiesEnabled())
-                    1 -> setThirdPartyCookiesEnabled(!areThirdPartyCookiesEnabled())
-                    2 -> setDoNotTrackEnabled(!isDoNotTrackEnabled())
-
-                    3 -> setImagesEnabled(!areImagesEnabled())
-                    4 -> setDomStorageEnabled(!isDomStorageEnabled())
-                    5 -> setDatabaseStorageEnabled(!isDatabaseStorageEnabled())
-
-                    6 -> clearCookiesOnly()
-                    7 -> clearCacheOnly()
-                    8 -> clearHistoryOnly()
-                    9 -> clearFormDataOnly()
-                    10 -> clearWebsiteStorage()
-                    11 -> clearLocationPermissions()
-                    12 -> resetPrivacySettings()
+                    0 -> showCookieSettings()
+                    1 -> showTrackingProtectionSettings()
+                    2 -> showSitePermissionSettings()
+                    3 -> showStorageDataSettings()
+                    4 -> showContentSettings()
+                    5 -> resetPrivacySettings()
                 }
             }
             .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showCookieSettings() {
+        val options = arrayOf(
+            "Cookies: " +
+                if (areCookiesEnabled()) "On" else "Off",
+
+            "Third-party cookies: " +
+                if (areThirdPartyCookiesEnabled()) "On" else "Off",
+
+            "Clear cookies"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Cookies")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> setCookiesEnabled(!areCookiesEnabled())
+                    1 -> setThirdPartyCookiesEnabled(
+                        !areThirdPartyCookiesEnabled()
+                    )
+                    2 -> clearCookiesOnly()
+                }
+            }
+            .setNegativeButton("Back") { _, _ ->
+                showPrivacySecuritySettings()
+            }
+            .show()
+    }
+
+    private fun showTrackingProtectionSettings() {
+        val options = arrayOf(
+            "Do Not Track: " +
+                if (isDoNotTrackEnabled()) "On" else "Off"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Tracking protection")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> setDoNotTrackEnabled(
+                        !isDoNotTrackEnabled()
+                    )
+                }
+            }
+            .setNegativeButton("Back") { _, _ ->
+                showPrivacySecuritySettings()
+            }
+            .show()
+    }
+
+    private fun showSitePermissionSettings() {
+        val options = arrayOf(
+            "Clear location permissions"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Site permissions")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> clearLocationPermissions()
+                }
+            }
+            .setNegativeButton("Back") { _, _ ->
+                showPrivacySecuritySettings()
+            }
+            .show()
+    }
+
+    private fun showStorageDataSettings() {
+        val options = arrayOf(
+            "DOM storage: " +
+                if (isDomStorageEnabled()) "On" else "Off",
+
+            "Database storage: " +
+                if (isDatabaseStorageEnabled()) "On" else "Off",
+
+            "Clear cache",
+            "Clear history",
+            "Clear form data",
+            "Clear website storage"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Storage & data")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> setDomStorageEnabled(
+                        !isDomStorageEnabled()
+                    )
+
+                    1 -> setDatabaseStorageEnabled(
+                        !isDatabaseStorageEnabled()
+                    )
+
+                    2 -> clearCacheOnly()
+                    3 -> clearHistoryOnly()
+                    4 -> clearFormDataOnly()
+                    5 -> clearWebsiteStorage()
+                }
+            }
+            .setNegativeButton("Back") { _, _ ->
+                showPrivacySecuritySettings()
+            }
+            .show()
+    }
+
+    private fun showContentSettings() {
+        val options = arrayOf(
+            "Block images: " +
+                if (!areImagesEnabled()) "On" else "Off"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Content settings")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> setImagesEnabled(
+                        !areImagesEnabled()
+                    )
+                }
+            }
+            .setNegativeButton("Back") { _, _ ->
+                showPrivacySecuritySettings()
+            }
             .show()
     }
 
