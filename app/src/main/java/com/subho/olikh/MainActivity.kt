@@ -1168,7 +1168,8 @@ class MainActivity : AppCompatActivity() {
             "Homepage",
             "JavaScript",
             "Privacy & security",
-            "Web page settings"
+            "Web page settings",
+            "Advanced browsing"
         )
 
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1180,6 +1181,7 @@ class MainActivity : AppCompatActivity() {
                     2 -> showJavaScriptSetting()
                     3 -> showPrivacySecuritySettings()
                     4 -> showWebPageSettings()
+                    5 -> showAdvancedBrowsingSettings()
                 }
             }
             .setNegativeButton("Close", null)
