@@ -929,7 +929,7 @@ class MainActivity : AppCompatActivity() {
         popup.menu.add("Share page")
         popup.menu.add("Copy URL")
         popup.menu.add("Page tools")
-        popup.menu.add("Search engine")
+        popup.menu.add("Settings")
 
         popup.menu.add(
             if (
@@ -978,8 +978,8 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
-                "Search engine" -> {
-                    showSearchEngineSelector()
+                "Settings" -> {
+                    showSettings()
                     true
                 }
 
@@ -1102,6 +1102,22 @@ class MainActivity : AppCompatActivity() {
             adapter,
             PrintAttributes.Builder().build()
         )
+    }
+
+    private fun showSettings() {
+        val options = arrayOf(
+            "Search engine"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Settings")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showSearchEngineSelector()
+                }
+            }
+            .setNegativeButton("Close", null)
+            .show()
     }
 
     private fun showSearchEngineSelector() {
