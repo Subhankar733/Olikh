@@ -2798,6 +2798,7 @@ class MainActivity : AppCompatActivity() {
                 createTabWebViewClient(tab)
 
             installSitePermissionChromeClient(restoredWebView, tab)
+        }
 
         activeTabIndex = wantedActiveIndex
         switchToTab(activeTabIndex)
