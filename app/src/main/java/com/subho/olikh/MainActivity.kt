@@ -15,6 +15,16 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.http.SslError
+import android.webkit.SslErrorHandler
+import android.view.ViewGroup
+import android.view.Gravity
+import android.os.Message
+import android.os.Build
+import android.webkit.SafeBrowsingResponse
+import android.webkit.RenderProcessGoneDetail
+import android.graphics.drawable.ColorDrawable
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -29,7 +39,14 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.ValueCallback
 import android.webkit.WebViewClient
+import android.webkit.WebResourceResponse
+import android.webkit.JsPromptResult
+import android.webkit.JsResult
+import android.webkit.ConsoleMessage
+import android.webkit.ClientCertRequest
+import android.webkit.HttpAuthHandler
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -40,6 +57,15 @@ import androidx.appcompat.app.AppCompatActivity
 import java.net.URLEncoder
 
 class MainActivity : AppCompatActivity() {
+    private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+    private val fileChooserRequestCode = 7002
+
+
+
+
+    private var fullscreenView: View? = null
+    private var fullscreenCallback: WebChromeClient.CustomViewCallback? = null
+    private var previousSystemUiVisibility = 0
 
     private var pendingWebPermissionRequest: PermissionRequest? = null
 
@@ -222,6 +248,89 @@ class MainActivity : AppCompatActivity() {
             false
         )
 
+
+    private fun openFileChooser(
+        callback: ValueCallback<Array<Uri>>,
+        params: WebChromeClient.FileChooserParams?
+    ): Boolean {
+        fileUploadCallback?.onReceiveValue(null)
+        fileUploadCallback = callback
+
+        val intent = runCatching {
+            params?.createIntent()
+        }.getOrNull() ?: Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+
+        return try {
+            startActivityForResult(intent, fileChooserRequestCode)
+            true
+        } catch (_: Exception) {
+            fileUploadCallback?.onReceiveValue(null)
+            fileUploadCallback = null
+
+            Toast.makeText(
+                this,
+                "No file picker available",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            false
+        }
+    }
+
+    @Deprecated("Deprecated in Android")
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode != fileChooserRequestCode) return
+
+        val callback = fileUploadCallback ?: return
+        fileUploadCallback = null
+
+        val result =
+            if (resultCode == RESULT_OK) {
+                WebChromeClient.FileChooserParams.parseResult(
+                    resultCode,
+                    data
+                )
+            } else {
+                null
+            }
+
+        callback.onReceiveValue(result)
+    }
+
+    private fun createBrowserChromeClient(): WebChromeClient =
+        object : WebChromeClient() {
+
+            override fun onProgressChanged(
+                view: WebView?,
+                newProgress: Int
+            ) {
+                progressBar.progress = newProgress
+                progressBar.visibility =
+                    if (newProgress >= 100) View.GONE else View.VISIBLE
+            }
+
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                return openFileChooser(
+                    filePathCallback,
+                    fileChooserParams
+                )
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -272,8 +381,10 @@ class MainActivity : AppCompatActivity() {
             useWideViewPort = isDesktopViewportEnabled() || isWideViewportEnabled()
             loadWithOverviewMode = isDesktopViewportEnabled() || isOverviewModeEnabled()
 
+            setSupportZoom(areZoomGesturesEnabled())
             builtInZoomControls = areZoomGesturesEnabled()
             displayZoomControls = false
+            setGeolocationEnabled(locationPermissionEnabled())
 
             cacheMode =
                 if (isCacheEnabled()) {
@@ -779,8 +890,10 @@ class MainActivity : AppCompatActivity() {
             useWideViewPort = isDesktopViewportEnabled() || isWideViewportEnabled()
             loadWithOverviewMode = isDesktopViewportEnabled() || isOverviewModeEnabled()
 
+            setSupportZoom(areZoomGesturesEnabled())
             builtInZoomControls = areZoomGesturesEnabled()
             displayZoomControls = false
+            setGeolocationEnabled(locationPermissionEnabled())
 
             cacheMode =
                 if (isCacheEnabled()) {
@@ -858,8 +971,331 @@ class MainActivity : AppCompatActivity() {
         updateBookmarkButton()
     }
 
+
+    private fun handleMainFrameHttpError(
+        tab: BrowserTab?,
+        request: WebResourceRequest?,
+        response: WebResourceResponse?
+    ) {
+        if (request?.isForMainFrame != true) return
+
+        val code = response?.statusCode ?: return
+        if (code < 400) return
+
+        val url = request.url.toString()
+
+        if (tab != null) {
+            tab.failedUrl = url
+            tab.showingError = true
+        }
+
+        if (tab == null || activeTab === tab) {
+            failedUrl = url
+            showingErrorPage = true
+
+            showNetworkError(
+                url,
+                "HTTP $code ${response?.reasonPhrase.orEmpty()}".trim()
+            )
+        }
+    }
+
+    private fun handleSslFailure(
+        tab: BrowserTab?,
+        view: WebView?,
+        handler: SslErrorHandler?,
+        error: SslError?
+    ) {
+        handler?.cancel()
+
+        val url = error?.url ?: view?.url ?: return
+
+        if (tab != null) {
+            tab.failedUrl = url
+            tab.showingError = true
+        }
+
+        if (tab == null || activeTab === tab) {
+            failedUrl = url
+            showingErrorPage = true
+
+            showNetworkError(
+                url,
+                "Secure connection failed. OLIKH blocked this page."
+            )
+        }
+    }
+
     private fun createTabWebViewClient(tab: BrowserTab): WebViewClient {
         return object : WebViewClient() {
+
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                val uri = request?.url ?: return false
+                return handleExternalUri(uri)
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                url: String?
+            ): Boolean {
+                if (url.isNullOrBlank()) return false
+                return handleExternalUri(Uri.parse(url))
+            }
+
+            override fun onSafeBrowsingHit(
+                view: WebView?,
+                request: WebResourceRequest?,
+                threatType: Int,
+                callback: SafeBrowsingResponse?
+            ) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                    callback?.backToSafety(true)
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Unsafe page blocked",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onRenderProcessGone(
+                view: WebView?,
+                detail: RenderProcessGoneDetail?
+            ): Boolean {
+                val crashedView = view ?: return true
+                val urlToRestore =
+                    crashedView.url
+                        ?: tab.url.takeIf { it.isNotBlank() }
+                        ?: homePage
+
+                val wasActive = activeTab === tab
+
+                (crashedView.parent as? ViewGroup)
+                    ?.removeView(crashedView)
+
+                crashedView.webChromeClient = null
+                crashedView.webViewClient = WebViewClient()
+                crashedView.destroy()
+
+                val replacement = WebView(this@MainActivity)
+
+                replacement.layoutParams =
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                    )
+
+                replacement.settings.apply {
+                    javaScriptEnabled = isJavaScriptEnabled()
+                    domStorageEnabled = isDomStorageEnabled()
+                    databaseEnabled = isDatabaseStorageEnabled()
+
+                    loadsImagesAutomatically = areImagesEnabled()
+                    blockNetworkImage = !areImagesEnabled()
+
+                    useWideViewPort =
+                        isDesktopViewportEnabled() ||
+                        isWideViewportEnabled()
+
+                    loadWithOverviewMode =
+                        isDesktopViewportEnabled() ||
+                        isOverviewModeEnabled()
+
+                    setSupportZoom(areZoomGesturesEnabled())
+                    builtInZoomControls = areZoomGesturesEnabled()
+                    displayZoomControls = false
+
+                    setGeolocationEnabled(
+                        locationPermissionEnabled()
+                    )
+
+                    cacheMode =
+                        if (isCacheEnabled()) {
+                            WebSettings.LOAD_DEFAULT
+                        } else {
+                            WebSettings.LOAD_NO_CACHE
+                        }
+
+                    mediaPlaybackRequiresUserGesture =
+                        !isAutoplayEnabled()
+
+                    allowContentAccess =
+                        isContentAccessEnabled()
+
+                    allowFileAccess =
+                        isFileAccessEnabled()
+
+                    javaScriptCanOpenWindowsAutomatically =
+                        areJsPopupsEnabled()
+
+                    setSupportMultipleWindows(
+                        areMultipleWindowsEnabled()
+                    )
+                }
+
+                applyReadingDisplaySettings(replacement)
+                applyAdvancedSettings(replacement)
+
+                CookieManager.getInstance().apply {
+                    setAcceptCookie(areCookiesEnabled())
+
+                    setAcceptThirdPartyCookies(
+                        replacement,
+                        areCookiesEnabled() &&
+                        areThirdPartyCookiesEnabled()
+                    )
+                }
+
+                installDownloadListener(replacement)
+                installLongPressActions(replacement)
+
+                tab.webView = replacement
+                tab.url = urlToRestore
+                tab.failedUrl = null
+                tab.showingError = false
+
+                replacement.webViewClient =
+                    createTabWebViewClient(tab)
+
+                installSitePermissionChromeClient(
+                    replacement,
+                    tab
+                )
+
+                if (wasActive) {
+                    browserContainer.removeAllViews()
+                    browserContainer.addView(replacement)
+                    webView = replacement
+
+                    showingErrorPage = false
+                    failedUrl = null
+
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Web page crashed — recovered",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                replacement.loadUrl(urlToRestore)
+
+                return true
+            }
+
+            override fun doUpdateVisitedHistory(
+                view: WebView?,
+                url: String?,
+                isReload: Boolean
+            ) {
+                super.doUpdateVisitedHistory(view, url, isReload)
+                url?.let { tab.url = it }
+            }
+
+            override fun onScaleChanged(
+                view: WebView?,
+                oldScale: Float,
+                newScale: Float
+            ) {
+                super.onScaleChanged(view, oldScale, newScale)
+            }
+
+            override fun onReceivedClientCertRequest(
+                view: WebView?,
+                request: ClientCertRequest?
+            ) {
+                if (request == null) return
+
+                androidx.appcompat.app.AlertDialog.Builder(
+                    this@MainActivity
+                )
+                    .setTitle("Client certificate requested")
+                    .setMessage(
+                        buildString {
+                            append("Website: ")
+                            append(request.host)
+                            append(":")
+                            append(request.port)
+                            append("\n\n")
+                            append(
+                                "OLIKH will not automatically provide " +
+                                "a client certificate."
+                            )
+                        }
+                    )
+                    .setPositiveButton("OK") { _, _ ->
+                        request.cancel()
+                    }
+                    .setOnCancelListener {
+                        request.cancel()
+                    }
+                    .show()
+            }
+
+            override fun onReceivedHttpAuthRequest(
+                view: WebView?,
+                handler: HttpAuthHandler?,
+                host: String?,
+                realm: String?
+            ) {
+                if (handler == null) return
+
+                val username = EditText(this@MainActivity).apply {
+                    hint = "Username"
+                    setSingleLine(true)
+                }
+
+                val password = EditText(this@MainActivity).apply {
+                    hint = "Password"
+                    setSingleLine(true)
+                    inputType =
+                        android.text.InputType.TYPE_CLASS_TEXT or
+                        android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                }
+
+                val container = android.widget.LinearLayout(
+                    this@MainActivity
+                ).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+
+                    val padding =
+                        (20 * resources.displayMetrics.density).toInt()
+
+                    setPadding(padding, padding, padding, 0)
+                    addView(username)
+                    addView(password)
+                }
+
+                androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Sign in")
+                    .setMessage(
+                        buildString {
+                            append(host ?: "Website")
+                            if (!realm.isNullOrBlank()) {
+                                append("\n")
+                                append(realm)
+                            }
+                        }
+                    )
+                    .setView(container)
+                    .setPositiveButton("Sign in") { _, _ ->
+                        handler.proceed(
+                            username.text.toString(),
+                            password.text.toString()
+                        )
+                    }
+                    .setNegativeButton("Cancel") { _, _ ->
+                        handler.cancel()
+                    }
+                    .setOnCancelListener {
+                        handler.cancel()
+                    }
+                    .show()
+            }
 
             override fun onPageStarted(
                 view: WebView?,
@@ -909,6 +1345,38 @@ class MainActivity : AppCompatActivity() {
                     updateNavigationButtons()
                     updateBookmarkButton()
                 }
+            }
+
+
+            override fun onReceivedHttpError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                errorResponse: WebResourceResponse?
+            ) {
+                super.onReceivedHttpError(
+                    view,
+                    request,
+                    errorResponse
+                )
+
+                handleMainFrameHttpError(
+                    tab,
+                    request,
+                    errorResponse
+                )
+            }
+
+            override fun onReceivedSslError(
+                view: WebView?,
+                handler: SslErrorHandler?,
+                error: SslError?
+            ) {
+                handleSslFailure(
+                    tab,
+                    view,
+                    handler,
+                    error
+                )
             }
 
             override fun onReceivedError(
@@ -1256,7 +1724,10 @@ class MainActivity : AppCompatActivity() {
             "Page info",
             "Open in external app",
             "Save as PDF",
-            "Zoom"
+            "Zoom",
+            "View page source",
+            "Save page offline",
+            "Refresh page"
         )
 
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1267,6 +1738,9 @@ class MainActivity : AppCompatActivity() {
                     1 -> openInExternalApp()
                     2 -> savePageAsPdf()
                     3 -> showZoomMenu()
+                    4 -> viewPageSource()
+                    5 -> saveWebArchive()
+                    6 -> refreshCurrentPage()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -1560,6 +2034,163 @@ class MainActivity : AppCompatActivity() {
         ).show()
     }
 
+
+    private fun showFullscreenView(
+        view: View?,
+        callback: WebChromeClient.CustomViewCallback?
+    ) {
+        if (view == null) {
+            callback?.onCustomViewHidden()
+            return
+        }
+
+        if (fullscreenView != null) {
+            callback?.onCustomViewHidden()
+            return
+        }
+
+        fullscreenView = view
+        fullscreenCallback = callback
+        previousSystemUiVisibility = window.decorView.systemUiVisibility
+
+        val decor = window.decorView as ViewGroup
+        decor.addView(
+            view,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        view.setBackgroundColor(Color.BLACK)
+
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+    }
+
+    private fun hideFullscreenView() {
+        val view = fullscreenView ?: return
+
+        (view.parent as? ViewGroup)?.removeView(view)
+
+        fullscreenView = null
+
+        window.decorView.systemUiVisibility =
+            previousSystemUiVisibility
+
+        fullscreenCallback?.onCustomViewHidden()
+        fullscreenCallback = null
+    }
+
+    private fun handleExternalUri(uri: Uri): Boolean {
+        val scheme = uri.scheme?.lowercase() ?: return false
+
+        if (scheme == "http" || scheme == "https") {
+            return false
+        }
+
+        if (scheme == "intent") {
+            return try {
+                val intent = Intent.parseUri(
+                    uri.toString(),
+                    Intent.URI_INTENT_SCHEME
+                )
+
+                try {
+                    startActivity(intent)
+                } catch (_: Exception) {
+                    val fallback =
+                        intent.getStringExtra(
+                            "browser_fallback_url"
+                        )
+
+                    if (!fallback.isNullOrBlank()) {
+                        webView.loadUrl(fallback)
+                    } else {
+                        Toast.makeText(
+                            this,
+                            "App not available",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+                true
+            } catch (_: Exception) {
+                true
+            }
+        }
+
+        return try {
+            startActivity(
+                Intent(Intent.ACTION_VIEW, uri)
+            )
+            true
+        } catch (_: Exception) {
+            Toast.makeText(
+                this,
+                "No app available for this link",
+                Toast.LENGTH_SHORT
+            ).show()
+            true
+        }
+    }
+
+    private fun viewPageSource() {
+        val url = webView.url ?: return
+
+        if (!url.startsWith("http://") &&
+            !url.startsWith("https://")
+        ) {
+            Toast.makeText(
+                this,
+                "Source unavailable",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        createNewTab(
+            initialUrl = "view-source:$url"
+        )
+    }
+
+    private fun saveWebArchive() {
+        val title = webView.title
+            ?.replace(Regex("""[\\/:*?"<>|]"""), "_")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: "OLIKH_page"
+
+        val dir = Environment.getExternalStoragePublicDirectory(
+            Environment.DIRECTORY_DOWNLOADS
+        )
+
+        val path = "${dir.absolutePath}/$title.mht"
+
+        webView.saveWebArchive(
+            path,
+            false
+        ) { saved ->
+            Toast.makeText(
+                this,
+                if (saved != null)
+                    "Page saved to Downloads"
+                else
+                    "Could not save page",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun refreshCurrentPage() {
+        showingErrorPage = false
+        failedUrl = null
+        webView.reload()
+    }
+
     private fun installSitePermissionChromeClient(
         targetWebView: WebView,
         tab: BrowserTab? = null
@@ -1606,7 +2237,193 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                override fun onPermissionRequest(
+                override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                return openFileChooser(
+                    filePathCallback,
+                    fileChooserParams
+                )
+            }
+
+
+            override fun onShowCustomView(
+                view: View?,
+                callback: CustomViewCallback?
+            ) {
+                showFullscreenView(view, callback)
+            }
+
+            override fun onHideCustomView() {
+                hideFullscreenView()
+            }
+
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: Message?
+            ): Boolean {
+                if (!isUserGesture) return false
+
+                val transport =
+                    resultMsg?.obj as? WebView.WebViewTransport
+                        ?: return false
+
+                val popup = WebView(this@MainActivity)
+
+                popup.settings.apply {
+                    javaScriptEnabled = isJavaScriptEnabled()
+                    domStorageEnabled = isDomStorageEnabled()
+                    setSupportMultipleWindows(true)
+                    javaScriptCanOpenWindowsAutomatically = true
+                }
+
+                popup.webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView?,
+                        request: WebResourceRequest?
+                    ): Boolean {
+                        val uri = request?.url ?: return false
+
+                        if (handleExternalUri(uri)) return true
+
+                        createNewTab(
+                            initialUrl = uri.toString()
+                        )
+
+                        popup.destroy()
+                        return true
+                    }
+
+                    @Deprecated("Deprecated in Java")
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView?,
+                        url: String?
+                    ): Boolean {
+                        if (url.isNullOrBlank()) return false
+
+                        val uri = Uri.parse(url)
+
+                        if (handleExternalUri(uri)) return true
+
+                        createNewTab(initialUrl = url)
+                        popup.destroy()
+                        return true
+                    }
+                }
+
+                transport.webView = popup
+                resultMsg.sendToTarget()
+                return true
+            }
+
+
+                override fun onCloseWindow(window: WebView?) {
+                    window?.let {
+                        val index = tabs.indexOfFirst { tab ->
+                            tab.webView === it
+                        }
+
+                        if (index >= 0) {
+                            closeTab(index)
+                        } else {
+                            it.destroy()
+                        }
+                    }
+                }
+
+                override fun onJsAlert(
+                    view: WebView?,
+                    url: String?,
+                    message: String?,
+                    result: JsResult?
+                ): Boolean {
+                    androidx.appcompat.app.AlertDialog.Builder(
+                        this@MainActivity
+                    )
+                        .setTitle("Page message")
+                        .setMessage(message ?: "")
+                        .setPositiveButton("OK") { _, _ ->
+                            result?.confirm()
+                        }
+                        .setOnCancelListener {
+                            result?.cancel()
+                        }
+                        .show()
+
+                    return true
+                }
+
+                override fun onJsConfirm(
+                    view: WebView?,
+                    url: String?,
+                    message: String?,
+                    result: JsResult?
+                ): Boolean {
+                    androidx.appcompat.app.AlertDialog.Builder(
+                        this@MainActivity
+                    )
+                        .setTitle("Page confirmation")
+                        .setMessage(message ?: "")
+                        .setPositiveButton("OK") { _, _ ->
+                            result?.confirm()
+                        }
+                        .setNegativeButton("Cancel") { _, _ ->
+                            result?.cancel()
+                        }
+                        .setOnCancelListener {
+                            result?.cancel()
+                        }
+                        .show()
+
+                    return true
+                }
+
+                override fun onJsPrompt(
+                    view: WebView?,
+                    url: String?,
+                    message: String?,
+                    defaultValue: String?,
+                    result: JsPromptResult?
+                ): Boolean {
+                    val input = EditText(this@MainActivity).apply {
+                        setText(defaultValue ?: "")
+                        setSingleLine(true)
+                    }
+
+                    androidx.appcompat.app.AlertDialog.Builder(
+                        this@MainActivity
+                    )
+                        .setTitle(message ?: "Page input")
+                        .setView(input)
+                        .setPositiveButton("OK") { _, _ ->
+                            result?.confirm(
+                                input.text.toString()
+                            )
+                        }
+                        .setNegativeButton("Cancel") { _, _ ->
+                            result?.cancel()
+                        }
+                        .setOnCancelListener {
+                            result?.cancel()
+                        }
+                        .show()
+
+                    return true
+                }
+
+                override fun onConsoleMessage(
+                    consoleMessage: ConsoleMessage?
+                ): Boolean {
+                    return super.onConsoleMessage(
+                        consoleMessage
+                    )
+                }
+
+            override fun onPermissionRequest(
                     request: PermissionRequest?
                 ) {
                     if (request == null) return
@@ -3661,6 +4478,55 @@ class MainActivity : AppCompatActivity() {
     private fun installNormalWebViewClient() {
         webView.webViewClient = object : WebViewClient() {
 
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                val uri = request?.url ?: return false
+                return handleExternalUri(uri)
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                url: String?
+            ): Boolean {
+                if (url.isNullOrBlank()) return false
+                return handleExternalUri(Uri.parse(url))
+            }
+
+            override fun onReceivedHttpError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                errorResponse: WebResourceResponse?
+            ) {
+                super.onReceivedHttpError(
+                    view,
+                    request,
+                    errorResponse
+                )
+
+                handleMainFrameHttpError(
+                    null,
+                    request,
+                    errorResponse
+                )
+            }
+
+            override fun onReceivedSslError(
+                view: WebView?,
+                handler: SslErrorHandler?,
+                error: SslError?
+            ) {
+                handleSslFailure(
+                    null,
+                    view,
+                    handler,
+                    error
+                )
+            }
+
             override fun onPageStarted(
                 view: WebView?,
                 url: String?,
@@ -3818,8 +4684,10 @@ class MainActivity : AppCompatActivity() {
                 useWideViewPort = isDesktopViewportEnabled() || isWideViewportEnabled()
                 loadWithOverviewMode = isDesktopViewportEnabled() || isOverviewModeEnabled()
 
+                setSupportZoom(areZoomGesturesEnabled())
                 builtInZoomControls = areZoomGesturesEnabled()
                 displayZoomControls = false
+                setGeolocationEnabled(locationPermissionEnabled())
 
                 cacheMode =
                 if (isCacheEnabled()) {
@@ -3939,6 +4807,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
+        if (fullscreenView != null) {
+            hideFullscreenView()
+            return
+        }
+
         if (webView.canGoBack()) {
             showingErrorPage = false
             webView.goBack()
