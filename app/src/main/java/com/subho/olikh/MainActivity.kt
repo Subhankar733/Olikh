@@ -11,6 +11,8 @@ import android.webkit.PermissionRequest
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.content.Intent
+import android.security.KeyChain
+import android.security.KeyChainAliasCallback
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -68,6 +70,10 @@ class MainActivity : AppCompatActivity() {
     private var previousSystemUiVisibility = 0
 
     private var pendingWebPermissionRequest: PermissionRequest? = null
+    private var pendingLocationOrigin: String? = null
+    private var pendingLocationCallback: GeolocationPermissions.Callback? = null
+    private val locationPermissionRequestCode = 7003
+    private var pendingClientCertRequest: ClientCertRequest? = null
 
     private val webPermissionRequestCode = 7001
 
@@ -87,6 +93,10 @@ class MainActivity : AppCompatActivity() {
 
     private val browserPrefs by lazy {
         getSharedPreferences("olikh_browser", MODE_PRIVATE)
+    }
+
+    private val sitePermissionManager by lazy {
+        SitePermissionManager(this)
     }
 
     private val homePage: String
@@ -1210,30 +1220,73 @@ class MainActivity : AppCompatActivity() {
             ) {
                 if (request == null) return
 
-                androidx.appcompat.app.AlertDialog.Builder(
-                    this@MainActivity
-                )
-                    .setTitle("Client certificate requested")
-                    .setMessage(
-                        buildString {
-                            append("Website: ")
-                            append(request.host)
-                            append(":")
-                            append(request.port)
-                            append("\n\n")
-                            append(
-                                "OLIKH will not automatically provide " +
-                                "a client certificate."
-                            )
+                pendingClientCertRequest?.cancel()
+                pendingClientCertRequest = request
+
+                KeyChain.choosePrivateKeyAlias(
+                    this@MainActivity,
+                    KeyChainAliasCallback { alias ->
+                        runOnUiThread {
+                            val pending = pendingClientCertRequest
+                            pendingClientCertRequest = null
+
+                            if (pending !== request) {
+                                request.cancel()
+                                return@runOnUiThread
+                            }
+
+                            if (alias.isNullOrBlank()) {
+                                request.cancel()
+                                return@runOnUiThread
+                            }
+
+                            Thread {
+                                try {
+                                    val privateKey =
+                                        KeyChain.getPrivateKey(
+                                            this@MainActivity,
+                                            alias
+                                        )
+
+                                    val certificateChain =
+                                        KeyChain.getCertificateChain(
+                                            this@MainActivity,
+                                            alias
+                                        )
+
+                                    runOnUiThread {
+                                        if (
+                                            privateKey != null &&
+                                            !certificateChain.isNullOrEmpty()
+                                        ) {
+                                            request.proceed(
+                                                privateKey,
+                                                certificateChain
+                                            )
+                                        } else {
+                                            request.cancel()
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    runOnUiThread {
+                                        request.cancel()
+
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            "Certificate could not be loaded",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                            }.start()
                         }
-                    )
-                    .setPositiveButton("OK") { _, _ ->
-                        request.cancel()
-                    }
-                    .setOnCancelListener {
-                        request.cancel()
-                    }
-                    .show()
+                    },
+                    request.keyTypes,
+                    request.principals,
+                    request.host,
+                    request.port,
+                    null
+                )
             }
 
             override fun onReceivedHttpAuthRequest(
@@ -1918,11 +1971,32 @@ class MainActivity : AppCompatActivity() {
     ) {
         val requested = request.resources ?: emptyArray()
 
+        val supported = requested.filter {
+            it == PermissionRequest.RESOURCE_VIDEO_CAPTURE ||
+                it == PermissionRequest.RESOURCE_AUDIO_CAPTURE
+        }
+
+        if (supported.isEmpty()) {
+            request.deny()
+            return
+        }
+
+        val origin = request.origin?.toString()
+
+        if (origin.isNullOrBlank()) {
+            request.deny()
+            return
+        }
+
         val wantsCamera =
-            requested.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)
+            supported.contains(
+                PermissionRequest.RESOURCE_VIDEO_CAPTURE
+            )
 
         val wantsMic =
-            requested.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+            supported.contains(
+                PermissionRequest.RESOURCE_AUDIO_CAPTURE
+            )
 
         if (wantsCamera && !cameraPermissionEnabled()) {
             request.deny()
@@ -1934,106 +2008,214 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val androidPermissions = mutableListOf<String>()
-
-        if (
-            wantsCamera &&
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            androidPermissions += Manifest.permission.CAMERA
+        val decisions = supported.map { resource ->
+            sitePermissionManager.getDecision(
+                origin,
+                resource
+            )
         }
 
         if (
-            wantsMic &&
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            androidPermissions += Manifest.permission.RECORD_AUDIO
-        }
-
-        if (androidPermissions.isEmpty()) {
-            val allowed = requested.filter { resource ->
-                when (resource) {
-                    PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
-                        cameraPermissionEnabled()
-
-                    PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
-                        microphonePermissionEnabled()
-
-                    else -> false
-                }
-            }.toTypedArray()
-
-            if (allowed.isNotEmpty()) {
-                request.grant(allowed)
-            } else {
-                request.deny()
+            decisions.any {
+                it == SitePermissionManager.Decision.BLOCK
             }
-
+        ) {
+            request.deny()
             return
         }
 
-        pendingWebPermissionRequest?.deny()
-        pendingWebPermissionRequest = request
+        fun continueWithAndroidPermission() {
+            val androidPermissions = mutableListOf<String>()
 
-        ActivityCompat.requestPermissions(
-            this,
-            androidPermissions.toTypedArray(),
-            webPermissionRequestCode
-        )
+            if (
+                wantsCamera &&
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.CAMERA
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                androidPermissions += Manifest.permission.CAMERA
+            }
+
+            if (
+                wantsMic &&
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.RECORD_AUDIO
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                androidPermissions += Manifest.permission.RECORD_AUDIO
+            }
+
+            if (androidPermissions.isEmpty()) {
+                request.grant(supported.toTypedArray())
+                return
+            }
+
+            pendingWebPermissionRequest?.deny()
+            pendingWebPermissionRequest = request
+
+            ActivityCompat.requestPermissions(
+                this,
+                androidPermissions.toTypedArray(),
+                webPermissionRequestCode
+            )
+        }
+
+        if (
+            decisions.all {
+                it == SitePermissionManager.Decision.ALLOW
+            }
+        ) {
+            continueWithAndroidPermission()
+            return
+        }
+
+        val host = runCatching {
+            Uri.parse(origin).host
+        }.getOrNull() ?: origin
+
+        val requestedNames = buildList {
+            if (wantsCamera) add("Camera")
+            if (wantsMic) add("Microphone")
+        }.joinToString(" & ")
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("$requestedNames permission")
+            .setMessage(
+                "$host wants to use $requestedNames. " +
+                    "Allow and remember this choice for this site?"
+            )
+            .setPositiveButton("Allow") { _, _ ->
+                supported.forEach { resource ->
+                    sitePermissionManager.setDecision(
+                        origin,
+                        resource,
+                        SitePermissionManager.Decision.ALLOW
+                    )
+                }
+
+                continueWithAndroidPermission()
+            }
+            .setNegativeButton("Block") { _, _ ->
+                supported.forEach { resource ->
+                    sitePermissionManager.setDecision(
+                        origin,
+                        resource,
+                        SitePermissionManager.Decision.BLOCK
+                    )
+                }
+
+                request.deny()
+            }
+            .setNeutralButton("Cancel") { _, _ ->
+                request.deny()
+            }
+            .setOnCancelListener {
+                request.deny()
+            }
+            .show()
     }
 
     private fun handleGeolocationRequest(
         origin: String?,
         callback: GeolocationPermissions.Callback?
     ) {
-        if (origin == null || callback == null) return
+        if (origin.isNullOrBlank() || callback == null) return
 
         if (!locationPermissionEnabled()) {
             callback.invoke(origin, false, false)
             return
         }
 
-        val fineGranted =
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+        val decision = sitePermissionManager.getDecision(
+            origin,
+            "location"
+        )
 
-        val coarseGranted =
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-        if (fineGranted || coarseGranted) {
-            callback.invoke(origin, true, false)
+        if (decision == SitePermissionManager.Decision.BLOCK) {
+            callback.invoke(origin, false, true)
             return
         }
 
-        callback.invoke(origin, false, false)
+        fun continueWithAndroidPermission() {
+            val fineGranted =
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
 
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ),
-            7002
-        )
+            val coarseGranted =
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
 
-        Toast.makeText(
-            this,
-            "Location permission granted হলে page আবার reload কর",
-            Toast.LENGTH_LONG
-        ).show()
+            if (fineGranted || coarseGranted) {
+                callback.invoke(origin, true, true)
+                return
+            }
+
+            pendingLocationCallback?.let { oldCallback ->
+                pendingLocationOrigin?.let { oldOrigin ->
+                    oldCallback.invoke(oldOrigin, false, false)
+                }
+            }
+
+            pendingLocationOrigin = origin
+            pendingLocationCallback = callback
+
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                locationPermissionRequestCode
+            )
+        }
+
+        if (decision == SitePermissionManager.Decision.ALLOW) {
+            continueWithAndroidPermission()
+            return
+        }
+
+        val host = runCatching {
+            Uri.parse(origin).host
+        }.getOrNull() ?: origin
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Location permission")
+            .setMessage(
+                "$host wants to access your location. " +
+                    "Allow and remember this choice for this site?"
+            )
+            .setPositiveButton("Allow") { _, _ ->
+                sitePermissionManager.setDecision(
+                    origin,
+                    "location",
+                    SitePermissionManager.Decision.ALLOW
+                )
+
+                continueWithAndroidPermission()
+            }
+            .setNegativeButton("Block") { _, _ ->
+                sitePermissionManager.setDecision(
+                    origin,
+                    "location",
+                    SitePermissionManager.Decision.BLOCK
+                )
+
+                callback.invoke(origin, false, true)
+            }
+            .setNeutralButton("Cancel") { _, _ ->
+                callback.invoke(origin, false, false)
+            }
+            .setOnCancelListener {
+                callback.invoke(origin, false, false)
+            }
+            .show()
     }
-
 
     private fun showFullscreenView(
         view: View?,
@@ -3539,6 +3721,7 @@ class MainActivity : AppCompatActivity() {
             "Location: " +
                 if (locationPermissionEnabled()) "On" else "Off",
 
+            "Saved site permissions",
             "Clear location permissions"
         )
 
@@ -3558,7 +3741,8 @@ class MainActivity : AppCompatActivity() {
                         !locationPermissionEnabled()
                     )
 
-                    3 -> clearLocationPermissions()
+                    3 -> showSavedSitePermissions()
+                    4 -> clearLocationPermissions()
                 }
             }
             .setNegativeButton("Back") { _, _ ->
@@ -3571,6 +3755,152 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
+    }
+
+    private fun showSavedSitePermissions() {
+        val saved =
+            sitePermissionManager.getSavedPermissions()
+
+        if (saved.isEmpty()) {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Saved site permissions")
+                .setMessage("No site permissions have been saved yet.")
+                .setPositiveButton("OK", null)
+                .show()
+
+            return
+        }
+
+        val hosts = saved.keys.sorted()
+
+        val labels = hosts.map { host ->
+            val permissions = saved[host].orEmpty()
+
+            val details = permissions.entries
+                .sortedBy { it.key }
+                .joinToString(", ") { (permission, decision) ->
+
+                    val name = when (permission) {
+                        PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
+                            "Camera"
+
+                        PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
+                            "Microphone"
+
+                        "location" ->
+                            "Location"
+
+                        else ->
+                            permission
+                    }
+
+                    val state = when (decision) {
+                        SitePermissionManager.Decision.ALLOW ->
+                            "Allow"
+
+                        SitePermissionManager.Decision.BLOCK ->
+                            "Block"
+
+                        SitePermissionManager.Decision.ASK ->
+                            "Ask"
+                    }
+
+                    "$name: $state"
+                }
+
+            "$host\n$details"
+        }.toTypedArray()
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Saved site permissions")
+            .setItems(labels) { _, which ->
+                showSavedSitePermissionDetails(
+                    hosts[which]
+                )
+            }
+            .setNeutralButton("Clear all") { _, _ ->
+                sitePermissionManager.clearAll()
+
+                GeolocationPermissions.getInstance()
+                    .clearAll()
+
+                Toast.makeText(
+                    this,
+                    "Saved site permissions cleared",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Back") { _, _ ->
+                showSitePermissionSettings()
+            }
+            .show()
+    }
+
+    private fun showSavedSitePermissionDetails(
+        host: String
+    ) {
+        val permissions =
+            sitePermissionManager
+                .getSavedPermissions()[host]
+                .orEmpty()
+
+        val details = permissions.entries
+            .sortedBy { it.key }
+            .joinToString("\n") { (permission, decision) ->
+
+                val name = when (permission) {
+                    PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
+                        "Camera"
+
+                    PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
+                        "Microphone"
+
+                    "location" ->
+                        "Location"
+
+                    else ->
+                        permission
+                }
+
+                val state = when (decision) {
+                    SitePermissionManager.Decision.ALLOW ->
+                        "Allow"
+
+                    SitePermissionManager.Decision.BLOCK ->
+                        "Block"
+
+                    SitePermissionManager.Decision.ASK ->
+                        "Ask"
+                }
+
+                "$name: $state"
+            }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(host)
+            .setMessage(
+                details.ifBlank {
+                    "No saved permissions"
+                }
+            )
+            .setPositiveButton("Clear permissions") { _, _ ->
+                sitePermissionManager.clearSite(
+                    "https://$host"
+                )
+
+                GeolocationPermissions.getInstance()
+                    .clear(host)
+
+                Toast.makeText(
+                    this,
+                    "Permissions cleared for $host",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Back") { _, _ ->
+                showSavedSitePermissions()
+            }
+            .show()
     }
 
     private fun showStorageDataSettings() {
@@ -4760,6 +5090,34 @@ class MainActivity : AppCompatActivity() {
             grantResults
         )
 
+        if (requestCode == locationPermissionRequestCode) {
+            val origin = pendingLocationOrigin
+            val callback = pendingLocationCallback
+
+            pendingLocationOrigin = null
+            pendingLocationCallback = null
+
+            if (origin != null && callback != null) {
+                val granted =
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+
+                callback.invoke(
+                    origin,
+                    granted,
+                    granted
+                )
+            }
+
+            return
+        }
+
         if (requestCode != webPermissionRequestCode) {
             return
         }
@@ -4832,6 +5190,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        pendingClientCertRequest?.cancel()
+        pendingClientCertRequest = null
+
+        pendingWebPermissionRequest?.deny()
+        pendingWebPermissionRequest = null
+
+        pendingLocationCallback?.let { callback ->
+            pendingLocationOrigin?.let { origin ->
+                callback.invoke(origin, false, false)
+            }
+        }
+        pendingLocationOrigin = null
+        pendingLocationCallback = null
+
         webView.stopLoading()
         webView.webChromeClient = null
         webView.webViewClient = WebViewClient()
