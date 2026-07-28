@@ -1,6 +1,9 @@
 package com.subho.olikh
 
 import android.annotation.SuppressLint
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.view.MotionEvent
 import android.Manifest
 import android.content.pm.PackageManager
 import android.webkit.GeolocationPermissions
@@ -247,6 +250,8 @@ class MainActivity : AppCompatActivity() {
         )
         activeTabIndex = 0
         btnTabs.text = tabs.size.toString()
+
+        installUiAnimations()
 
         CookieManager.getInstance().apply {
             setAcceptCookie(areCookiesEnabled())
@@ -521,7 +526,7 @@ class MainActivity : AppCompatActivity() {
             "$cleanTitle\n${entry.url}"
         }.toTypedArray()
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Bookmarks · ${bookmarks.size}")
             .setItems(items) { _, index ->
                 val entry =
@@ -542,7 +547,13 @@ class MainActivity : AppCompatActivity() {
                 confirmClearBookmarks()
             }
             .setPositiveButton("Close", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun confirmClearBookmarks() {
@@ -619,7 +630,7 @@ class MainActivity : AppCompatActivity() {
             "$cleanTitle\n${entry.url}"
         }.toTypedArray()
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("History · ${history.size}")
             .setItems(items) { _, index ->
                 val entry = history.getOrNull(index)
@@ -639,7 +650,13 @@ class MainActivity : AppCompatActivity() {
                 confirmClearHistory()
             }
             .setPositiveButton("Close", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun confirmClearHistory() {
@@ -1013,6 +1030,82 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun animateBrowserButton(view: View) {
+        view.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.animate()
+                        .scaleX(0.88f)
+                        .scaleY(0.88f)
+                        .alpha(0.72f)
+                        .setDuration(90L)
+                        .start()
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+                    v.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .alpha(1f)
+                        .setDuration(160L)
+                        .start()
+                }
+            }
+            false
+        }
+    }
+
+    private fun installUiAnimations() {
+        val ids = intArrayOf(
+            R.id.btnTabs,
+            R.id.btnNewTab,
+            R.id.btnMenu,
+            R.id.btnBack,
+            R.id.btnForward,
+            R.id.btnHome,
+            R.id.btnHistory,
+            R.id.btnBookmark,
+            R.id.btnReload
+        )
+
+        ids.forEach { id ->
+            findViewById<View>(id)?.let {
+                animateBrowserButton(it)
+            }
+        }
+
+        addressBar.setOnFocusChangeListener { view, focused ->
+            val targetScale = if (focused) 1.015f else 1f
+            val targetAlpha = if (focused) 1f else 0.96f
+
+            AnimatorSet().apply {
+                playTogether(
+                    ObjectAnimator.ofFloat(
+                        view,
+                        View.SCALE_X,
+                        view.scaleX,
+                        targetScale
+                    ),
+                    ObjectAnimator.ofFloat(
+                        view,
+                        View.SCALE_Y,
+                        view.scaleY,
+                        targetScale
+                    ),
+                    ObjectAnimator.ofFloat(
+                        view,
+                        View.ALPHA,
+                        view.alpha,
+                        targetAlpha
+                    )
+                )
+                duration = 180L
+                start()
+            }
+        }
+    }
+
     private fun installDownloadListener(targetWebView: WebView) {
         targetWebView.setDownloadListener {
             url,
@@ -1112,7 +1205,50 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        popup.show()
+        popup.setOnDismissListener {
+            anchor.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .alpha(1f)
+                .setDuration(140L)
+                .start()
+        }
+
+        anchor.animate()
+            .scaleX(0.92f)
+            .scaleY(0.92f)
+            .alpha(0.72f)
+            .setDuration(110L)
+            .withEndAction {
+                popup.show()
+
+                anchor.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .alpha(1f)
+                    .setDuration(180L)
+                    .start()
+            }
+            .start()
+    }
+
+    private fun animateDialogEntrance(
+        dialog: androidx.appcompat.app.AlertDialog
+    ) {
+        val decor = dialog.window?.decorView ?: return
+
+        decor.alpha = 0f
+        decor.scaleX = 0.94f
+        decor.scaleY = 0.94f
+        decor.translationY = 28f
+
+        decor.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .translationY(0f)
+            .setDuration(220L)
+            .start()
     }
 
     private fun showPageToolsMenu() {
@@ -1123,7 +1259,7 @@ class MainActivity : AppCompatActivity() {
             "Zoom"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Page tools")
             .setItems(options) { _, which ->
                 when (which) {
@@ -1134,7 +1270,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showPageInfo() {
@@ -1229,7 +1371,7 @@ class MainActivity : AppCompatActivity() {
             "Reading & display"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Settings")
             .setItems(options) { _, which ->
                 when (which) {
@@ -1243,7 +1385,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Close", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun cameraPermissionEnabled(): Boolean {
@@ -1574,7 +1722,7 @@ class MainActivity : AppCompatActivity() {
             values.indexOf(currentTextZoom())
                 .takeIf { it >= 0 } ?: 2
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Text zoom")
             .setSingleChoiceItems(
                 labels,
@@ -1596,7 +1744,13 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showMinimumFontSelector() {
@@ -1611,7 +1765,7 @@ class MainActivity : AppCompatActivity() {
             values.indexOf(currentMinimumFontSize())
                 .takeIf { it >= 0 } ?: 1
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Minimum font size")
             .setSingleChoiceItems(
                 labels,
@@ -1630,7 +1784,13 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showCustomUserAgentDialog() {
@@ -1667,7 +1827,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Custom User-Agent")
             .setView(container)
 
@@ -1717,7 +1877,13 @@ class MainActivity : AppCompatActivity() {
                     ).show()
                 }
             }
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
 
@@ -1780,7 +1946,7 @@ class MainActivity : AppCompatActivity() {
             values.indexOf(currentDefaultFontSize())
                 .takeIf { it >= 0 } ?: 2
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Default font size")
             .setSingleChoiceItems(
                 labels,
@@ -1798,7 +1964,13 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showFixedFontSizeSelector() {
@@ -1812,7 +1984,7 @@ class MainActivity : AppCompatActivity() {
             values.indexOf(currentFixedFontSize())
                 .takeIf { it >= 0 } ?: 2
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Fixed-width font size")
             .setSingleChoiceItems(
                 labels,
@@ -1830,7 +2002,13 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showEncodingSelector() {
@@ -1845,7 +2023,7 @@ class MainActivity : AppCompatActivity() {
             values.indexOf(currentTextEncoding())
                 .takeIf { it >= 0 } ?: 0
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Text encoding")
             .setSingleChoiceItems(
                 values,
@@ -1865,7 +2043,13 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showFontSelector(
@@ -1884,7 +2068,7 @@ class MainActivity : AppCompatActivity() {
             values.indexOf(current)
                 .takeIf { it >= 0 } ?: 0
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(title)
             .setSingleChoiceItems(
                 values,
@@ -1904,7 +2088,13 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun toggleReaderMode() {
@@ -2011,7 +2201,7 @@ class MainActivity : AppCompatActivity() {
                     "Off"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Reading & display")
             .setItems(options) { _, which ->
                 when (which) {
@@ -2058,7 +2248,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Back", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showAdvancedBrowsingSettings() {
@@ -2118,7 +2314,7 @@ class MainActivity : AppCompatActivity() {
                     "Off"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Advanced browsing")
             .setItems(options) { _, which ->
 
@@ -2205,7 +2401,13 @@ class MainActivity : AppCompatActivity() {
                 null
             )
 
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showWebPageSettings() {
@@ -2241,7 +2443,7 @@ class MainActivity : AppCompatActivity() {
                 if (isDesktopViewportEnabled()) "On" else "Off"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Web page settings")
             .setItems(options) { _, which ->
                 when (which) {
@@ -2260,7 +2462,13 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Back") { _, _ ->
                 showSettings()
             }
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun setAutoplayEnabled(enabled: Boolean) {
@@ -2420,7 +2628,7 @@ class MainActivity : AppCompatActivity() {
             "Reset privacy settings"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Privacy & security")
             .setItems(options) { _, which ->
                 when (which) {
@@ -2433,7 +2641,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Close", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showCookieSettings() {
@@ -2447,7 +2661,7 @@ class MainActivity : AppCompatActivity() {
             "Clear cookies"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Cookies")
             .setItems(options) { _, which ->
                 when (which) {
@@ -2461,7 +2675,13 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Back") { _, _ ->
                 showPrivacySecuritySettings()
             }
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showTrackingProtectionSettings() {
@@ -2470,7 +2690,7 @@ class MainActivity : AppCompatActivity() {
                 if (isDoNotTrackEnabled()) "On" else "Off"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Tracking protection")
             .setItems(options) { _, which ->
                 when (which) {
@@ -2482,7 +2702,13 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Back") { _, _ ->
                 showPrivacySecuritySettings()
             }
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showSitePermissionSettings() {
@@ -2499,7 +2725,7 @@ class MainActivity : AppCompatActivity() {
             "Clear location permissions"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Site permissions")
             .setItems(options) { _, which ->
                 when (which) {
@@ -2521,7 +2747,13 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Back") { _, _ ->
                 showPrivacySecuritySettings()
             }
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showStorageDataSettings() {
@@ -2538,7 +2770,7 @@ class MainActivity : AppCompatActivity() {
             "Clear website storage"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Storage & data")
             .setItems(options) { _, which ->
                 when (which) {
@@ -2559,7 +2791,13 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Back") { _, _ ->
                 showPrivacySecuritySettings()
             }
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showContentSettings() {
@@ -2568,7 +2806,7 @@ class MainActivity : AppCompatActivity() {
                 if (!areImagesEnabled()) "On" else "Off"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Content settings")
             .setItems(options) { _, which ->
                 when (which) {
@@ -2580,7 +2818,13 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Back") { _, _ ->
                 showPrivacySecuritySettings()
             }
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun setCookiesEnabled(enabled: Boolean) {
@@ -2838,7 +3082,7 @@ class MainActivity : AppCompatActivity() {
         val selected =
             if (isJavaScriptEnabled()) 0 else 1
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("JavaScript")
             .setSingleChoiceItems(
                 options,
@@ -2868,7 +3112,13 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showHomepageSettings() {
@@ -2893,7 +3143,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Homepage")
             .setMessage("Set the page opened by Home and new tabs.")
             .setView(container)
@@ -2948,7 +3198,13 @@ class MainActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showSearchEngineSelector() {
@@ -2964,7 +3220,7 @@ class MainActivity : AppCompatActivity() {
             .takeIf { it >= 0 }
             ?: 0
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Search engine")
             .setSingleChoiceItems(
                 engines,
@@ -2985,7 +3241,13 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun showZoomMenu() {
@@ -2995,7 +3257,7 @@ class MainActivity : AppCompatActivity() {
             "Reset zoom"
         )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Page zoom")
             .setItems(options) { _, which ->
                 when (which) {
@@ -3015,7 +3277,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
 
     private fun confirmClearBrowsingData() {
@@ -3064,6 +3332,8 @@ class MainActivity : AppCompatActivity() {
             .create()
 
         dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+
             dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
                 .setOnClickListener {
                     val query = input.text.toString().trim()

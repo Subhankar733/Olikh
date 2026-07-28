@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -112,6 +113,7 @@ class LibraryDialog(
             setTextColor(Color.WHITE)
             background = rounded("#1C2026", 18f)
             setOnClickListener { dismiss() }
+            installPressAnimation(this)
         }
 
         root.addView(
@@ -163,6 +165,7 @@ class LibraryDialog(
             isClickable = true
             isFocusable = true
             setOnClickListener { action() }
+            installPressAnimation(this)
         }
 
         card.addView(TextView(context).apply {
@@ -213,7 +216,53 @@ class LibraryDialog(
             gravity = Gravity.CENTER_VERTICAL
             setPadding(d(12), d(12), d(12), d(12))
             setOnClickListener { action() }
+            installPressAnimation(this)
         })
+    }
+
+    override fun show() {
+        super.show()
+
+        window?.decorView?.apply {
+            alpha = 0f
+            scaleX = 0.94f
+            scaleY = 0.94f
+            translationY = d(18).toFloat()
+
+            animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setDuration(240L)
+                .start()
+        }
+    }
+
+    private fun installPressAnimation(view: View) {
+        view.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.animate()
+                        .scaleX(0.97f)
+                        .scaleY(0.97f)
+                        .alpha(0.82f)
+                        .setDuration(90L)
+                        .start()
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+                    v.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .alpha(1f)
+                        .setDuration(150L)
+                        .start()
+                }
+            }
+            false
+        }
     }
 
     private fun rounded(color: String, radius: Float) =
