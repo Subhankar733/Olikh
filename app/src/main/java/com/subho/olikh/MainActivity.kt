@@ -8,6 +8,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.print.PrintAttributes
+import android.print.PrintManager
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -43,6 +46,25 @@ class MainActivity : AppCompatActivity() {
         get() = tabs.getOrNull(activeTabIndex)
 
     private val homePage = "https://www.google.com"
+
+    private val browserPrefs by lazy {
+        getSharedPreferences("olikh_browser", MODE_PRIVATE)
+    }
+
+    private fun currentSearchEngine(): String {
+        return browserPrefs.getString("search_engine", "Google") ?: "Google"
+    }
+
+    private fun buildSearchUrl(query: String): String {
+        val encoded = URLEncoder.encode(query, "UTF-8")
+
+        return when (currentSearchEngine()) {
+            "DuckDuckGo" -> "https://duckduckgo.com/?q=$encoded"
+            "Bing" -> "https://www.bing.com/search?q=$encoded"
+            "Brave" -> "https://search.brave.com/search?q=$encoded"
+            else -> "https://www.google.com/search?q=$encoded"
+        }
+    }
 
     private val tabPrefs by lazy {
         getSharedPreferences("olikh_tabs", MODE_PRIVATE)
@@ -906,6 +928,10 @@ class MainActivity : AppCompatActivity() {
         popup.menu.add("Find in page")
         popup.menu.add("Share page")
         popup.menu.add("Copy URL")
+        popup.menu.add("Page info")
+        popup.menu.add("Open in external app")
+        popup.menu.add("Save as PDF")
+        popup.menu.add("Search engine")
         popup.menu.add("Zoom")
 
         popup.menu.add(
@@ -950,6 +976,26 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
+                "Page info" -> {
+                    showPageInfo()
+                    true
+                }
+
+                "Open in external app" -> {
+                    openInExternalApp()
+                    true
+                }
+
+                "Save as PDF" -> {
+                    savePageAsPdf()
+                    true
+                }
+
+                "Search engine" -> {
+                    showSearchEngineSelector()
+                    true
+                }
+
                 "Zoom" -> {
                     showZoomMenu()
                     true
@@ -971,6 +1017,124 @@ class MainActivity : AppCompatActivity() {
         }
 
         popup.show()
+    }
+
+    private fun showPageInfo() {
+        val url = webView.url ?: "No URL"
+        val title = webView.title ?: "Untitled"
+        val uri = runCatching { Uri.parse(url) }.getOrNull()
+
+        val host = uri?.host ?: "Unknown"
+        val scheme = uri?.scheme ?: "Unknown"
+
+        val security = when (scheme.lowercase()) {
+            "https" -> "Secure connection (HTTPS)"
+            "http" -> "Not encrypted (HTTP)"
+            else -> scheme
+        }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Page info")
+            .setMessage(
+                "Title: $title\n\n" +
+                    "Site: $host\n\n" +
+                    "Connection: $security\n\n" +
+                    "URL:\n$url"
+            )
+            .setPositiveButton("Close", null)
+            .show()
+    }
+
+    private fun openInExternalApp() {
+        val url = webView.url
+            ?.takeIf {
+                it.startsWith("http://") ||
+                    it.startsWith("https://")
+            }
+            ?: run {
+                Toast.makeText(
+                    this,
+                    "No external page to open",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return
+            }
+
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse(url)
+        )
+
+        runCatching {
+            startActivity(
+                Intent.createChooser(
+                    intent,
+                    "Open with"
+                )
+            )
+        }.onFailure {
+            Toast.makeText(
+                this,
+                "No app can open this page",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun savePageAsPdf() {
+        val manager =
+            getSystemService(Context.PRINT_SERVICE) as PrintManager
+
+        val title = webView.title
+            ?.replace(Regex("""[\\/:*?"<>|]"""), "_")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: "OLIKH page"
+
+        val adapter = webView.createPrintDocumentAdapter(title)
+
+        manager.print(
+            title,
+            adapter,
+            PrintAttributes.Builder().build()
+        )
+    }
+
+    private fun showSearchEngineSelector() {
+        val engines = arrayOf(
+            "Google",
+            "DuckDuckGo",
+            "Bing",
+            "Brave"
+        )
+
+        val current = currentSearchEngine()
+        val selected = engines.indexOf(current)
+            .takeIf { it >= 0 }
+            ?: 0
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Search engine")
+            .setSingleChoiceItems(
+                engines,
+                selected
+            ) { dialog, which ->
+                val engine = engines[which]
+
+                browserPrefs.edit()
+                    .putString("search_engine", engine)
+                    .apply()
+
+                Toast.makeText(
+                    this,
+                    "$engine selected",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun showZoomMenu() {
