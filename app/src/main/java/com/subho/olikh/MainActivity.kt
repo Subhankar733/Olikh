@@ -1,6 +1,12 @@
 package com.subho.olikh
 
 import android.annotation.SuppressLint
+import android.Manifest
+import android.content.pm.PackageManager
+import android.webkit.GeolocationPermissions
+import android.webkit.PermissionRequest
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import android.content.Intent
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -31,6 +37,11 @@ import androidx.appcompat.app.AppCompatActivity
 import java.net.URLEncoder
 
 class MainActivity : AppCompatActivity() {
+
+    private var pendingWebPermissionRequest: PermissionRequest? = null
+
+    private val webPermissionRequestCode = 7001
+
 
     private lateinit var webView: WebView
     private lateinit var addressBar: EditText
@@ -286,26 +297,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        webView.webChromeClient = object : WebChromeClient() {
-
-            override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                if (!showingErrorPage) {
-                    progressBar.progress = newProgress
-                    progressBar.visibility =
-                        if (newProgress >= 100) View.GONE else View.VISIBLE
-                } else {
-                    progressBar.visibility = View.GONE
-                }
-            }
-
-            override fun onReceivedTitle(view: WebView?, title: String?) {
-                super.onReceivedTitle(view, title)
-
-                if (!showingErrorPage) {
-                    this@MainActivity.title = title ?: "OLIKH"
-                }
-            }
-        }
+        installSitePermissionChromeClient(webView)
 
         addressBar.setOnEditorActionListener { _, actionId, event ->
 
@@ -752,23 +744,7 @@ class MainActivity : AppCompatActivity() {
 
         newWebView.webViewClient = createTabWebViewClient(tab)
 
-        newWebView.webChromeClient = object : WebChromeClient() {
-            override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                if (activeTab === tab) {
-                    progressBar.progress = newProgress
-                    progressBar.visibility =
-                        if (newProgress >= 100) View.GONE else View.VISIBLE
-                }
-            }
-
-            override fun onReceivedTitle(view: WebView?, title: String?) {
-                tab.title = title ?: "New Tab"
-
-                if (activeTab === tab) {
-                    this@MainActivity.title = tab.title
-                }
-            }
-        }
+        installSitePermissionChromeClient(newWebView, tab)
 
         switchToTab(activeTabIndex)
         newWebView.loadUrl(initialUrl)
@@ -1210,6 +1186,240 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun cameraPermissionEnabled(): Boolean {
+        return browserPrefs.getBoolean(
+            "site_camera_enabled",
+            true
+        )
+    }
+
+    private fun microphonePermissionEnabled(): Boolean {
+        return browserPrefs.getBoolean(
+            "site_microphone_enabled",
+            true
+        )
+    }
+
+    private fun locationPermissionEnabled(): Boolean {
+        return browserPrefs.getBoolean(
+            "site_location_enabled",
+            true
+        )
+    }
+
+    private fun setCameraPermissionEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("site_camera_enabled", enabled)
+            .apply()
+
+        settingToast("Camera access", enabled)
+    }
+
+    private fun setMicrophonePermissionEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("site_microphone_enabled", enabled)
+            .apply()
+
+        settingToast("Microphone access", enabled)
+    }
+
+    private fun setLocationPermissionEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("site_location_enabled", enabled)
+            .apply()
+
+        settingToast("Location access", enabled)
+    }
+
+    private fun handleWebPermissionRequest(
+        request: PermissionRequest
+    ) {
+        val requested = request.resources ?: emptyArray()
+
+        val wantsCamera =
+            requested.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)
+
+        val wantsMic =
+            requested.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+
+        if (wantsCamera && !cameraPermissionEnabled()) {
+            request.deny()
+            return
+        }
+
+        if (wantsMic && !microphonePermissionEnabled()) {
+            request.deny()
+            return
+        }
+
+        val androidPermissions = mutableListOf<String>()
+
+        if (
+            wantsCamera &&
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            androidPermissions += Manifest.permission.CAMERA
+        }
+
+        if (
+            wantsMic &&
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            androidPermissions += Manifest.permission.RECORD_AUDIO
+        }
+
+        if (androidPermissions.isEmpty()) {
+            val allowed = requested.filter { resource ->
+                when (resource) {
+                    PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
+                        cameraPermissionEnabled()
+
+                    PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
+                        microphonePermissionEnabled()
+
+                    else -> false
+                }
+            }.toTypedArray()
+
+            if (allowed.isNotEmpty()) {
+                request.grant(allowed)
+            } else {
+                request.deny()
+            }
+
+            return
+        }
+
+        pendingWebPermissionRequest?.deny()
+        pendingWebPermissionRequest = request
+
+        ActivityCompat.requestPermissions(
+            this,
+            androidPermissions.toTypedArray(),
+            webPermissionRequestCode
+        )
+    }
+
+    private fun handleGeolocationRequest(
+        origin: String?,
+        callback: GeolocationPermissions.Callback?
+    ) {
+        if (origin == null || callback == null) return
+
+        if (!locationPermissionEnabled()) {
+            callback.invoke(origin, false, false)
+            return
+        }
+
+        val fineGranted =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+        val coarseGranted =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (fineGranted || coarseGranted) {
+            callback.invoke(origin, true, false)
+            return
+        }
+
+        callback.invoke(origin, false, false)
+
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ),
+            7002
+        )
+
+        Toast.makeText(
+            this,
+            "Location permission granted হলে page আবার reload কর",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
+    private fun installSitePermissionChromeClient(
+        targetWebView: WebView,
+        tab: BrowserTab? = null
+    ) {
+        targetWebView.webChromeClient =
+            object : WebChromeClient() {
+
+                override fun onProgressChanged(
+                    view: WebView?,
+                    newProgress: Int
+                ) {
+                    if (
+                        tab == null ||
+                        activeTab === tab
+                    ) {
+                        progressBar.progress = newProgress
+
+                        progressBar.visibility =
+                            if (newProgress >= 100) {
+                                View.GONE
+                            } else {
+                                View.VISIBLE
+                            }
+                    }
+                }
+
+                override fun onReceivedTitle(
+                    view: WebView?,
+                    pageTitle: String?
+                ) {
+                    val resolvedTitle =
+                        pageTitle ?: "OLIKH"
+
+                    if (tab != null) {
+                        tab.title = resolvedTitle
+                    }
+
+                    if (
+                        tab == null ||
+                        activeTab === tab
+                    ) {
+                        this@MainActivity.title =
+                            resolvedTitle
+                    }
+                }
+
+                override fun onPermissionRequest(
+                    request: PermissionRequest?
+                ) {
+                    if (request == null) return
+
+                    runOnUiThread {
+                        handleWebPermissionRequest(request)
+                    }
+                }
+
+                override fun onGeolocationPermissionsShowPrompt(
+                    origin: String?,
+                    callback: GeolocationPermissions.Callback?
+                ) {
+                    handleGeolocationRequest(
+                        origin,
+                        callback
+                    )
+                }
+            }
+    }
+
     private fun showWebPageSettings() {
         val options = arrayOf(
             "Autoplay media: " +
@@ -1489,6 +1699,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSitePermissionSettings() {
         val options = arrayOf(
+            "Camera: " +
+                if (cameraPermissionEnabled()) "On" else "Off",
+
+            "Microphone: " +
+                if (microphonePermissionEnabled()) "On" else "Off",
+
+            "Location: " +
+                if (locationPermissionEnabled()) "On" else "Off",
+
             "Clear location permissions"
         )
 
@@ -1496,7 +1715,19 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Site permissions")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> clearLocationPermissions()
+                    0 -> setCameraPermissionEnabled(
+                        !cameraPermissionEnabled()
+                    )
+
+                    1 -> setMicrophonePermissionEnabled(
+                        !microphonePermissionEnabled()
+                    )
+
+                    2 -> setLocationPermissionEnabled(
+                        !locationPermissionEnabled()
+                    )
+
+                    3 -> clearLocationPermissions()
                 }
             }
             .setNegativeButton("Back") { _, _ ->
@@ -2566,37 +2797,7 @@ class MainActivity : AppCompatActivity() {
             restoredWebView.webViewClient =
                 createTabWebViewClient(tab)
 
-            restoredWebView.webChromeClient =
-                object : WebChromeClient() {
-
-                    override fun onProgressChanged(
-                        view: WebView?,
-                        newProgress: Int
-                    ) {
-                        if (activeTab === tab) {
-                            progressBar.progress = newProgress
-                            progressBar.visibility =
-                                if (newProgress >= 100) {
-                                    View.GONE
-                                } else {
-                                    View.VISIBLE
-                                }
-                        }
-                    }
-
-                    override fun onReceivedTitle(
-                        view: WebView?,
-                        title: String?
-                    ) {
-                        tab.title = title ?: "New Tab"
-
-                        if (activeTab === tab) {
-                            this@MainActivity.title =
-                                tab.title
-                        }
-                    }
-                }
-        }
+            installSitePermissionChromeClient(restoredWebView, tab)
 
         activeTabIndex = wantedActiveIndex
         switchToTab(activeTabIndex)
@@ -2617,6 +2818,63 @@ class MainActivity : AppCompatActivity() {
             webView.canGoForward()
 
         updateBookmarkButton()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        )
+
+        if (requestCode != webPermissionRequestCode) {
+            return
+        }
+
+        val request =
+            pendingWebPermissionRequest ?: return
+
+        pendingWebPermissionRequest = null
+
+        val allowed = mutableListOf<String>()
+
+        if (
+            request.resources.contains(
+                PermissionRequest.RESOURCE_VIDEO_CAPTURE
+            ) &&
+            cameraPermissionEnabled() &&
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            allowed +=
+                PermissionRequest.RESOURCE_VIDEO_CAPTURE
+        }
+
+        if (
+            request.resources.contains(
+                PermissionRequest.RESOURCE_AUDIO_CAPTURE
+            ) &&
+            microphonePermissionEnabled() &&
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            allowed +=
+                PermissionRequest.RESOURCE_AUDIO_CAPTURE
+        }
+
+        if (allowed.isEmpty()) {
+            request.deny()
+        } else {
+            request.grant(allowed.toTypedArray())
+        }
     }
 
     override fun onBackPressed() {
