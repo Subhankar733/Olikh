@@ -167,6 +167,58 @@ class MainActivity : AppCompatActivity() {
     private var showingErrorPage = false
 
     @SuppressLint("SetJavaScriptEnabled")
+
+    private fun isReaderModeEnabled(): Boolean =
+        browserPrefs.getBoolean("reader_mode_enabled", false)
+
+    private fun currentDefaultFontSize(): Int =
+        browserPrefs.getInt("default_font_size", 16)
+
+    private fun currentFixedFontSize(): Int =
+        browserPrefs.getInt("fixed_font_size", 13)
+
+    private fun currentTextEncoding(): String =
+        browserPrefs.getString(
+            "text_encoding",
+            "UTF-8"
+        ) ?: "UTF-8"
+
+    private fun currentSansFont(): String =
+        browserPrefs.getString(
+            "sans_font",
+            "sans-serif"
+        ) ?: "sans-serif"
+
+    private fun currentSerifFont(): String =
+        browserPrefs.getString(
+            "serif_font",
+            "serif"
+        ) ?: "serif"
+
+    private fun currentMonospaceFont(): String =
+        browserPrefs.getString(
+            "monospace_font",
+            "monospace"
+        ) ?: "monospace"
+
+    private fun isOffscreenPreRasterEnabled(): Boolean =
+        browserPrefs.getBoolean(
+            "offscreen_preraster_enabled",
+            false
+        )
+
+    private fun isInitialFocusEnabled(): Boolean =
+        browserPrefs.getBoolean(
+            "initial_focus_enabled",
+            true
+        )
+
+    private fun isAutoFitScaleEnabled(): Boolean =
+        browserPrefs.getBoolean(
+            "auto_fit_scale_enabled",
+            false
+        )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -232,6 +284,10 @@ class MainActivity : AppCompatActivity() {
             javaScriptCanOpenWindowsAutomatically = areJsPopupsEnabled()
             setSupportMultipleWindows(areMultipleWindowsEnabled())
         }
+
+        applyReadingDisplaySettings(newWebView)
+
+        applyReadingDisplaySettings(webView)
 
         webView.webViewClient = object : WebViewClient() {
 
@@ -1169,7 +1225,8 @@ class MainActivity : AppCompatActivity() {
             "JavaScript",
             "Privacy & security",
             "Web page settings",
-            "Advanced browsing"
+            "Advanced browsing",
+            "Reading & display"
         )
 
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1182,6 +1239,7 @@ class MainActivity : AppCompatActivity() {
                     3 -> showPrivacySecuritySettings()
                     4 -> showWebPageSettings()
                     5 -> showAdvancedBrowsingSettings()
+                    6 -> showReadingDisplaySettings()
                 }
             }
             .setNegativeButton("Close", null)
@@ -1659,6 +1717,349 @@ class MainActivity : AppCompatActivity() {
                     ).show()
                 }
             }
+            .show()
+    }
+
+
+    private fun applyReadingDisplaySettings(
+        target: WebView
+    ) {
+        target.settings.apply {
+            defaultFontSize = currentDefaultFontSize()
+            defaultFixedFontSize = currentFixedFontSize()
+
+            defaultTextEncodingName =
+                currentTextEncoding()
+
+            sansSerifFontFamily =
+                currentSansFont()
+
+            serifFontFamily =
+                currentSerifFont()
+
+            fixedFontFamily =
+                currentMonospaceFont()
+
+            offscreenPreRaster =
+                isOffscreenPreRasterEnabled()
+
+            needInitialFocus =
+                isInitialFocusEnabled()
+        }
+
+        if (isAutoFitScaleEnabled()) {
+            target.setInitialScale(0)
+        }
+    }
+
+    private fun applyReadingDisplayToAllTabs() {
+        tabs.forEach {
+            applyReadingDisplaySettings(it.webView)
+        }
+
+        applyReadingDisplaySettings(webView)
+    }
+
+    private fun saveReadingBoolean(
+        key: String,
+        enabled: Boolean
+    ) {
+        browserPrefs.edit()
+            .putBoolean(key, enabled)
+            .apply()
+
+        applyReadingDisplayToAllTabs()
+    }
+
+    private fun showDefaultFontSizeSelector() {
+        val values =
+            intArrayOf(12, 14, 16, 18, 20, 22, 24, 28)
+
+        val labels =
+            values.map { "$it px" }.toTypedArray()
+
+        val selected =
+            values.indexOf(currentDefaultFontSize())
+                .takeIf { it >= 0 } ?: 2
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Default font size")
+            .setSingleChoiceItems(
+                labels,
+                selected
+            ) { dialog, which ->
+
+                browserPrefs.edit()
+                    .putInt(
+                        "default_font_size",
+                        values[which]
+                    )
+                    .apply()
+
+                applyReadingDisplayToAllTabs()
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showFixedFontSizeSelector() {
+        val values =
+            intArrayOf(10, 12, 13, 14, 16, 18, 20, 24)
+
+        val labels =
+            values.map { "$it px" }.toTypedArray()
+
+        val selected =
+            values.indexOf(currentFixedFontSize())
+                .takeIf { it >= 0 } ?: 2
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Fixed-width font size")
+            .setSingleChoiceItems(
+                labels,
+                selected
+            ) { dialog, which ->
+
+                browserPrefs.edit()
+                    .putInt(
+                        "fixed_font_size",
+                        values[which]
+                    )
+                    .apply()
+
+                applyReadingDisplayToAllTabs()
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showEncodingSelector() {
+        val values = arrayOf(
+            "UTF-8",
+            "ISO-8859-1",
+            "windows-1252",
+            "UTF-16"
+        )
+
+        val selected =
+            values.indexOf(currentTextEncoding())
+                .takeIf { it >= 0 } ?: 0
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Text encoding")
+            .setSingleChoiceItems(
+                values,
+                selected
+            ) { dialog, which ->
+
+                browserPrefs.edit()
+                    .putString(
+                        "text_encoding",
+                        values[which]
+                    )
+                    .apply()
+
+                applyReadingDisplayToAllTabs()
+                webView.reload()
+
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showFontSelector(
+        title: String,
+        key: String,
+        current: String
+    ) {
+        val values = arrayOf(
+            "sans-serif",
+            "serif",
+            "monospace",
+            "cursive"
+        )
+
+        val selected =
+            values.indexOf(current)
+                .takeIf { it >= 0 } ?: 0
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(title)
+            .setSingleChoiceItems(
+                values,
+                selected
+            ) { dialog, which ->
+
+                browserPrefs.edit()
+                    .putString(
+                        key,
+                        values[which]
+                    )
+                    .apply()
+
+                applyReadingDisplayToAllTabs()
+                webView.reload()
+
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun toggleReaderMode() {
+        val enabled = !isReaderModeEnabled()
+
+        browserPrefs.edit()
+            .putBoolean(
+                "reader_mode_enabled",
+                enabled
+            )
+            .apply()
+
+        if (enabled) {
+            val js = """
+                javascript:(function(){
+                    var style =
+                        document.getElementById(
+                            'olikh-reader-style'
+                        );
+
+                    if(!style){
+                        style =
+                            document.createElement('style');
+
+                        style.id =
+                            'olikh-reader-style';
+
+                        style.innerHTML =
+                            'body{' +
+                            'max-width:850px;' +
+                            'margin:auto!important;' +
+                            'padding:24px!important;' +
+                            'line-height:1.7!important;' +
+                            'font-size:18px!important;' +
+                            '}' +
+                            'img,video{' +
+                            'max-width:100%!important;' +
+                            'height:auto!important;' +
+                            '}' +
+                            'aside,nav{' +
+                            'display:none!important;' +
+                            '}';
+
+                        document.head.appendChild(style);
+                    }
+                })()
+            """.trimIndent()
+
+            webView.loadUrl(js)
+        } else {
+            webView.reload()
+        }
+
+        Toast.makeText(
+            this,
+            "Reader mode " +
+                if (enabled) "enabled" else "disabled",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun showReadingDisplaySettings() {
+        val options = arrayOf(
+            "Reader mode: " +
+                if (isReaderModeEnabled())
+                    "On"
+                else
+                    "Off",
+
+            "Default font size: " +
+                "${currentDefaultFontSize()} px",
+
+            "Fixed-width font size: " +
+                "${currentFixedFontSize()} px",
+
+            "Text encoding: " +
+                currentTextEncoding(),
+
+            "Sans-serif font: " +
+                currentSansFont(),
+
+            "Serif font: " +
+                currentSerifFont(),
+
+            "Monospace font: " +
+                currentMonospaceFont(),
+
+            "Offscreen pre-render: " +
+                if (isOffscreenPreRasterEnabled())
+                    "On"
+                else
+                    "Off",
+
+            "Initial focus: " +
+                if (isInitialFocusEnabled())
+                    "On"
+                else
+                    "Off",
+
+            "Auto-fit page scale: " +
+                if (isAutoFitScaleEnabled())
+                    "On"
+                else
+                    "Off"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Reading & display")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> toggleReaderMode()
+
+                    1 -> showDefaultFontSizeSelector()
+
+                    2 -> showFixedFontSizeSelector()
+
+                    3 -> showEncodingSelector()
+
+                    4 -> showFontSelector(
+                        "Sans-serif font",
+                        "sans_font",
+                        currentSansFont()
+                    )
+
+                    5 -> showFontSelector(
+                        "Serif font",
+                        "serif_font",
+                        currentSerifFont()
+                    )
+
+                    6 -> showFontSelector(
+                        "Monospace font",
+                        "monospace_font",
+                        currentMonospaceFont()
+                    )
+
+                    7 -> saveReadingBoolean(
+                        "offscreen_preraster_enabled",
+                        !isOffscreenPreRasterEnabled()
+                    )
+
+                    8 -> saveReadingBoolean(
+                        "initial_focus_enabled",
+                        !isInitialFocusEnabled()
+                    )
+
+                    9 -> saveReadingBoolean(
+                        "auto_fit_scale_enabled",
+                        !isAutoFitScaleEnabled()
+                    )
+                }
+            }
+            .setNegativeButton("Back", null)
             .show()
     }
 
@@ -3166,6 +3567,8 @@ class MainActivity : AppCompatActivity() {
                 javaScriptCanOpenWindowsAutomatically = areJsPopupsEnabled()
                 setSupportMultipleWindows(areMultipleWindowsEnabled())
             }
+
+            applyReadingDisplaySettings(restoredWebView)
 
             CookieManager.getInstance().apply {
                 setAcceptCookie(areCookiesEnabled())
