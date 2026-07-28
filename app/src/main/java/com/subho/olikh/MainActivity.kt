@@ -928,11 +928,8 @@ class MainActivity : AppCompatActivity() {
         popup.menu.add("Find in page")
         popup.menu.add("Share page")
         popup.menu.add("Copy URL")
-        popup.menu.add("Page info")
-        popup.menu.add("Open in external app")
-        popup.menu.add("Save as PDF")
+        popup.menu.add("Page tools")
         popup.menu.add("Search engine")
-        popup.menu.add("Zoom")
 
         popup.menu.add(
             if (
@@ -976,28 +973,13 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
-                "Page info" -> {
-                    showPageInfo()
-                    true
-                }
-
-                "Open in external app" -> {
-                    openInExternalApp()
-                    true
-                }
-
-                "Save as PDF" -> {
-                    savePageAsPdf()
+                "Page tools" -> {
+                    showPageToolsMenu()
                     true
                 }
 
                 "Search engine" -> {
                     showSearchEngineSelector()
-                    true
-                }
-
-                "Zoom" -> {
-                    showZoomMenu()
                     true
                 }
 
@@ -1017,6 +999,28 @@ class MainActivity : AppCompatActivity() {
         }
 
         popup.show()
+    }
+
+    private fun showPageToolsMenu() {
+        val options = arrayOf(
+            "Page info",
+            "Open in external app",
+            "Save as PDF",
+            "Zoom"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Page tools")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showPageInfo()
+                    1 -> openInExternalApp()
+                    2 -> savePageAsPdf()
+                    3 -> showZoomMenu()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun showPageInfo() {
