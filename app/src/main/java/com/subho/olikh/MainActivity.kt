@@ -71,6 +71,18 @@ class MainActivity : AppCompatActivity() {
         return browserPrefs.getBoolean("do_not_track_enabled", false)
     }
 
+    private fun areImagesEnabled(): Boolean {
+        return browserPrefs.getBoolean("images_enabled", true)
+    }
+
+    private fun isDomStorageEnabled(): Boolean {
+        return browserPrefs.getBoolean("dom_storage_enabled", true)
+    }
+
+    private fun isDatabaseStorageEnabled(): Boolean {
+        return browserPrefs.getBoolean("database_storage_enabled", true)
+    }
+
     private fun currentSearchEngine(): String {
         return browserPrefs.getString("search_engine", "Google") ?: "Google"
     }
@@ -143,11 +155,11 @@ class MainActivity : AppCompatActivity() {
 
         webView.settings.apply {
             javaScriptEnabled = isJavaScriptEnabled()
-            domStorageEnabled = true
-            databaseEnabled = true
+            domStorageEnabled = isDomStorageEnabled()
+            databaseEnabled = isDatabaseStorageEnabled()
 
-            loadsImagesAutomatically = true
-            blockNetworkImage = false
+            loadsImagesAutomatically = areImagesEnabled()
+            blockNetworkImage = !areImagesEnabled()
 
             useWideViewPort = true
             loadWithOverviewMode = true
@@ -648,11 +660,11 @@ class MainActivity : AppCompatActivity() {
 
         newWebView.settings.apply {
             javaScriptEnabled = isJavaScriptEnabled()
-            domStorageEnabled = true
-            databaseEnabled = true
+            domStorageEnabled = isDomStorageEnabled()
+            databaseEnabled = isDatabaseStorageEnabled()
 
-            loadsImagesAutomatically = true
-            blockNetworkImage = false
+            loadsImagesAutomatically = areImagesEnabled()
+            blockNetworkImage = !areImagesEnabled()
 
             useWideViewPort = true
             loadWithOverviewMode = true
@@ -1151,7 +1163,24 @@ class MainActivity : AppCompatActivity() {
             "Cookies: " + if (areCookiesEnabled()) "On" else "Off",
             "Third-party cookies: " +
                 if (areThirdPartyCookiesEnabled()) "On" else "Off",
-            "Do Not Track: " + if (isDoNotTrackEnabled()) "On" else "Off"
+            "Do Not Track: " + if (isDoNotTrackEnabled()) "On" else "Off",
+
+            "Block images: " +
+                if (!areImagesEnabled()) "On" else "Off",
+
+            "DOM storage: " +
+                if (isDomStorageEnabled()) "On" else "Off",
+
+            "Database storage: " +
+                if (isDatabaseStorageEnabled()) "On" else "Off",
+
+            "Clear cookies",
+            "Clear cache",
+            "Clear history",
+            "Clear form data",
+            "Clear website storage",
+            "Clear location permissions",
+            "Reset privacy settings"
         )
 
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1161,6 +1190,18 @@ class MainActivity : AppCompatActivity() {
                     0 -> setCookiesEnabled(!areCookiesEnabled())
                     1 -> setThirdPartyCookiesEnabled(!areThirdPartyCookiesEnabled())
                     2 -> setDoNotTrackEnabled(!isDoNotTrackEnabled())
+
+                    3 -> setImagesEnabled(!areImagesEnabled())
+                    4 -> setDomStorageEnabled(!isDomStorageEnabled())
+                    5 -> setDatabaseStorageEnabled(!isDatabaseStorageEnabled())
+
+                    6 -> clearCookiesOnly()
+                    7 -> clearCacheOnly()
+                    8 -> clearHistoryOnly()
+                    9 -> clearFormDataOnly()
+                    10 -> clearWebsiteStorage()
+                    11 -> clearLocationPermissions()
+                    12 -> resetPrivacySettings()
                 }
             }
             .setNegativeButton("Close", null)
@@ -1242,6 +1283,175 @@ class MainActivity : AppCompatActivity() {
             if (enabled) "Do Not Track enabled" else "Do Not Track disabled",
             Toast.LENGTH_SHORT
         ).show()
+    }
+
+    private fun setImagesEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("images_enabled", enabled)
+            .apply()
+
+        tabs.forEach { tab ->
+            tab.webView.settings.loadsImagesAutomatically = enabled
+            tab.webView.settings.blockNetworkImage = !enabled
+        }
+
+        if (enabled) {
+            webView.reload()
+        }
+
+        Toast.makeText(
+            this,
+            if (enabled) "Images enabled" else "Images blocked",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun setDomStorageEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("dom_storage_enabled", enabled)
+            .apply()
+
+        tabs.forEach { tab ->
+            tab.webView.settings.domStorageEnabled = enabled
+        }
+
+        Toast.makeText(
+            this,
+            if (enabled) "DOM storage enabled" else "DOM storage disabled",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun setDatabaseStorageEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("database_storage_enabled", enabled)
+            .apply()
+
+        tabs.forEach { tab ->
+            tab.webView.settings.databaseEnabled = enabled
+        }
+
+        Toast.makeText(
+            this,
+            if (enabled) {
+                "Database storage enabled"
+            } else {
+                "Database storage disabled"
+            },
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun clearCookiesOnly() {
+        CookieManager.getInstance().apply {
+            removeAllCookies(null)
+            flush()
+        }
+
+        Toast.makeText(
+            this,
+            "Cookies cleared",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun clearCacheOnly() {
+        tabs.forEach { tab ->
+            tab.webView.clearCache(true)
+        }
+
+        Toast.makeText(
+            this,
+            "Cache cleared",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun clearHistoryOnly() {
+        historyManager.clear()
+
+        tabs.forEach { tab ->
+            tab.webView.clearHistory()
+        }
+
+        Toast.makeText(
+            this,
+            "History cleared",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun clearFormDataOnly() {
+        tabs.forEach { tab ->
+            tab.webView.clearFormData()
+        }
+
+        Toast.makeText(
+            this,
+            "Form data cleared",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun clearWebsiteStorage() {
+        android.webkit.WebStorage.getInstance()
+            .deleteAllData()
+
+        Toast.makeText(
+            this,
+            "Website storage cleared",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun clearLocationPermissions() {
+        android.webkit.GeolocationPermissions.getInstance()
+            .clearAll()
+
+        Toast.makeText(
+            this,
+            "Location permissions cleared",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun resetPrivacySettings() {
+        browserPrefs.edit()
+            .remove("cookies_enabled")
+            .remove("third_party_cookies_enabled")
+            .remove("do_not_track_enabled")
+            .remove("images_enabled")
+            .remove("dom_storage_enabled")
+            .remove("database_storage_enabled")
+            .apply()
+
+        val cookieManager = CookieManager.getInstance()
+
+        cookieManager.setAcceptCookie(true)
+
+        tabs.forEach { tab ->
+            cookieManager.setAcceptThirdPartyCookies(
+                tab.webView,
+                true
+            )
+
+            tab.webView.settings.loadsImagesAutomatically = true
+            tab.webView.settings.blockNetworkImage = false
+            tab.webView.settings.domStorageEnabled = true
+            tab.webView.settings.databaseEnabled = true
+
+            tab.webView.settings.userAgentString =
+                tab.webView.settings.userAgentString
+                    ?.replace(" OLIKH_DNT", "")
+        }
+
+        Toast.makeText(
+            this,
+            "Privacy settings reset",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        webView.reload()
     }
 
     private fun showJavaScriptSetting() {
@@ -1954,11 +2164,11 @@ class MainActivity : AppCompatActivity() {
 
             restoredWebView.settings.apply {
                 javaScriptEnabled = isJavaScriptEnabled()
-                domStorageEnabled = true
-                databaseEnabled = true
+                domStorageEnabled = isDomStorageEnabled()
+                databaseEnabled = isDatabaseStorageEnabled()
 
-                loadsImagesAutomatically = true
-                blockNetworkImage = false
+                loadsImagesAutomatically = areImagesEnabled()
+                blockNetworkImage = !areImagesEnabled()
 
                 useWideViewPort = true
                 loadWithOverviewMode = true
