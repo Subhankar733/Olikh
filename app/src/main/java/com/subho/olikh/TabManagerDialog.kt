@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -70,6 +71,7 @@ class TabManagerDialog(
                 dismiss()
                 onNewTab()
             }
+            installPressAnimation(this)
         }
 
         header.addView(
@@ -117,6 +119,7 @@ class TabManagerDialog(
                     dismiss()
                     onSelectTab(index)
                 }
+                installPressAnimation(this)
             }
 
             val info = LinearLayout(context).apply {
@@ -236,6 +239,51 @@ class TabManagerDialog(
             )
 
             setGravity(Gravity.CENTER)
+        }
+    }
+
+    override fun show() {
+        super.show()
+
+        window?.decorView?.apply {
+            alpha = 0f
+            scaleX = 0.96f
+            scaleY = 0.96f
+            translationY = dp(24).toFloat()
+
+            animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setDuration(240L)
+                .start()
+        }
+    }
+
+    private fun installPressAnimation(view: View) {
+        view.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.animate()
+                        .scaleX(0.97f)
+                        .scaleY(0.97f)
+                        .alpha(0.82f)
+                        .setDuration(90L)
+                        .start()
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+                    v.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .alpha(1f)
+                        .setDuration(150L)
+                        .start()
+                }
+            }
+            false
         }
     }
 }
