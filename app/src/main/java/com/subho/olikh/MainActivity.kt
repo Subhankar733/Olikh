@@ -83,6 +83,46 @@ class MainActivity : AppCompatActivity() {
         return browserPrefs.getBoolean("database_storage_enabled", true)
     }
 
+    private fun isAutoplayEnabled(): Boolean {
+        return browserPrefs.getBoolean("autoplay_enabled", false)
+    }
+
+    private fun areZoomGesturesEnabled(): Boolean {
+        return browserPrefs.getBoolean("zoom_gestures_enabled", true)
+    }
+
+    private fun isWideViewportEnabled(): Boolean {
+        return browserPrefs.getBoolean("wide_viewport_enabled", true)
+    }
+
+    private fun isOverviewModeEnabled(): Boolean {
+        return browserPrefs.getBoolean("overview_mode_enabled", true)
+    }
+
+    private fun isContentAccessEnabled(): Boolean {
+        return browserPrefs.getBoolean("content_access_enabled", true)
+    }
+
+    private fun isFileAccessEnabled(): Boolean {
+        return browserPrefs.getBoolean("file_access_enabled", false)
+    }
+
+    private fun areJsPopupsEnabled(): Boolean {
+        return browserPrefs.getBoolean("js_popups_enabled", false)
+    }
+
+    private fun areMultipleWindowsEnabled(): Boolean {
+        return browserPrefs.getBoolean("multiple_windows_enabled", false)
+    }
+
+    private fun isCacheEnabled(): Boolean {
+        return browserPrefs.getBoolean("cache_enabled", true)
+    }
+
+    private fun isDesktopViewportEnabled(): Boolean {
+        return browserPrefs.getBoolean("desktop_viewport_enabled", false)
+    }
+
     private fun currentSearchEngine(): String {
         return browserPrefs.getString("search_engine", "Google") ?: "Google"
     }
@@ -161,20 +201,25 @@ class MainActivity : AppCompatActivity() {
             loadsImagesAutomatically = areImagesEnabled()
             blockNetworkImage = !areImagesEnabled()
 
-            useWideViewPort = true
-            loadWithOverviewMode = true
+            useWideViewPort = isDesktopViewportEnabled() || isWideViewportEnabled()
+            loadWithOverviewMode = isDesktopViewportEnabled() || isOverviewModeEnabled()
 
-            builtInZoomControls = true
+            builtInZoomControls = areZoomGesturesEnabled()
             displayZoomControls = false
 
-            cacheMode = WebSettings.LOAD_DEFAULT
-            mediaPlaybackRequiresUserGesture = true
+            cacheMode =
+                if (isCacheEnabled()) {
+                    WebSettings.LOAD_DEFAULT
+                } else {
+                    WebSettings.LOAD_NO_CACHE
+                }
+            mediaPlaybackRequiresUserGesture = !isAutoplayEnabled()
 
-            allowContentAccess = true
-            allowFileAccess = false
+            allowContentAccess = isContentAccessEnabled()
+            allowFileAccess = isFileAccessEnabled()
 
-            javaScriptCanOpenWindowsAutomatically = false
-            setSupportMultipleWindows(false)
+            javaScriptCanOpenWindowsAutomatically = areJsPopupsEnabled()
+            setSupportMultipleWindows(areMultipleWindowsEnabled())
         }
 
         webView.webViewClient = object : WebViewClient() {
@@ -666,20 +711,25 @@ class MainActivity : AppCompatActivity() {
             loadsImagesAutomatically = areImagesEnabled()
             blockNetworkImage = !areImagesEnabled()
 
-            useWideViewPort = true
-            loadWithOverviewMode = true
+            useWideViewPort = isDesktopViewportEnabled() || isWideViewportEnabled()
+            loadWithOverviewMode = isDesktopViewportEnabled() || isOverviewModeEnabled()
 
-            builtInZoomControls = true
+            builtInZoomControls = areZoomGesturesEnabled()
             displayZoomControls = false
 
-            cacheMode = WebSettings.LOAD_DEFAULT
-            mediaPlaybackRequiresUserGesture = true
+            cacheMode =
+                if (isCacheEnabled()) {
+                    WebSettings.LOAD_DEFAULT
+                } else {
+                    WebSettings.LOAD_NO_CACHE
+                }
+            mediaPlaybackRequiresUserGesture = !isAutoplayEnabled()
 
-            allowContentAccess = true
-            allowFileAccess = false
+            allowContentAccess = isContentAccessEnabled()
+            allowFileAccess = isFileAccessEnabled()
 
-            javaScriptCanOpenWindowsAutomatically = false
-            setSupportMultipleWindows(false)
+            javaScriptCanOpenWindowsAutomatically = areJsPopupsEnabled()
+            setSupportMultipleWindows(areMultipleWindowsEnabled())
         }
 
         CookieManager.getInstance().apply {
@@ -1141,7 +1191,8 @@ class MainActivity : AppCompatActivity() {
             "Search engine",
             "Homepage",
             "JavaScript",
-            "Privacy & security"
+            "Privacy & security",
+            "Web page settings"
         )
 
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1152,10 +1203,213 @@ class MainActivity : AppCompatActivity() {
                     1 -> showHomepageSettings()
                     2 -> showJavaScriptSetting()
                     3 -> showPrivacySecuritySettings()
+                    4 -> showWebPageSettings()
                 }
             }
             .setNegativeButton("Close", null)
             .show()
+    }
+
+    private fun showWebPageSettings() {
+        val options = arrayOf(
+            "Autoplay media: " +
+                if (isAutoplayEnabled()) "On" else "Off",
+
+            "Pinch zoom: " +
+                if (areZoomGesturesEnabled()) "On" else "Off",
+
+            "Wide viewport: " +
+                if (isWideViewportEnabled()) "On" else "Off",
+
+            "Overview mode: " +
+                if (isOverviewModeEnabled()) "On" else "Off",
+
+            "Content access: " +
+                if (isContentAccessEnabled()) "On" else "Off",
+
+            "File access: " +
+                if (isFileAccessEnabled()) "On" else "Off",
+
+            "JavaScript pop-ups: " +
+                if (areJsPopupsEnabled()) "On" else "Off",
+
+            "Multiple windows: " +
+                if (areMultipleWindowsEnabled()) "On" else "Off",
+
+            "Browser cache: " +
+                if (isCacheEnabled()) "On" else "Off",
+
+            "Desktop viewport: " +
+                if (isDesktopViewportEnabled()) "On" else "Off"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Web page settings")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> setAutoplayEnabled(!isAutoplayEnabled())
+                    1 -> setZoomGesturesEnabled(!areZoomGesturesEnabled())
+                    2 -> setWideViewportEnabled(!isWideViewportEnabled())
+                    3 -> setOverviewModeEnabled(!isOverviewModeEnabled())
+                    4 -> setContentAccessEnabled(!isContentAccessEnabled())
+                    5 -> setFileAccessEnabled(!isFileAccessEnabled())
+                    6 -> setJsPopupsEnabled(!areJsPopupsEnabled())
+                    7 -> setMultipleWindowsEnabled(!areMultipleWindowsEnabled())
+                    8 -> setCacheEnabled(!isCacheEnabled())
+                    9 -> setDesktopViewportEnabled(!isDesktopViewportEnabled())
+                }
+            }
+            .setNegativeButton("Back") { _, _ ->
+                showSettings()
+            }
+            .show()
+    }
+
+    private fun setAutoplayEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("autoplay_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.mediaPlaybackRequiresUserGesture = !enabled
+        }
+
+        settingToast("Autoplay media", enabled)
+    }
+
+    private fun setZoomGesturesEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("zoom_gestures_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.builtInZoomControls = enabled
+            it.webView.settings.displayZoomControls = false
+        }
+
+        settingToast("Pinch zoom", enabled)
+    }
+
+    private fun setWideViewportEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("wide_viewport_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.useWideViewPort = enabled
+        }
+
+        webView.reload()
+        settingToast("Wide viewport", enabled)
+    }
+
+    private fun setOverviewModeEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("overview_mode_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.loadWithOverviewMode = enabled
+        }
+
+        webView.reload()
+        settingToast("Overview mode", enabled)
+    }
+
+    private fun setContentAccessEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("content_access_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.allowContentAccess = enabled
+        }
+
+        settingToast("Content access", enabled)
+    }
+
+    private fun setFileAccessEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("file_access_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.allowFileAccess = enabled
+        }
+
+        settingToast("File access", enabled)
+    }
+
+    private fun setJsPopupsEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("js_popups_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.javaScriptCanOpenWindowsAutomatically = enabled
+        }
+
+        settingToast("JavaScript pop-ups", enabled)
+    }
+
+    private fun setMultipleWindowsEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("multiple_windows_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.setSupportMultipleWindows(enabled)
+        }
+
+        settingToast("Multiple windows", enabled)
+    }
+
+    private fun setCacheEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("cache_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.cacheMode =
+                if (enabled) {
+                    WebSettings.LOAD_DEFAULT
+                } else {
+                    WebSettings.LOAD_NO_CACHE
+                }
+        }
+
+        if (!enabled) {
+            tabs.forEach {
+                it.webView.clearCache(true)
+            }
+        }
+
+        settingToast("Browser cache", enabled)
+    }
+
+    private fun setDesktopViewportEnabled(enabled: Boolean) {
+        browserPrefs.edit()
+            .putBoolean("desktop_viewport_enabled", enabled)
+            .apply()
+
+        tabs.forEach {
+            it.webView.settings.useWideViewPort =
+                enabled || isWideViewportEnabled()
+
+            it.webView.settings.loadWithOverviewMode =
+                enabled || isOverviewModeEnabled()
+        }
+
+        webView.reload()
+        settingToast("Desktop viewport", enabled)
+    }
+
+    private fun settingToast(name: String, enabled: Boolean) {
+        Toast.makeText(
+            this,
+            "$name ${if (enabled) "enabled" else "disabled"}",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun showPrivacySecuritySettings() {
@@ -1861,8 +2115,8 @@ class MainActivity : AppCompatActivity() {
 
         if (desktopEnabled) {
             settings.userAgentString = null
-            settings.useWideViewPort = true
-            settings.loadWithOverviewMode = true
+            settings.useWideViewPort = isDesktopViewportEnabled() || isWideViewportEnabled()
+            settings.loadWithOverviewMode = isDesktopViewportEnabled() || isOverviewModeEnabled()
 
             Toast.makeText(
                 this,
@@ -1876,8 +2130,8 @@ class MainActivity : AppCompatActivity() {
                 "Chrome/138.0.0.0 Safari/537.36 OLIKH_DESKTOP"
 
             settings.userAgentString = desktopUa
-            settings.useWideViewPort = true
-            settings.loadWithOverviewMode = true
+            settings.useWideViewPort = isDesktopViewportEnabled() || isWideViewportEnabled()
+            settings.loadWithOverviewMode = isDesktopViewportEnabled() || isOverviewModeEnabled()
 
             Toast.makeText(
                 this,
@@ -2272,20 +2526,25 @@ class MainActivity : AppCompatActivity() {
                 loadsImagesAutomatically = areImagesEnabled()
                 blockNetworkImage = !areImagesEnabled()
 
-                useWideViewPort = true
-                loadWithOverviewMode = true
+                useWideViewPort = isDesktopViewportEnabled() || isWideViewportEnabled()
+                loadWithOverviewMode = isDesktopViewportEnabled() || isOverviewModeEnabled()
 
-                builtInZoomControls = true
+                builtInZoomControls = areZoomGesturesEnabled()
                 displayZoomControls = false
 
-                cacheMode = WebSettings.LOAD_DEFAULT
-                mediaPlaybackRequiresUserGesture = true
+                cacheMode =
+                if (isCacheEnabled()) {
+                    WebSettings.LOAD_DEFAULT
+                } else {
+                    WebSettings.LOAD_NO_CACHE
+                }
+                mediaPlaybackRequiresUserGesture = !isAutoplayEnabled()
 
-                allowContentAccess = true
-                allowFileAccess = false
+                allowContentAccess = isContentAccessEnabled()
+                allowFileAccess = isFileAccessEnabled()
 
-                javaScriptCanOpenWindowsAutomatically = false
-                setSupportMultipleWindows(false)
+                javaScriptCanOpenWindowsAutomatically = areJsPopupsEnabled()
+                setSupportMultipleWindows(areMultipleWindowsEnabled())
             }
 
             CookieManager.getInstance().apply {
