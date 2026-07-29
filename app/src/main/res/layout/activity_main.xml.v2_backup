@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0B0D10">
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:max="100"
+        android:visibility="gone"/>
+
+    <!-- Graphical omnibox -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="68dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp"
+        android:background="#0B0D10">
+
+        <EditText
+            android:id="@+id/addressBar"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:background="@drawable/olikh_omnibox"
+            android:hint="Search or enter address"
+            android:imeOptions="actionGo"
+            android:inputType="textUri"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:textColor="#F5F7FA"
+            android:textColorHint="#8D949E"
+            android:textSize="15sp"/>
+
+        <!-- Live graphical tab counter -->
+        <Button
+            android:id="@+id/btnTabs"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/olikh_tab_badge"
+            android:contentDescription="Open tabs"
+            android:gravity="center"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="0dp"
+            android:text="1"
+            android:textAllCaps="false"
+            android:textColor="#F5F7FA"
+            android:textSize="12sp"
+            android:textStyle="bold"/>
+
+        <ImageButton
+            android:id="@+id/btnNewTab"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/olikh_icon_button"
+            android:contentDescription="New tab"
+            android:padding="10dp"
+            android:src="@drawable/ic_add"/>
+
+        <ImageButton
+            android:id="@+id/btnMenu"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/olikh_icon_button"
+            android:contentDescription="Browser menu"
+            android:padding="10dp"
+            android:src="@drawable/ic_more"/>
+
+    </LinearLayout>
+
+    <!-- Web content -->
+    <FrameLayout
+        android:id="@+id/browserContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#FFFFFF">
+
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    </FrameLayout>
+
+    <!-- Floating graphical toolbar -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="#0B0D10"
+        android:paddingStart="12dp"
+        android:paddingTop="7dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="9dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/olikh_toolbar"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/olikh_icon_button"
+                android:contentDescription="Back"
+                android:padding="12dp"
+                android:src="@drawable/ic_back"/>
+
+            <ImageButton
+                android:id="@+id/btnForward"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/olikh_icon_button"
+                android:contentDescription="Forward"
+                android:padding="12dp"
+                android:src="@drawable/ic_forward"/>
+
+            <ImageButton
+                android:id="@+id/btnHome"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/olikh_icon_button"
+                android:contentDescription="Home"
+                android:padding="12dp"
+                android:src="@drawable/ic_home"/>
+
+            <ImageButton
+                android:id="@+id/btnHistory"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/olikh_icon_button"
+                android:contentDescription="History"
+                android:padding="12dp"
+                android:src="@drawable/ic_history"/>
+
+            <ImageButton
+                android:id="@+id/btnBookmark"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/olikh_icon_button"
+                android:contentDescription="Add bookmark"
+                android:padding="12dp"
+                android:src="@drawable/ic_bookmark"/>
+
+            <ImageButton
+                android:id="@+id/btnReload"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/olikh_icon_button"
+                android:contentDescription="Reload"
+                android:padding="12dp"
+                android:src="@drawable/ic_reload"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</LinearLayout>
