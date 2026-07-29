@@ -2653,22 +2653,12 @@ h1 {
                 .start()
         }
 
-        anchor.animate()
-            .scaleX(0.92f)
-            .scaleY(0.92f)
-            .alpha(0.72f)
-            .setDuration(110L)
-            .withEndAction {
-                popup.show()
+        anchor.animate().cancel()
+        anchor.scaleX = 1f
+        anchor.scaleY = 1f
+        anchor.alpha = 1f
 
-                anchor.animate()
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .alpha(1f)
-                    .setDuration(180L)
-                    .start()
-            }
-            .start()
+        popup.show()
     }
 
     private fun animateDialogEntrance(
