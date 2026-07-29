@@ -4082,6 +4082,10 @@ class MainActivity : AppCompatActivity() {
             ?.lowercase()
             ?.trimEnd('.')
 
+        val currentSiteAllowed =
+            !currentHost.isNullOrBlank() &&
+                olikhBlocker.isAllowedHost(currentHost)
+
         val options = arrayOf(
             "Ad & tracker blocking: " +
                 if (olikhBlocker.isEnabled()) "On" else "Off",
@@ -4090,10 +4094,17 @@ class MainActivity : AppCompatActivity() {
 
             "Blocked domains: ${olikhBlocker.blockedHostCount()}",
 
-            if (currentHost.isNullOrBlank()) {
-                "Allow current site"
-            } else {
-                "Allow current site: $currentHost"
+            "Allowed sites: ${olikhBlocker.allowedHostCount()}",
+
+            when {
+                currentHost.isNullOrBlank() ->
+                    "Current site protection unavailable"
+
+                currentSiteAllowed ->
+                    "Enable protection for: $currentHost"
+
+                else ->
+                    "Allow current site: $currentHost"
             },
 
             "Reset blocked counter",
@@ -4125,6 +4136,7 @@ class MainActivity : AppCompatActivity() {
                                 Toast.LENGTH_SHORT
                             ).show()
 
+                            webView.reload()
                             showTrackingProtectionSettings()
                         }
 
@@ -4149,12 +4161,32 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         3 -> {
+                            Toast.makeText(
+                                this,
+                                "${olikhBlocker.allowedHostCount()} sites allowed",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            showTrackingProtectionSettings()
+                        }
+
+                        4 -> {
                             if (currentHost.isNullOrBlank()) {
                                 Toast.makeText(
                                     this,
                                     "No website is currently open",
                                     Toast.LENGTH_SHORT
                                 ).show()
+                            } else if (currentSiteAllowed) {
+                                olikhBlocker.removeAllowedHost(currentHost)
+
+                                Toast.makeText(
+                                    this,
+                                    "Protection enabled for $currentHost",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                webView.reload()
                             } else {
                                 olikhBlocker.addAllowedHost(currentHost)
 
@@ -4170,7 +4202,7 @@ class MainActivity : AppCompatActivity() {
                             showTrackingProtectionSettings()
                         }
 
-                        4 -> {
+                        5 -> {
                             olikhBlocker.resetCounter()
 
                             Toast.makeText(
@@ -4182,7 +4214,7 @@ class MainActivity : AppCompatActivity() {
                             showTrackingProtectionSettings()
                         }
 
-                        5 -> {
+                        6 -> {
                             olikhBlocker.clearAllowlist()
 
                             Toast.makeText(
@@ -4192,11 +4224,10 @@ class MainActivity : AppCompatActivity() {
                             ).show()
 
                             webView.reload()
-
                             showTrackingProtectionSettings()
                         }
 
-                        6 -> {
+                        7 -> {
                             setDoNotTrackEnabled(
                                 !isDoNotTrackEnabled()
                             )

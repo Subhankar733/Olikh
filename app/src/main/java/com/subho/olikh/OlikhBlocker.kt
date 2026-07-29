@@ -147,6 +147,14 @@ class OlikhBlocker(
     fun allowedHostCount(): Int =
         allowedHosts.size
 
+    fun isAllowedHost(host: String): Boolean {
+        val normalized =
+            normalizeHost(host)
+                ?: return false
+
+        return matchesHost(normalized, allowedHosts)
+    }
+
     private fun saveAllowlist() {
         prefs.edit()
             .putStringSet(
