@@ -5702,34 +5702,6 @@ h1 {
         webView.reload()
     }
 
-    private fun getSearchEngine(): String {
-        return browserPrefs.getString(
-            "search_engine",
-            "Google"
-        ) ?: "Google"
-    }
-
-    private fun buildSearchUrl(queryText: String): String {
-        val query = URLEncoder.encode(
-            queryText.trim(),
-            "UTF-8"
-        )
-
-        return when (getSearchEngine()) {
-            "DuckDuckGo" ->
-                "https://duckduckgo.com/?q=$query"
-
-            "Bing" ->
-                "https://www.bing.com/search?q=$query"
-
-            "Brave Search" ->
-                "https://search.brave.com/search?q=$query"
-
-            else ->
-                "https://www.google.com/search?q=$query"
-        }
-    }
-
     private fun openInput(rawInput: String) {
         val input = rawInput.trim()
 
@@ -5745,7 +5717,10 @@ h1 {
             input.contains(".") &&
                 !input.contains(" ") -> "https://$input"
 
-            else -> buildSearchUrl(input)
+            else -> {
+                val query = URLEncoder.encode(input, "UTF-8")
+                "https://www.google.com/search?q=$query"
+            }
         }
 
         webView.loadUrl(url)
