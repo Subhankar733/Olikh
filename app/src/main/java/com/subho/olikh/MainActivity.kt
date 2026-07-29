@@ -255,13 +255,152 @@ class MainActivity : AppCompatActivity() {
             if (blockerEnabled) "&#10003;"
             else "&#8212;"
 
+        val searchEngine =
+            escapeHtml(currentSearchEngine())
+
         val quickAccessHtml =
-            buildQuickAccessHtml()
+            getQuickAccessItems()
+                .take(8)
+                .joinToString("\n") { item ->
+                    val safeName = escapeHtml(item.name)
+                    val safeUrl = escapeHtml(item.url)
+
+                    val faviconUrl = runCatching {
+                        val uri = Uri.parse(item.url)
+                        val scheme = uri.scheme ?: "https"
+                        val host = uri.host.orEmpty()
+
+                        if (host.isBlank()) {
+                            ""
+                        } else {
+                            "$scheme://$host/favicon.ico"
+                        }
+                    }.getOrDefault("")
+
+                    val safeFavicon =
+                        escapeHtml(faviconUrl)
+
+                    val fallback =
+                        escapeHtml(quickAccessIcon(item.name))
+
+                    """
+                    <a class="site" href="$safeUrl">
+                        <div class="site-icon">
+                            <span class="fallback">$fallback</span>
+                            <img
+                                src="$safeFavicon"
+                                alt=""
+                                onload="this.style.display='block';this.previousElementSibling.style.display='none';"
+                                onerror="this.style.display='none';this.previousElementSibling.style.display='flex';">
+                        </div>
+                        <div class="site-name">$safeName</div>
+                    </a>
+                    """.trimIndent()
+                }
+
+        val recentHtml =
+            historyManager.getAll()
+                .asSequence()
+                .filter {
+                    it.url.startsWith("http://") ||
+                    it.url.startsWith("https://")
+                }
+                .distinctBy { it.url }
+                .take(4)
+                .map { entry ->
+                    val safeTitle =
+                        escapeHtml(
+                            entry.title
+                                .trim()
+                                .ifBlank { entry.url }
+                                .take(34)
+                        )
+
+                    val safeUrl =
+                        escapeHtml(entry.url)
+
+                    val host = runCatching {
+                        Uri.parse(entry.url).host.orEmpty()
+                    }.getOrDefault("")
+
+                    val safeHost =
+                        escapeHtml(
+                            host.removePrefix("www.")
+                                .ifBlank { entry.url }
+                                .take(36)
+                        )
+
+                    """
+                    <a class="row" href="$safeUrl">
+                        <div class="row-icon">&#8634;</div>
+                        <div class="row-text">
+                            <div class="row-title">$safeTitle</div>
+                            <div class="row-sub">$safeHost</div>
+                        </div>
+                        <div class="row-arrow">&#8250;</div>
+                    </a>
+                    """.trimIndent()
+                }
+                .toList()
+                .joinToString("\n")
+                .ifBlank {
+                    """
+                    <div class="empty">
+                        Sites you visit will appear here.
+                    </div>
+                    """.trimIndent()
+                }
+
+        val bookmarkHtml =
+            bookmarkManager.getAll()
+                .take(4)
+                .joinToString("\n") { entry ->
+                    val safeTitle =
+                        escapeHtml(
+                            entry.title
+                                .trim()
+                                .ifBlank { entry.url }
+                                .take(34)
+                        )
+
+                    val safeUrl =
+                        escapeHtml(entry.url)
+
+                    val host = runCatching {
+                        Uri.parse(entry.url).host.orEmpty()
+                    }.getOrDefault("")
+
+                    val safeHost =
+                        escapeHtml(
+                            host.removePrefix("www.")
+                                .ifBlank { entry.url }
+                                .take(36)
+                        )
+
+                    """
+                    <a class="row" href="$safeUrl">
+                        <div class="row-icon">&#9734;</div>
+                        <div class="row-text">
+                            <div class="row-title">$safeTitle</div>
+                            <div class="row-sub">$safeHost</div>
+                        </div>
+                        <div class="row-arrow">&#8250;</div>
+                    </a>
+                    """.trimIndent()
+                }
+                .ifBlank {
+                    """
+                    <div class="empty">
+                        Saved bookmarks will appear here.
+                    </div>
+                    """.trimIndent()
+                }
 
         val html = """
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
@@ -278,16 +417,14 @@ html, body {
     margin: 0;
     width: 100%;
     min-height: 100%;
+    color: #f5f7fa;
     background:
         radial-gradient(
-            circle at 50% -10%,
-            #232833 0%,
-            #101319 38%,
-            #090b0f 72%
+            circle at 50% -8%,
+            #202631 0%,
+            #10141b 34%,
+            #080a0e 70%
         );
-
-    color: #f7f8fa;
-
     font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -296,41 +433,35 @@ html, body {
 }
 
 body {
-    min-height: 100vh;
     padding:
-        max(36px, env(safe-area-inset-top))
+        max(28px, env(safe-area-inset-top))
         22px
-        40px;
-
-    display: flex;
-    justify-content: center;
+        38px;
 }
 
 .page {
     width: 100%;
     max-width: 680px;
+    margin: 0 auto;
 }
 
 .brand {
-    margin-top: 7vh;
+    margin-top: 4vh;
     text-align: center;
 }
 
 .logo {
-    width: 72px;
-    height: 72px;
-
-    margin: 0 auto 18px;
-
-    border-radius: 23px;
+    width: 78px;
+    height: 78px;
+    margin: 0 auto 16px;
+    border-radius: 25px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    font-size: 29px;
-    font-weight: 800;
-    letter-spacing: -2px;
+    position: relative;
+    overflow: hidden;
 
     color: #090b0f;
 
@@ -338,88 +469,107 @@ body {
         linear-gradient(
             145deg,
             #ffffff,
-            #cbd0d8
+            #d3d8e0 58%,
+            #aeb6c2
         );
 
     box-shadow:
-        0 18px 50px rgba(0,0,0,.45),
-        inset 0 1px 0 rgba(255,255,255,.9);
+        0 20px 55px rgba(0,0,0,.45),
+        inset 0 1px 1px rgba(255,255,255,.95);
+}
+
+.logo::before {
+    content: "";
+    width: 31px;
+    height: 42px;
+    border: 8px solid #0b0d11;
+    border-radius: 50%;
+}
+
+.logo::after {
+    content: "";
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #dfe4ea;
 }
 
 h1 {
     margin: 0;
-
-    font-size: 36px;
-    font-weight: 760;
-
-    letter-spacing: -1.4px;
+    font-size: 35px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
 }
 
 .subtitle {
-    margin-top: 8px;
-
-    color: #8e96a3;
-
-    font-size: 14px;
+    margin-top: 7px;
+    color: #8d96a4;
+    font-size: 13px;
 }
 
 .search {
-    margin-top: 38px;
+    margin-top: 30px;
+    min-height: 58px;
+
+    padding: 0 17px;
 
     display: flex;
     align-items: center;
 
-    height: 58px;
-
-    padding: 0 18px;
-
     border-radius: 20px;
 
-    background: rgba(255,255,255,.075);
+    background:
+        rgba(255,255,255,.075);
 
     border:
-        1px solid rgba(255,255,255,.10);
+        1px solid rgba(255,255,255,.105);
 
     box-shadow:
         0 16px 40px rgba(0,0,0,.25);
-
-    backdrop-filter: blur(22px);
 }
 
-.search span {
-    font-size: 20px;
-
+.search-symbol {
     margin-right: 12px;
-
-    opacity: .75;
+    font-size: 20px;
+    opacity: .78;
 }
 
 .search input {
-    width: 100%;
+    min-width: 0;
+    flex: 1;
 
     border: 0;
     outline: 0;
 
     background: transparent;
-
     color: #fff;
 
     font-size: 16px;
 }
 
 .search input::placeholder {
-    color: #747c88;
+    color: #78818e;
+}
+
+.engine {
+    margin-left: 10px;
+    padding: 6px 9px;
+
+    border-radius: 10px;
+
+    color: #aeb6c2;
+    background: rgba(255,255,255,.06);
+
+    font-size: 10px;
+    font-weight: 700;
+
+    white-space: nowrap;
 }
 
 .protection {
-    margin-top: 22px;
-
-    cursor: pointer;
-    transition:
-        transform .12s ease,
-        background .12s ease;
-
-    padding: 20px;
+    margin-top: 20px;
+    padding: 19px;
 
     border-radius: 22px;
 
@@ -435,10 +585,15 @@ h1 {
 
     box-shadow:
         0 18px 45px rgba(0,0,0,.22);
+
+    text-decoration: none;
+    color: inherit;
+
+    display: block;
 }
 
 .protection:active {
-    transform: scale(.985);
+    transform: scale(.988);
 }
 
 .protection-top {
@@ -447,8 +602,12 @@ h1 {
 }
 
 .shield {
-    width: 46px;
-    height: 46px;
+    width: 47px;
+    height: 47px;
+
+    flex: 0 0 47px;
+
+    margin-right: 14px;
 
     border-radius: 15px;
 
@@ -456,16 +615,14 @@ h1 {
     align-items: center;
     justify-content: center;
 
-    margin-right: 14px;
-
     background:
         linear-gradient(
             145deg,
-            #e9edf2,
-            #aeb5bf
+            #f0f3f7,
+            #adb6c2
         );
 
-    color: #0b0d10;
+    color: #090b0f;
 
     font-size: 21px;
     font-weight: 900;
@@ -473,121 +630,264 @@ h1 {
 
 .protection-title {
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 750;
 }
 
 .protection-status {
     margin-top: 4px;
-
-    font-size: 13px;
-
-    color: #9098a5;
+    color: #929ba8;
+    font-size: 12px;
 }
 
 .stats {
-    margin-top: 20px;
+    margin-top: 18px;
 
     display: grid;
-
     grid-template-columns: 1fr 1fr;
-
     gap: 10px;
 }
 
 .stat {
-    padding: 15px;
-
+    padding: 14px;
     border-radius: 16px;
-
-    background:
-        rgba(0,0,0,.20);
+    background: rgba(0,0,0,.20);
 }
 
 .number {
     font-size: 23px;
-    font-weight: 750;
+    font-weight: 800;
 }
 
 .label {
     margin-top: 4px;
-
-    color: #858d99;
-
-    font-size: 12px;
+    color: #89929f;
+    font-size: 11px;
 }
 
-.quick {
-    margin-top: 28px;
+.section {
+    margin-top: 27px;
 }
 
-.quick-title {
-    margin-bottom: 13px;
+.section-title {
+    margin-bottom: 12px;
 
-    color: #8f97a3;
+    color: #929aa7;
 
-    font-size: 12px;
-
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
 
     text-transform: uppercase;
-
-    letter-spacing: 1.2px;
+    letter-spacing: 1.35px;
 }
 
 .grid {
     display: grid;
-
-    grid-template-columns:
-        repeat(4, 1fr);
-
-    gap: 11px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
 }
 
 .site {
-    min-height: 76px;
+    min-width: 0;
+    min-height: 80px;
+
+    padding: 10px 5px;
 
     border-radius: 18px;
 
     display: flex;
     flex-direction: column;
-
     align-items: center;
     justify-content: center;
 
     text-decoration: none;
 
-    color: #e9ecf0;
+    color: #edf0f4;
 
     background:
         rgba(255,255,255,.055);
 
     border:
-        1px solid rgba(255,255,255,.07);
+        1px solid rgba(255,255,255,.075);
+}
+
+.site:active {
+    transform: scale(.96);
 }
 
 .site-icon {
-    font-size: 21px;
+    width: 29px;
+    height: 29px;
+
     margin-bottom: 7px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: relative;
+
+    border-radius: 8px;
+
+    background: rgba(255,255,255,.07);
+}
+
+.site-icon img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    display: none;
+}
+
+.fallback {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 16px;
+    font-weight: 700;
 }
 
 .site-name {
-    font-size: 11px;
-    color: #a8afb9;
-}
+    width: 100%;
+    padding: 0 3px;
 
-.footer {
-    margin-top: 34px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 
     text-align: center;
 
-    color: #5f6670;
+    color: #abb3be;
+    font-size: 10px;
+}
 
+.panel {
+    overflow: hidden;
+
+    border-radius: 19px;
+
+    background:
+        rgba(255,255,255,.045);
+
+    border:
+        1px solid rgba(255,255,255,.07);
+}
+
+.row {
+    min-height: 59px;
+
+    padding: 10px 14px;
+
+    display: flex;
+    align-items: center;
+
+    text-decoration: none;
+    color: inherit;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.055);
+}
+
+.row:last-child {
+    border-bottom: 0;
+}
+
+.row-icon {
+    width: 34px;
+    height: 34px;
+
+    flex: 0 0 34px;
+
+    margin-right: 11px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background: rgba(255,255,255,.065);
+
+    color: #dce1e7;
+
+    font-size: 16px;
+}
+
+.row-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.row-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.row-sub {
+    margin-top: 3px;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    color: #7f8996;
+    font-size: 10px;
+}
+
+.row-arrow {
+    margin-left: 10px;
+    color: #6e7783;
+    font-size: 22px;
+}
+
+.empty {
+    padding: 19px 15px;
+
+    text-align: center;
+
+    color: #707986;
     font-size: 11px;
+}
 
-    letter-spacing: .8px;
+.footer {
+    margin-top: 32px;
+
+    text-align: center;
+
+    color: #555d68;
+
+    font-size: 10px;
+    letter-spacing: 1.2px;
+}
+
+@media (max-width: 380px) {
+    body {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .grid {
+        gap: 7px;
+    }
+
+    .site {
+        min-height: 73px;
+    }
+
+    .engine {
+        display: none;
+    }
 }
 
 </style>
+
 </head>
 
 <body>
@@ -596,9 +896,7 @@ h1 {
 
     <div class="brand">
 
-        <div class="logo">
-            O
-        </div>
+        <div class="logo"></div>
 
         <h1>OLIKH</h1>
 
@@ -622,18 +920,21 @@ h1 {
               }
           ">
 
-        <span>&#8981;</span>
+        <span class="search-symbol">&#8981;</span>
 
         <input
             id="q"
             autocomplete="off"
             placeholder="Search the web">
 
+        <span class="engine">
+            $searchEngine
+        </span>
+
     </form>
 
-    <div class="protection"
-         onclick="location.href='olikh://toggle-blocker'"
-         role="button">
+    <a class="protection"
+       href="olikh://toggle-blocker">
 
         <div class="protection-top">
 
@@ -642,7 +943,6 @@ h1 {
             </div>
 
             <div>
-
                 <div class="protection-title">
                     Ad & Tracker Protection
                 </div>
@@ -650,7 +950,6 @@ h1 {
                 <div class="protection-status">
                     $blockerStatus
                 </div>
-
             </div>
 
         </div>
@@ -658,7 +957,6 @@ h1 {
         <div class="stats">
 
             <div class="stat">
-
                 <div class="number">
                     $blockedRequests
                 </div>
@@ -666,37 +964,60 @@ h1 {
                 <div class="label">
                     Requests blocked
                 </div>
-
             </div>
 
             <div class="stat">
-
                 <div class="number">
                     $blockedDomains
                 </div>
 
                 <div class="label">
-                    Protection domains
+                    Blocked domains
                 </div>
-
             </div>
 
         </div>
 
-    </div>
+    </a>
 
-    <div class="quick">
+    <div class="section">
 
-        <div class="quick-title">
-            Quick access
+        <div class="section-title">
+            Quick Access
         </div>
 
         <div class="grid">
-
             $quickAccessHtml
-
         </div>
 
+    </div>
+
+    <div class="section">
+
+        <div class="section-title">
+            Recent Sites
+        </div>
+
+        <div class="panel">
+            $recentHtml
+        </div>
+
+    </div>
+
+    <div class="section">
+
+        <div class="section-title">
+            Bookmarks
+        </div>
+
+        <div class="panel">
+            $bookmarkHtml
+        </div>
+
+    </div>
+
+    <div class="footer">
+        OLIKH
     </div>
 
 </div>
