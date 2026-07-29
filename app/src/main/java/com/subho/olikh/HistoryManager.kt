@@ -75,12 +75,7 @@ class HistoryManager(context: Context) {
             return false
         }
 
-        prefs.edit()
-            .putString(
-                "history",
-                serialize(updated)
-            )
-            .apply()
+        save(updated)
 
         return true
     }
