@@ -594,10 +594,6 @@ h1 {
 
     </div>
 
-    <div class="footer">
-        OLIKH BROWSER
-    </div>
-
 </div>
 
 </body>
@@ -5701,7 +5697,10 @@ h1 {
         webView.stopLoading()
         progressBar.visibility = View.GONE
 
-        addressBar.setText(url)
+        addressBar.setText(
+                    if (isOlikhStartPageUrl(url)) "OLIKH Start"
+                    else url
+                )
         title = "OLIKH"
 
         val safeHost = escapeHtml(
