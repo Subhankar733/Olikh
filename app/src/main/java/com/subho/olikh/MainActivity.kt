@@ -64,7 +64,7 @@ import java.net.URLEncoder
 class MainActivity : AppCompatActivity() {
 
     private val olikhBlocker by lazy {
-        OlikhBlocker()
+        OlikhBlocker(applicationContext)
     }
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null

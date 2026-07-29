@@ -1,0 +1,53 @@
+# OLIKH Blocklist V2
+# One domain per line.
+# Hosts-file and simple Adblock domain syntax are also accepted.
+
+# Google ads / tracking
+doubleclick.net
+googlesyndication.com
+googleadservices.com
+adservice.google.com
+google-analytics.com
+googletagmanager.com
+
+# Meta
+connect.facebook.net
+
+# Microsoft
+bat.bing.com
+ads.microsoft.com
+
+# Advertising networks
+adnxs.com
+adsrvr.org
+criteo.com
+criteo.net
+taboola.com
+outbrain.com
+pubmatic.com
+rubiconproject.com
+openx.net
+casalemedia.com
+smartadserver.com
+amazon-adsystem.com
+advertising.com
+media.net
+yieldmo.com
+yieldmanager.com
+
+# Mobile advertising
+adcolony.com
+applovin.com
+unityads.unity3d.com
+vungle.com
+inmobi.com
+chartboost.com
+
+# Analytics / tracking
+scorecardresearch.com
+quantserve.com
+hotjar.com
+mixpanel.com
+segment.io
+segment.com
+moatads.com
