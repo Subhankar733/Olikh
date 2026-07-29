@@ -52,6 +52,7 @@ import android.webkit.ConsoleMessage
 import android.webkit.ClientCertRequest
 import android.webkit.HttpAuthHandler
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ProgressBar
@@ -85,7 +86,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var browserContainer: FrameLayout
     private lateinit var btnTabs: Button
-    private lateinit var btnNewTab: Button
+    private lateinit var btnNewTab: ImageButton
 
     private val tabs = mutableListOf<BrowserTab>()
     private var activeTabIndex = 0
@@ -202,7 +203,7 @@ class MainActivity : AppCompatActivity() {
         BookmarkManager(this)
     }
 
-    private lateinit var btnBookmark: Button
+    private lateinit var btnBookmark: ImageButton
 
     private var failedUrl: String? = null
     private var showingErrorPage = false
@@ -353,13 +354,13 @@ class MainActivity : AppCompatActivity() {
         browserContainer = findViewById(R.id.browserContainer)
         btnTabs = findViewById(R.id.btnTabs)
         btnNewTab = findViewById(R.id.btnNewTab)
-        val btnMenu = findViewById<Button>(R.id.btnMenu)
+        val btnMenu = findViewById<ImageButton>(R.id.btnMenu)
 
-        val btnBack = findViewById<Button>(R.id.btnBack)
-        val btnForward = findViewById<Button>(R.id.btnForward)
-        val btnHome = findViewById<Button>(R.id.btnHome)
-        val btnReload = findViewById<Button>(R.id.btnReload)
-        val btnHistory = findViewById<Button>(R.id.btnHistory)
+        val btnBack = findViewById<ImageButton>(R.id.btnBack)
+        val btnForward = findViewById<ImageButton>(R.id.btnForward)
+        val btnHome = findViewById<ImageButton>(R.id.btnHome)
+        val btnReload = findViewById<ImageButton>(R.id.btnReload)
+        val btnHistory = findViewById<ImageButton>(R.id.btnHistory)
         btnBookmark = findViewById(R.id.btnBookmark)
 
         tabs.add(
@@ -615,8 +616,13 @@ class MainActivity : AppCompatActivity() {
             currentUrl != null &&
                 bookmarkManager.contains(currentUrl)
 
-        btnBookmark.text =
-            if (saved) "★" else "☆"
+        btnBookmark.setImageResource(
+            if (saved) {
+                R.drawable.ic_bookmark_filled
+            } else {
+                R.drawable.ic_bookmark
+            }
+        )
 
         btnBookmark.contentDescription =
             if (saved) {
@@ -5397,10 +5403,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateNavigationButtons() {
-        findViewById<Button>(R.id.btnBack).isEnabled =
+        findViewById<ImageButton>(R.id.btnBack).isEnabled =
             webView.canGoBack()
 
-        findViewById<Button>(R.id.btnForward).isEnabled =
+        findViewById<ImageButton>(R.id.btnForward).isEnabled =
             webView.canGoForward()
 
         updateBookmarkButton()
