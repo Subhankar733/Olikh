@@ -1620,7 +1620,7 @@ h1 {
         switchToTab(activeTabIndex)
 
         if (!incognito && initialUrl == "about:blank") {
-            showOlikhStartPage(newWebView)
+            showOlikhStartPage()
         } else {
             newWebView.loadUrl(initialUrl)
         }
@@ -1758,9 +1758,7 @@ h1 {
                         !olikhBlocker.isEnabled()
                     )
 
-                    showOlikhStartPage(
-                        view ?: webView
-                    )
+                    showOlikhStartPage()
 
                     return true
                 }
@@ -1780,9 +1778,7 @@ h1 {
                         !olikhBlocker.isEnabled()
                     )
 
-                    showOlikhStartPage(
-                        view ?: webView
-                    )
+                    showOlikhStartPage()
 
                     return true
                 }
@@ -5886,9 +5882,7 @@ h1 {
                         !olikhBlocker.isEnabled()
                     )
 
-                    showOlikhStartPage(
-                        view ?: webView
-                    )
+                    showOlikhStartPage()
 
                     return true
                 }
@@ -5978,9 +5972,7 @@ h1 {
                         !olikhBlocker.isEnabled()
                     )
 
-                    showOlikhStartPage(
-                        view ?: webView
-                    )
+                    showOlikhStartPage()
 
                     return true
                 }
@@ -6000,9 +5992,7 @@ h1 {
                         !olikhBlocker.isEnabled()
                     )
 
-                    showOlikhStartPage(
-                        view ?: webView
-                    )
+                    showOlikhStartPage()
 
                     return true
                 }
