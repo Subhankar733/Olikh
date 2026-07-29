@@ -1696,25 +1696,60 @@ class MainActivity : AppCompatActivity() {
     private fun animateBrowserButton(view: View) {
         view.setOnTouchListener { v, event ->
             when (event.actionMasked) {
+
                 MotionEvent.ACTION_DOWN -> {
+                    v.animate().cancel()
+
+                    val tilt =
+                        if (v.id == R.id.btnNewTab) 8f else 5f
+
                     v.animate()
-                        .scaleX(0.88f)
-                        .scaleY(0.88f)
-                        .alpha(0.72f)
-                        .setDuration(90L)
+                        .scaleX(0.78f)
+                        .scaleY(0.78f)
+                        .rotation(tilt)
+                        .alpha(0.68f)
+                        .translationY(3f)
+                        .setDuration(85L)
                         .start()
                 }
 
-                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_UP -> {
+                    v.animate().cancel()
+
+                    v.animate()
+                        .scaleX(1.16f)
+                        .scaleY(1.16f)
+                        .rotation(-3f)
+                        .alpha(1f)
+                        .translationY(-2f)
+                        .setDuration(110L)
+                        .withEndAction {
+                            v.animate()
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .rotation(0f)
+                                .translationY(0f)
+                                .alpha(1f)
+                                .setDuration(150L)
+                                .start()
+                        }
+                        .start()
+                }
+
                 MotionEvent.ACTION_CANCEL -> {
+                    v.animate().cancel()
+
                     v.animate()
                         .scaleX(1f)
                         .scaleY(1f)
+                        .rotation(0f)
+                        .translationY(0f)
                         .alpha(1f)
-                        .setDuration(160L)
+                        .setDuration(140L)
                         .start()
                 }
             }
+
             false
         }
     }
@@ -1739,32 +1774,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         addressBar.setOnFocusChangeListener { view, focused ->
-            val targetScale = if (focused) 1.015f else 1f
-            val targetAlpha = if (focused) 1f else 0.96f
+            view.animate().cancel()
 
-            AnimatorSet().apply {
-                playTogether(
-                    ObjectAnimator.ofFloat(
-                        view,
-                        View.SCALE_X,
-                        view.scaleX,
-                        targetScale
-                    ),
-                    ObjectAnimator.ofFloat(
-                        view,
-                        View.SCALE_Y,
-                        view.scaleY,
-                        targetScale
-                    ),
-                    ObjectAnimator.ofFloat(
-                        view,
-                        View.ALPHA,
-                        view.alpha,
-                        targetAlpha
-                    )
-                )
-                duration = 180L
-                start()
+            if (focused) {
+                view.animate()
+                    .scaleX(1.035f)
+                    .scaleY(1.08f)
+                    .translationY(-4f)
+                    .alpha(1f)
+                    .setDuration(180L)
+                    .start()
+            } else {
+                view.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .translationY(0f)
+                    .alpha(0.96f)
+                    .setDuration(220L)
+                    .start()
             }
         }
     }
