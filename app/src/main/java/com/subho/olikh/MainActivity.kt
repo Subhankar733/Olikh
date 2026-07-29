@@ -118,6 +118,127 @@ class MainActivity : AppCompatActivity() {
         return url == "https://olikh.local/start"
     }
 
+    private data class QuickAccessItem(
+        val name: String,
+        val url: String
+    )
+
+    private fun defaultQuickAccessItems(): List<QuickAccessItem> {
+        return listOf(
+            QuickAccessItem("Google", "https://www.google.com"),
+            QuickAccessItem("YouTube", "https://www.youtube.com"),
+            QuickAccessItem("Wikipedia", "https://en.wikipedia.org"),
+            QuickAccessItem("GitHub", "https://github.com")
+        )
+    }
+
+    private fun getQuickAccessItems(): MutableList<QuickAccessItem> {
+        val raw = browserPrefs.getString(
+            "quick_access_items",
+            null
+        )
+
+        if (raw.isNullOrBlank()) {
+            return defaultQuickAccessItems().toMutableList()
+        }
+
+        val items = raw
+            .split("\n")
+            .mapNotNull { line ->
+                val parts = line.split("\t", limit = 2)
+
+                if (parts.size != 2) {
+                    null
+                } else {
+                    val name = parts[0].trim()
+                    val url = parts[1].trim()
+
+                    if (name.isBlank() || url.isBlank()) {
+                        null
+                    } else {
+                        QuickAccessItem(name, url)
+                    }
+                }
+            }
+            .toMutableList()
+
+        return if (items.isEmpty()) {
+            defaultQuickAccessItems().toMutableList()
+        } else {
+            items
+        }
+    }
+
+    private fun saveQuickAccessItems(
+        items: List<QuickAccessItem>
+    ) {
+        val raw = items.joinToString("\n") {
+            val safeName =
+                it.name.replace("\n", " ").replace("\t", " ")
+
+            val safeUrl =
+                it.url.replace("\n", "").replace("\t", "")
+
+            "$safeName\t$safeUrl"
+        }
+
+        browserPrefs.edit()
+            .putString("quick_access_items", raw)
+            .apply()
+    }
+
+    private fun normalizeQuickAccessUrl(
+        raw: String
+    ): String {
+        val value = raw.trim()
+
+        if (value.startsWith("http://", true) ||
+            value.startsWith("https://", true)
+        ) {
+            return value
+        }
+
+        return "https://$value"
+    }
+
+    private fun quickAccessIcon(
+        name: String
+    ): String {
+        return name
+            .trim()
+            .firstOrNull()
+            ?.uppercaseChar()
+            ?.toString()
+            ?: "•"
+    }
+
+    private fun buildQuickAccessHtml(): String {
+        return getQuickAccessItems()
+            .joinToString("\n") { item ->
+
+                val safeName =
+                    escapeHtml(item.name)
+
+                val safeUrl =
+                    escapeHtml(item.url)
+
+                val icon =
+                    escapeHtml(
+                        quickAccessIcon(item.name)
+                    )
+
+                """
+            <a class="site"
+               href="$safeUrl">
+
+                <div class="site-icon">$icon</div>
+                <div class="site-name">$safeName</div>
+
+            </a>
+                """.trimIndent()
+            }
+    }
+
     private fun showOlikhStartPage() {
         showingErrorPage = false
         failedUrl = null
@@ -133,6 +254,9 @@ class MainActivity : AppCompatActivity() {
         val blockerIcon =
             if (blockerEnabled) "&#10003;"
             else "&#8212;"
+
+        val quickAccessHtml =
+            buildQuickAccessHtml()
 
         val html = """
 <!DOCTYPE html>
@@ -569,37 +693,7 @@ h1 {
 
         <div class="grid">
 
-            <a class="site"
-               href="https://www.google.com">
-
-                <div class="site-icon">G</div>
-                <div class="site-name">Google</div>
-
-            </a>
-
-            <a class="site"
-               href="https://www.youtube.com">
-
-                <div class="site-icon">&#9654;</div>
-                <div class="site-name">YouTube</div>
-
-            </a>
-
-            <a class="site"
-               href="https://en.wikipedia.org">
-
-                <div class="site-icon">W</div>
-                <div class="site-name">Wikipedia</div>
-
-            </a>
-
-            <a class="site"
-               href="https://github.com">
-
-                <div class="site-icon">&lt;/&gt;</div>
-                <div class="site-name">GitHub</div>
-
-            </a>
+            $quickAccessHtml
 
         </div>
 
@@ -2825,6 +2919,7 @@ h1 {
         val options = arrayOf(
             "Search engine",
             "Homepage",
+            "Quick access",
             "JavaScript",
             "Privacy & security",
             "Web page settings",
@@ -2838,11 +2933,12 @@ h1 {
                 when (which) {
                     0 -> showSearchEngineSelector()
                     1 -> showHomepageSettings()
-                    2 -> showJavaScriptSetting()
-                    3 -> showPrivacySecuritySettings()
-                    4 -> showWebPageSettings()
-                    5 -> showAdvancedBrowsingSettings()
-                    6 -> showReadingDisplaySettings()
+                    2 -> showQuickAccessManager()
+                    3 -> showJavaScriptSetting()
+                    4 -> showPrivacySecuritySettings()
+                    5 -> showWebPageSettings()
+                    6 -> showAdvancedBrowsingSettings()
+                    7 -> showReadingDisplaySettings()
                 }
             }
             .setNegativeButton("Close", null)
@@ -2853,6 +2949,237 @@ h1 {
         }
 
         dialog.show()
+    }
+
+    private fun showQuickAccessManager() {
+        val items = getQuickAccessItems()
+
+        val labels =
+            items.mapIndexed { index, item ->
+                "${index + 1}. ${item.name}\n${item.url}"
+            }.toMutableList()
+
+        labels.add("＋ Add shortcut")
+        labels.add("↺ Reset defaults")
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Quick access")
+            .setItems(labels.toTypedArray()) { _, which ->
+
+                when {
+                    which < items.size -> {
+                        showQuickAccessItemActions(which)
+                    }
+
+                    which == items.size -> {
+                        showQuickAccessEditor(null)
+                    }
+
+                    else -> {
+                        confirmResetQuickAccess()
+                    }
+                }
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showQuickAccessItemActions(
+        index: Int
+    ) {
+        val items = getQuickAccessItems()
+        val item = items.getOrNull(index) ?: return
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(item.name)
+            .setItems(
+                arrayOf(
+                    "Edit",
+                    "Delete",
+                    "Open"
+                )
+            ) { _, which ->
+
+                when (which) {
+                    0 -> showQuickAccessEditor(index)
+
+                    1 -> confirmDeleteQuickAccess(index)
+
+                    2 -> webView.loadUrl(item.url)
+                }
+            }
+            .setNegativeButton("Back") { _, _ ->
+                showQuickAccessManager()
+            }
+            .show()
+    }
+
+    private fun showQuickAccessEditor(
+        editIndex: Int?
+    ) {
+        val items = getQuickAccessItems()
+        val existing =
+            editIndex?.let { items.getOrNull(it) }
+
+        val container =
+            android.widget.LinearLayout(this).apply {
+                orientation =
+                    android.widget.LinearLayout.VERTICAL
+
+                val padding =
+                    (20 * resources.displayMetrics.density)
+                        .toInt()
+
+                setPadding(
+                    padding,
+                    padding / 2,
+                    padding,
+                    0
+                )
+            }
+
+        val nameInput = EditText(this).apply {
+            hint = "Name"
+            setSingleLine(true)
+            setText(existing?.name.orEmpty())
+        }
+
+        val urlInput = EditText(this).apply {
+            hint = "Website URL"
+            setSingleLine(true)
+            setText(existing?.url.orEmpty())
+            inputType =
+                android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_URI
+        }
+
+        container.addView(nameInput)
+        container.addView(urlInput)
+
+        val dialog =
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(
+                    if (existing == null) {
+                        "Add shortcut"
+                    } else {
+                        "Edit shortcut"
+                    }
+                )
+                .setView(container)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Save", null)
+                .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(
+                androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE
+            ).setOnClickListener {
+
+                val name =
+                    nameInput.text.toString().trim()
+
+                val rawUrl =
+                    urlInput.text.toString().trim()
+
+                if (name.isBlank()) {
+                    nameInput.error = "Enter a name"
+                    return@setOnClickListener
+                }
+
+                if (rawUrl.isBlank()) {
+                    urlInput.error = "Enter a website"
+                    return@setOnClickListener
+                }
+
+                val url =
+                    normalizeQuickAccessUrl(rawUrl)
+
+                if (existing == null) {
+                    items.add(
+                        QuickAccessItem(
+                            name = name,
+                            url = url
+                        )
+                    )
+                } else {
+                    val index =
+                        editIndex ?: return@setOnClickListener
+
+                    if (index !in items.indices) {
+                        return@setOnClickListener
+                    }
+
+                    items[index] =
+                        QuickAccessItem(
+                            name = name,
+                            url = url
+                        )
+                }
+
+                saveQuickAccessItems(items)
+
+                if (isOlikhStartPageUrl(webView.url)) {
+                    showOlikhStartPage()
+                }
+
+                dialog.dismiss()
+                showQuickAccessManager()
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun confirmDeleteQuickAccess(
+        index: Int
+    ) {
+        val items = getQuickAccessItems()
+        val item = items.getOrNull(index) ?: return
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Delete shortcut?")
+            .setMessage(
+                "${item.name}\n${item.url}"
+            )
+            .setNegativeButton("Cancel") { _, _ ->
+                showQuickAccessManager()
+            }
+            .setPositiveButton("Delete") { _, _ ->
+
+                items.removeAt(index)
+                saveQuickAccessItems(items)
+
+                if (isOlikhStartPageUrl(webView.url)) {
+                    showOlikhStartPage()
+                }
+
+                showQuickAccessManager()
+            }
+            .show()
+    }
+
+    private fun confirmResetQuickAccess() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Reset Quick access?")
+            .setMessage(
+                "Google, YouTube, Wikipedia and GitHub will be restored."
+            )
+            .setNegativeButton("Cancel") { _, _ ->
+                showQuickAccessManager()
+            }
+            .setPositiveButton("Reset") { _, _ ->
+
+                saveQuickAccessItems(
+                    defaultQuickAccessItems()
+                )
+
+                if (isOlikhStartPageUrl(webView.url)) {
+                    showOlikhStartPage()
+                }
+
+                showQuickAccessManager()
+            }
+            .show()
     }
 
     private fun cameraPermissionEnabled(): Boolean {
