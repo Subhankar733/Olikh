@@ -290,6 +290,11 @@ h1 {
 .protection {
     margin-top: 22px;
 
+    cursor: pointer;
+    transition:
+        transform .12s ease,
+        background .12s ease;
+
     padding: 20px;
 
     border-radius: 22px;
@@ -306,6 +311,10 @@ h1 {
 
     box-shadow:
         0 18px 45px rgba(0,0,0,.22);
+}
+
+.protection:active {
+    transform: scale(.985);
 }
 
 .protection-top {
@@ -498,7 +507,9 @@ h1 {
 
     </form>
 
-    <div class="protection">
+    <div class="protection"
+         onclick="location.href='olikh://toggle-blocker'"
+         role="button">
 
         <div class="protection-top">
 
@@ -1746,20 +1757,12 @@ h1 {
                 request: WebResourceRequest?
             ): Boolean {
 
-                if (
-                    request?.url?.toString() ==
-                    "olikh://toggle-blocker"
-                ) {
-                    olikhBlocker.setEnabled(
-                        !olikhBlocker.isEnabled()
-                    )
+                val uri = request?.url ?: return false
 
-                    showOlikhStartPage()
-
+                if (handleOlikhUri(uri)) {
                     return true
                 }
 
-                val uri = request?.url ?: return false
                 return handleExternalUri(uri)
             }
 
@@ -1769,18 +1772,15 @@ h1 {
                 url: String?
             ): Boolean {
 
-                if (url == "olikh://toggle-blocker") {
-                    olikhBlocker.setEnabled(
-                        !olikhBlocker.isEnabled()
-                    )
+                if (url.isNullOrBlank()) return false
 
-                    showOlikhStartPage()
+                val uri = Uri.parse(url)
 
+                if (handleOlikhUri(uri)) {
                     return true
                 }
 
-                if (url.isNullOrBlank()) return false
-                return handleExternalUri(Uri.parse(url))
+                return handleExternalUri(uri)
             }
 
             override fun onSafeBrowsingHit(
@@ -3200,8 +3200,49 @@ h1 {
         fullscreenCallback = null
     }
 
+    private fun handleOlikhUri(uri: Uri): Boolean {
+        if (!uri.scheme.equals("olikh", ignoreCase = true)) {
+            return false
+        }
+
+        when (uri.host?.lowercase()) {
+            "search" -> {
+                val query =
+                    uri.getQueryParameter("q")
+                        ?.trim()
+                        .orEmpty()
+
+                if (query.isNotBlank()) {
+                    openInput(query)
+                }
+
+                return true
+            }
+
+            "toggle-blocker" -> {
+                olikhBlocker.setEnabled(
+                    !olikhBlocker.isEnabled()
+                )
+
+                showOlikhStartPage()
+                return true
+            }
+
+            "start" -> {
+                showOlikhStartPage()
+                return true
+            }
+        }
+
+        return false
+    }
+
     private fun handleExternalUri(uri: Uri): Boolean {
         val scheme = uri.scheme?.lowercase() ?: return false
+
+        if (scheme == "olikh") {
+            return handleOlikhUri(uri)
+        }
 
         if (scheme == "http" || scheme == "https") {
             return false
@@ -5873,21 +5914,14 @@ h1 {
                 request: WebResourceRequest?
             ): Boolean {
 
-                if (
-                    request?.url?.toString() ==
-                    "olikh://toggle-blocker"
-                ) {
-                    olikhBlocker.setEnabled(
-                        !olikhBlocker.isEnabled()
-                    )
+                val uri = request?.url ?: return false
 
-                    showOlikhStartPage()
-
+                if (uri.toString() == "olikh://retry") {
+                    retryFailedPage()
                     return true
                 }
 
-                if (request?.url?.toString() == "olikh://retry") {
-                    retryFailedPage()
+                if (handleOlikhUri(uri)) {
                     return true
                 }
 
@@ -5963,20 +5997,12 @@ h1 {
                 request: WebResourceRequest?
             ): Boolean {
 
-                if (
-                    request?.url?.toString() ==
-                    "olikh://toggle-blocker"
-                ) {
-                    olikhBlocker.setEnabled(
-                        !olikhBlocker.isEnabled()
-                    )
+                val uri = request?.url ?: return false
 
-                    showOlikhStartPage()
-
+                if (handleOlikhUri(uri)) {
                     return true
                 }
 
-                val uri = request?.url ?: return false
                 return handleExternalUri(uri)
             }
 
@@ -5986,18 +6012,15 @@ h1 {
                 url: String?
             ): Boolean {
 
-                if (url == "olikh://toggle-blocker") {
-                    olikhBlocker.setEnabled(
-                        !olikhBlocker.isEnabled()
-                    )
+                if (url.isNullOrBlank()) return false
 
-                    showOlikhStartPage()
+                val uri = Uri.parse(url)
 
+                if (handleOlikhUri(uri)) {
                     return true
                 }
 
-                if (url.isNullOrBlank()) return false
-                return handleExternalUri(Uri.parse(url))
+                return handleExternalUri(uri)
             }
 
             override fun onReceivedHttpError(
