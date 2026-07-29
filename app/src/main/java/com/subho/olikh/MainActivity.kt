@@ -835,10 +835,120 @@ class MainActivity : AppCompatActivity() {
         ).show()
     }
 
+    private data class ClosedTabEntry(
+        val title: String,
+        val url: String
+    )
+
+    private val recentlyClosedTabs =
+        ArrayDeque<ClosedTabEntry>()
+
+    private fun rememberClosedTab(tab: BrowserTab) {
+        if (tab.incognito) return
+
+        val url = tab.url
+            .ifBlank { tab.webView.url.orEmpty() }
+            .trim()
+
+        if (
+            url.isBlank() ||
+            url == "about:blank"
+        ) {
+            return
+        }
+
+        val title = tab.title
+            .replace("\n", " ")
+            .trim()
+            .ifBlank { url }
+
+        recentlyClosedTabs.addFirst(
+            ClosedTabEntry(
+                title = title,
+                url = url
+            )
+        )
+
+        while (recentlyClosedTabs.size > 20) {
+            recentlyClosedTabs.removeLast()
+        }
+    }
+
+    private fun reopenLastClosedTab() {
+        val entry = recentlyClosedTabs
+            .removeFirstOrNull()
+
+        if (entry == null) {
+            Toast.makeText(
+                this,
+                "No recently closed tabs",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            return
+        }
+
+        createNewTab(
+            incognito = false,
+            initialUrl = entry.url
+        )
+    }
+
+    private fun showRecentlyClosedTabs() {
+        if (recentlyClosedTabs.isEmpty()) {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Recently closed")
+                .setMessage("No recently closed tabs.")
+                .setPositiveButton("Close", null)
+                .show()
+
+            return
+        }
+
+        val entries = recentlyClosedTabs.toList()
+
+        val labels = entries.map { entry ->
+            val title = entry.title
+                .replace("\n", " ")
+                .trim()
+                .ifBlank { entry.url }
+                .take(60)
+
+            "$title\n${entry.url}"
+        }.toTypedArray()
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Recently closed · ${entries.size}")
+            .setItems(labels) { _, index ->
+                val entry =
+                    entries.getOrNull(index)
+                        ?: return@setItems
+
+                recentlyClosedTabs.remove(entry)
+
+                createNewTab(
+                    incognito = false,
+                    initialUrl = entry.url
+                )
+            }
+            .setNeutralButton("Clear") { _, _ ->
+                recentlyClosedTabs.clear()
+
+                Toast.makeText(
+                    this,
+                    "Recently closed tabs cleared",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
     private fun closeTab(index: Int) {
         val closingTab = tabs.getOrNull(index) ?: return
         val wasActive = index == activeTabIndex
 
+        rememberClosedTab(closingTab)
         tabs.removeAt(index)
 
         (closingTab.webView.parent as? android.view.ViewGroup)
@@ -872,7 +982,10 @@ class MainActivity : AppCompatActivity() {
         if (tabs.isEmpty()) return
 
         val closingIndex = activeTabIndex
-        val closingTab = tabs.removeAt(closingIndex)
+        val closingTab = tabs[closingIndex]
+
+        rememberClosedTab(closingTab)
+        tabs.removeAt(closingIndex)
 
         if (closingTab.webView.parent != null) {
             (closingTab.webView.parent as? android.view.ViewGroup)
@@ -1849,6 +1962,8 @@ class MainActivity : AppCompatActivity() {
         val popup = PopupMenu(this, anchor)
 
         popup.menu.add("New incognito tab")
+        popup.menu.add("Reopen last closed tab")
+        popup.menu.add("Recently closed")
         popup.menu.add("Find in page")
         popup.menu.add("Share page")
         popup.menu.add("Copy URL")
@@ -1883,7 +1998,17 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
-                "Find in page" -> {
+                "Reopen last closed tab" -> {
+                reopenLastClosedTab()
+                true
+            }
+
+            "Recently closed" -> {
+                showRecentlyClosedTabs()
+                true
+            }
+
+            "Find in page" -> {
                     showFindInPage()
                     true
                 }
