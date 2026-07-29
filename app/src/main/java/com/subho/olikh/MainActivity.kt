@@ -113,6 +113,508 @@ class MainActivity : AppCompatActivity() {
             "https://www.google.com"
         ) ?: "https://www.google.com"
 
+
+    private fun isOlikhStartPageUrl(url: String?): Boolean {
+        return url == "https://olikh.local/start"
+    }
+
+    private fun showOlikhStartPage() {
+        showingErrorPage = false
+        failedUrl = null
+
+        val blockerEnabled = olikhBlocker.isEnabled()
+        val blockedRequests = olikhBlocker.blockedRequests()
+        val blockedDomains = olikhBlocker.blockedHostCount()
+
+        val blockerStatus =
+            if (blockerEnabled) "Protection active"
+            else "Protection paused"
+
+        val blockerIcon =
+            if (blockerEnabled) "&#10003;"
+            else "&#8212;"
+
+        val html = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<meta name="color-scheme" content="dark">
+
+<style>
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    min-height: 100%;
+    background:
+        radial-gradient(
+            circle at 50% -10%,
+            #232833 0%,
+            #101319 38%,
+            #090b0f 72%
+        );
+
+    color: #f7f8fa;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    padding:
+        max(36px, env(safe-area-inset-top))
+        22px
+        40px;
+
+    display: flex;
+    justify-content: center;
+}
+
+.page {
+    width: 100%;
+    max-width: 680px;
+}
+
+.brand {
+    margin-top: 7vh;
+    text-align: center;
+}
+
+.logo {
+    width: 72px;
+    height: 72px;
+
+    margin: 0 auto 18px;
+
+    border-radius: 23px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 29px;
+    font-weight: 800;
+    letter-spacing: -2px;
+
+    color: #090b0f;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #cbd0d8
+        );
+
+    box-shadow:
+        0 18px 50px rgba(0,0,0,.45),
+        inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+h1 {
+    margin: 0;
+
+    font-size: 36px;
+    font-weight: 760;
+
+    letter-spacing: -1.4px;
+}
+
+.subtitle {
+    margin-top: 8px;
+
+    color: #8e96a3;
+
+    font-size: 14px;
+}
+
+.search {
+    margin-top: 38px;
+
+    display: flex;
+    align-items: center;
+
+    height: 58px;
+
+    padding: 0 18px;
+
+    border-radius: 20px;
+
+    background: rgba(255,255,255,.075);
+
+    border:
+        1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+        0 16px 40px rgba(0,0,0,.25);
+
+    backdrop-filter: blur(22px);
+}
+
+.search span {
+    font-size: 20px;
+
+    margin-right: 12px;
+
+    opacity: .75;
+}
+
+.search input {
+    width: 100%;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+
+    color: #fff;
+
+    font-size: 16px;
+}
+
+.search input::placeholder {
+    color: #747c88;
+}
+
+.protection {
+    margin-top: 22px;
+
+    padding: 20px;
+
+    border-radius: 22px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.085),
+            rgba(255,255,255,.045)
+        );
+
+    border:
+        1px solid rgba(255,255,255,.09);
+
+    box-shadow:
+        0 18px 45px rgba(0,0,0,.22);
+}
+
+.protection-top {
+    display: flex;
+    align-items: center;
+}
+
+.shield {
+    width: 46px;
+    height: 46px;
+
+    border-radius: 15px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-right: 14px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #e9edf2,
+            #aeb5bf
+        );
+
+    color: #0b0d10;
+
+    font-size: 21px;
+    font-weight: 900;
+}
+
+.protection-title {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.protection-status {
+    margin-top: 4px;
+
+    font-size: 13px;
+
+    color: #9098a5;
+}
+
+.stats {
+    margin-top: 20px;
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 10px;
+}
+
+.stat {
+    padding: 15px;
+
+    border-radius: 16px;
+
+    background:
+        rgba(0,0,0,.20);
+}
+
+.number {
+    font-size: 23px;
+    font-weight: 750;
+}
+
+.label {
+    margin-top: 4px;
+
+    color: #858d99;
+
+    font-size: 12px;
+}
+
+.quick {
+    margin-top: 28px;
+}
+
+.quick-title {
+    margin-bottom: 13px;
+
+    color: #8f97a3;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1.2px;
+}
+
+.grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 11px;
+}
+
+.site {
+    min-height: 76px;
+
+    border-radius: 18px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-decoration: none;
+
+    color: #e9ecf0;
+
+    background:
+        rgba(255,255,255,.055);
+
+    border:
+        1px solid rgba(255,255,255,.07);
+}
+
+.site-icon {
+    font-size: 21px;
+    margin-bottom: 7px;
+}
+
+.site-name {
+    font-size: 11px;
+    color: #a8afb9;
+}
+
+.footer {
+    margin-top: 34px;
+
+    text-align: center;
+
+    color: #5f6670;
+
+    font-size: 11px;
+
+    letter-spacing: .8px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="brand">
+
+        <div class="logo">
+            O
+        </div>
+
+        <h1>OLIKH</h1>
+
+        <div class="subtitle">
+            Private. Fast. Yours.
+        </div>
+
+    </div>
+
+    <form class="search"
+          onsubmit="
+              event.preventDefault();
+              var q =
+                  document.getElementById('q')
+                  .value.trim();
+
+              if(q) {
+                  location.href =
+                      'olikh://search?q=' +
+                      encodeURIComponent(q);
+              }
+          ">
+
+        <span>&#8981;</span>
+
+        <input
+            id="q"
+            autocomplete="off"
+            placeholder="Search the web">
+
+    </form>
+
+    <div class="protection">
+
+        <div class="protection-top">
+
+            <div class="shield">
+                $blockerIcon
+            </div>
+
+            <div>
+
+                <div class="protection-title">
+                    Ad & Tracker Protection
+                </div>
+
+                <div class="protection-status">
+                    $blockerStatus
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="stats">
+
+            <div class="stat">
+
+                <div class="number">
+                    $blockedRequests
+                </div>
+
+                <div class="label">
+                    Requests blocked
+                </div>
+
+            </div>
+
+            <div class="stat">
+
+                <div class="number">
+                    $blockedDomains
+                </div>
+
+                <div class="label">
+                    Protection domains
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="quick">
+
+        <div class="quick-title">
+            Quick access
+        </div>
+
+        <div class="grid">
+
+            <a class="site"
+               href="https://www.google.com">
+
+                <div class="site-icon">G</div>
+                <div class="site-name">Google</div>
+
+            </a>
+
+            <a class="site"
+               href="https://www.youtube.com">
+
+                <div class="site-icon">&#9654;</div>
+                <div class="site-name">YouTube</div>
+
+            </a>
+
+            <a class="site"
+               href="https://en.wikipedia.org">
+
+                <div class="site-icon">W</div>
+                <div class="site-name">Wikipedia</div>
+
+            </a>
+
+            <a class="site"
+               href="https://github.com">
+
+                <div class="site-icon">&lt;/&gt;</div>
+                <div class="site-name">GitHub</div>
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="footer">
+        OLIKH BROWSER
+    </div>
+
+</div>
+
+</body>
+</html>
+        """.trimIndent()
+
+        addressBar.setText("OLIKH Start")
+
+        webView.loadDataWithBaseURL(
+            "https://olikh.local/start",
+            html,
+            "text/html",
+            "UTF-8",
+            null
+        )
+    }
+
     private fun isJavaScriptEnabled(): Boolean {
         return browserPrefs.getBoolean("javascript_enabled", true)
     }
