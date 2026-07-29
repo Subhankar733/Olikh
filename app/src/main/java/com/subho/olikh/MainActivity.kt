@@ -4074,24 +4074,141 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showTrackingProtectionSettings() {
+        val currentUrl = webView.url.orEmpty()
+
+        val currentHost = runCatching {
+            Uri.parse(currentUrl).host
+        }.getOrNull()
+            ?.lowercase()
+            ?.trimEnd('.')
+
         val options = arrayOf(
+            "Ad & tracker blocking: " +
+                if (olikhBlocker.isEnabled()) "On" else "Off",
+
+            "Blocked requests: ${olikhBlocker.blockedRequests()}",
+
+            "Blocked domains: ${olikhBlocker.blockedHostCount()}",
+
+            if (currentHost.isNullOrBlank()) {
+                "Allow current site"
+            } else {
+                "Allow current site: $currentHost"
+            },
+
+            "Reset blocked counter",
+
+            "Clear site allowlist",
+
             "Do Not Track: " +
                 if (isDoNotTrackEnabled()) "On" else "Off"
         )
 
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Tracking protection")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> setDoNotTrackEnabled(
-                        !isDoNotTrackEnabled()
-                    )
+        val dialog =
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Tracking protection")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> {
+                            val enabled =
+                                !olikhBlocker.isEnabled()
+
+                            olikhBlocker.setEnabled(enabled)
+
+                            Toast.makeText(
+                                this,
+                                if (enabled) {
+                                    "Ad & tracker blocking enabled"
+                                } else {
+                                    "Ad & tracker blocking disabled"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            showTrackingProtectionSettings()
+                        }
+
+                        1 -> {
+                            Toast.makeText(
+                                this,
+                                "${olikhBlocker.blockedRequests()} requests blocked",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            showTrackingProtectionSettings()
+                        }
+
+                        2 -> {
+                            Toast.makeText(
+                                this,
+                                "${olikhBlocker.blockedHostCount()} blocked domains",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            showTrackingProtectionSettings()
+                        }
+
+                        3 -> {
+                            if (currentHost.isNullOrBlank()) {
+                                Toast.makeText(
+                                    this,
+                                    "No website is currently open",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                olikhBlocker.addAllowedHost(currentHost)
+
+                                Toast.makeText(
+                                    this,
+                                    "$currentHost added to allowlist",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                webView.reload()
+                            }
+
+                            showTrackingProtectionSettings()
+                        }
+
+                        4 -> {
+                            olikhBlocker.resetCounter()
+
+                            Toast.makeText(
+                                this,
+                                "Blocked counter reset",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            showTrackingProtectionSettings()
+                        }
+
+                        5 -> {
+                            olikhBlocker.clearAllowlist()
+
+                            Toast.makeText(
+                                this,
+                                "Site allowlist cleared",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            webView.reload()
+
+                            showTrackingProtectionSettings()
+                        }
+
+                        6 -> {
+                            setDoNotTrackEnabled(
+                                !isDoNotTrackEnabled()
+                            )
+
+                            showTrackingProtectionSettings()
+                        }
+                    }
                 }
-            }
-            .setNegativeButton("Back") { _, _ ->
-                showPrivacySecuritySettings()
-            }
-            .create()
+                .setNegativeButton("Back") { _, _ ->
+                    showPrivacySecuritySettings()
+                }
+                .create()
 
         dialog.setOnShowListener {
             animateDialogEntrance(dialog)
