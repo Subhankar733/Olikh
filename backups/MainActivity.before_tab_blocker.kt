@@ -1186,31 +1186,6 @@ class MainActivity : AppCompatActivity() {
     private fun createTabWebViewClient(tab: BrowserTab): WebViewClient {
         return object : WebViewClient() {
 
-            override fun shouldInterceptRequest(
-                view: WebView?,
-                request: WebResourceRequest?
-            ): WebResourceResponse? {
-                val url = request?.url?.toString()
-                    ?: return super.shouldInterceptRequest(view, request)
-
-                if (olikhBlocker.shouldBlock(url)) {
-                    return WebResourceResponse(
-                        "text/plain",
-                        "UTF-8",
-                        204,
-                        "No Content",
-                        mapOf(
-                            "Cache-Control" to "no-store",
-                            "X-OLIKH-Blocked" to "1"
-                        ),
-                        java.io.ByteArrayInputStream(ByteArray(0))
-                    )
-                }
-
-                return super.shouldInterceptRequest(view, request)
-            }
-
-
 
             override fun shouldOverrideUrlLoading(
                 view: WebView?,
