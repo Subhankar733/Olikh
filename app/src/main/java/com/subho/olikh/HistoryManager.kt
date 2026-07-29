@@ -67,6 +67,24 @@ class HistoryManager(context: Context) {
         }.getOrDefault(emptyList())
     }
 
+    fun remove(url: String): Boolean {
+        val current = getAll()
+        val updated = current.filterNot { it.url == url }
+
+        if (updated.size == current.size) {
+            return false
+        }
+
+        prefs.edit()
+            .putString(
+                "history",
+                serialize(updated)
+            )
+            .apply()
+
+        return true
+    }
+
     fun clear() {
         prefs.edit()
             .remove(KEY_HISTORY)

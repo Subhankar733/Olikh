@@ -5,11 +5,14 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -20,11 +23,16 @@ class LibraryDialog(
     private val bookmarks: List<BookmarkEntry>,
     private val onOpenHistory: (HistoryEntry) -> Unit,
     private val onOpenBookmark: (BookmarkEntry) -> Unit,
+    private val onDeleteHistory: (HistoryEntry) -> Unit,
+    private val onDeleteBookmark: (BookmarkEntry) -> Unit,
     private val onClearHistory: () -> Unit,
     private val onClearBookmarks: () -> Unit
 ) : Dialog(context) {
 
     private val dp = context.resources.displayMetrics.density
+
+    private lateinit var content: LinearLayout
+    private lateinit var searchInput: EditText
 
     init {
         setTitle("Library")
@@ -46,59 +54,37 @@ class LibraryDialog(
             text = "Your browsing history and saved pages"
             textSize = 14f
             setTextColor(Color.parseColor("#9298A1"))
-            setPadding(0, d(4), 0, d(18))
+            setPadding(0, d(4), 0, d(12))
         })
 
+        searchInput = EditText(context).apply {
+            hint = "Search history & bookmarks"
+            textSize = 15f
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.parseColor("#747B85"))
+            setSingleLine(true)
+            setPadding(d(14), 0, d(14), 0)
+            background = rounded("#191C21", 16f)
+        }
+
+        root.addView(
+            searchInput,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                d(48)
+            ).apply {
+                bottomMargin = d(8)
+            }
+        )
+
         val scroll = ScrollView(context)
-        val content = LinearLayout(context).apply {
+
+        content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
         }
 
-        addSectionTitle(content, "HISTORY", history.size)
-
-        if (history.isEmpty()) {
-            addEmpty(content, "No browsing history yet")
-        } else {
-            history.take(50).forEach { entry ->
-                addEntry(
-                    content,
-                    entry.title,
-                    entry.url
-                ) {
-                    dismiss()
-                    onOpenHistory(entry)
-                }
-            }
-        }
-
-        addAction(content, "Clear history") {
-            onClearHistory()
-            dismiss()
-        }
-
-        addSectionTitle(content, "BOOKMARKS", bookmarks.size)
-
-        if (bookmarks.isEmpty()) {
-            addEmpty(content, "No bookmarks saved yet")
-        } else {
-            bookmarks.forEach { entry ->
-                addEntry(
-                    content,
-                    entry.title,
-                    entry.url
-                ) {
-                    dismiss()
-                    onOpenBookmark(entry)
-                }
-            }
-        }
-
-        addAction(content, "Clear bookmarks") {
-            onClearBookmarks()
-            dismiss()
-        }
-
         scroll.addView(content)
+
         root.addView(
             scroll,
             LinearLayout.LayoutParams(
@@ -129,13 +115,191 @@ class LibraryDialog(
         setContentView(root)
 
         window?.apply {
-            setBackgroundDrawableResource(android.R.color.transparent)
+            setBackgroundDrawableResource(
+                android.R.color.transparent
+            )
             setLayout(
                 (context.resources.displayMetrics.widthPixels * 0.94).toInt(),
                 (context.resources.displayMetrics.heightPixels * 0.82).toInt()
             )
             setGravity(Gravity.CENTER)
         }
+
+        searchInput.addTextChangedListener(
+            object : TextWatcher {
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) = Unit
+
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {
+                    render(s?.toString().orEmpty())
+                }
+
+                override fun afterTextChanged(
+                    s: Editable?
+                ) = Unit
+            }
+        )
+
+        render("")
+    }
+
+    private fun render(query: String) {
+        content.removeAllViews()
+
+        val cleanQuery = query.trim()
+
+        val filteredHistory =
+            if (cleanQuery.isBlank()) {
+                history.take(50)
+            } else {
+                history.filter {
+                    matches(
+                        it.title,
+                        it.url,
+                        cleanQuery
+                    )
+                }.take(50)
+            }
+
+        val filteredBookmarks =
+            if (cleanQuery.isBlank()) {
+                bookmarks
+            } else {
+                bookmarks.filter {
+                    matches(
+                        it.title,
+                        it.url,
+                        cleanQuery
+                    )
+                }
+            }
+
+        addSectionTitle(
+            content,
+            "HISTORY",
+            filteredHistory.size
+        )
+
+        if (filteredHistory.isEmpty()) {
+            addEmpty(
+                content,
+                if (cleanQuery.isBlank()) {
+                    "No browsing history yet"
+                } else {
+                    "No matching history"
+                }
+            )
+        } else {
+            filteredHistory.forEach { entry ->
+                addEntry(
+                    parent = content,
+                    title = entry.title,
+                    url = entry.url,
+                    action = {
+                        dismiss()
+                        onOpenHistory(entry)
+                    },
+                    deleteAction = {
+                        confirmDelete(
+                            title = "Delete history entry?",
+                            message = entry.title
+                                .replace("\n", " ")
+                                .trim()
+                                .ifBlank { entry.url },
+                            action = {
+                                onDeleteHistory(entry)
+                                dismiss()
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
+        addAction(content, "Clear history") {
+            onClearHistory()
+            dismiss()
+        }
+
+        addSectionTitle(
+            content,
+            "BOOKMARKS",
+            filteredBookmarks.size
+        )
+
+        if (filteredBookmarks.isEmpty()) {
+            addEmpty(
+                content,
+                if (cleanQuery.isBlank()) {
+                    "No bookmarks saved yet"
+                } else {
+                    "No matching bookmarks"
+                }
+            )
+        } else {
+            filteredBookmarks.forEach { entry ->
+                addEntry(
+                    parent = content,
+                    title = entry.title,
+                    url = entry.url,
+                    action = {
+                        dismiss()
+                        onOpenBookmark(entry)
+                    },
+                    deleteAction = {
+                        confirmDelete(
+                            title = "Delete bookmark?",
+                            message = entry.title
+                                .replace("\n", " ")
+                                .trim()
+                                .ifBlank { entry.url },
+                            action = {
+                                onDeleteBookmark(entry)
+                                dismiss()
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
+        addAction(content, "Clear bookmarks") {
+            onClearBookmarks()
+            dismiss()
+        }
+    }
+
+    private fun matches(
+        title: String,
+        url: String,
+        query: String
+    ): Boolean {
+        return title.contains(query, ignoreCase = true) ||
+            url.contains(query, ignoreCase = true)
+    }
+
+    private fun confirmDelete(
+        title: String,
+        message: String,
+        action: () -> Unit
+    ) {
+        androidx.appcompat.app.AlertDialog.Builder(context)
+            .setTitle(title)
+            .setMessage(message.take(160))
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Delete") { _, _ ->
+                action()
+            }
+            .show()
     }
 
     private fun addSectionTitle(
@@ -156,7 +320,8 @@ class LibraryDialog(
         parent: LinearLayout,
         title: String,
         url: String,
-        action: () -> Unit
+        action: () -> Unit,
+        deleteAction: () -> Unit
     ) {
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -164,12 +329,26 @@ class LibraryDialog(
             background = rounded("#191C21", 16f)
             isClickable = true
             isFocusable = true
-            setOnClickListener { action() }
+
+            setOnClickListener {
+                action()
+            }
+
+            setOnLongClickListener {
+                deleteAction()
+                true
+            }
+
             installPressAnimation(this)
         }
 
         card.addView(TextView(context).apply {
-            text = title.replace("\n", " ").trim().ifBlank { url }.take(70)
+            text = title
+                .replace("\n", " ")
+                .trim()
+                .ifBlank { url }
+                .take(70)
+
             textSize = 15f
             setTextColor(Color.WHITE)
             setTypeface(typeface, Typeface.BOLD)
@@ -195,7 +374,10 @@ class LibraryDialog(
         )
     }
 
-    private fun addEmpty(parent: LinearLayout, message: String) {
+    private fun addEmpty(
+        parent: LinearLayout,
+        message: String
+    ) {
         parent.addView(TextView(context).apply {
             text = message
             textSize = 14f
@@ -222,6 +404,13 @@ class LibraryDialog(
 
     override fun show() {
         super.show()
+
+        window?.apply {
+            setLayout(
+                (context.resources.displayMetrics.widthPixels * 0.94).toInt(),
+                (context.resources.displayMetrics.heightPixels * 0.82).toInt()
+            )
+        }
 
         window?.decorView?.apply {
             alpha = 0f
@@ -261,15 +450,18 @@ class LibraryDialog(
                         .start()
                 }
             }
+
             false
         }
     }
 
-    private fun rounded(color: String, radius: Float) =
-        GradientDrawable().apply {
-            setColor(Color.parseColor(color))
-            cornerRadius = d(radius.toInt()).toFloat()
-        }
+    private fun rounded(
+        color: String,
+        radius: Float
+    ) = GradientDrawable().apply {
+        setColor(Color.parseColor(color))
+        cornerRadius = d(radius.toInt()).toFloat()
+    }
 
     private fun d(value: Int): Int =
         (value * dp).toInt()

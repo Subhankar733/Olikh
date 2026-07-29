@@ -721,6 +721,27 @@ class MainActivity : AppCompatActivity() {
                 webView.loadUrl(entry.url)
             },
 
+            onDeleteHistory = { entry ->
+                historyManager.remove(entry.url)
+
+                Toast.makeText(
+                    this,
+                    "History entry deleted",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+
+            onDeleteBookmark = { entry ->
+                bookmarkManager.remove(entry.url)
+                updateBookmarkButton()
+
+                Toast.makeText(
+                    this,
+                    "Bookmark deleted",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+
             onClearHistory = {
                 confirmClearHistory()
             },
