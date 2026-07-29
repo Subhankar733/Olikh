@@ -1047,9 +1047,7 @@ h1 {
         }
 
         btnHome.setOnClickListener {
-            showingErrorPage = false
-            failedUrl = null
-            webView.loadUrl(homePage)
+            showOlikhStartPage()
         }
 
         btnReload.setOnClickListener {
@@ -1083,14 +1081,16 @@ h1 {
 
         if (!restoredPersistentTabs) {
             if (savedInstanceState == null) {
-                webView.loadUrl(homePage)
+                showOlikhStartPage()
             } else {
                 webView.restoreState(savedInstanceState)
             }
         }
 
         btnNewTab.setOnClickListener {
-            createNewTab()
+            createNewTab(
+                initialUrl = "about:blank"
+            )
         }
 
         btnMenu.setOnClickListener {
@@ -1618,7 +1618,12 @@ h1 {
         installSitePermissionChromeClient(newWebView, tab)
 
         switchToTab(activeTabIndex)
-        newWebView.loadUrl(initialUrl)
+
+        if (!incognito && initialUrl == "about:blank") {
+            showOlikhStartPage(newWebView)
+        } else {
+            newWebView.loadUrl(initialUrl)
+        }
     }
 
     private fun switchToTab(index: Int) {
@@ -1744,6 +1749,22 @@ h1 {
                 view: WebView?,
                 request: WebResourceRequest?
             ): Boolean {
+
+                if (
+                    request?.url?.toString() ==
+                    "olikh://toggle-blocker"
+                ) {
+                    olikhBlocker.setEnabled(
+                        !olikhBlocker.isEnabled()
+                    )
+
+                    showOlikhStartPage(
+                        view ?: webView
+                    )
+
+                    return true
+                }
+
                 val uri = request?.url ?: return false
                 return handleExternalUri(uri)
             }
@@ -1753,6 +1774,19 @@ h1 {
                 view: WebView?,
                 url: String?
             ): Boolean {
+
+                if (url == "olikh://toggle-blocker") {
+                    olikhBlocker.setEnabled(
+                        !olikhBlocker.isEnabled()
+                    )
+
+                    showOlikhStartPage(
+                        view ?: webView
+                    )
+
+                    return true
+                }
+
                 if (url.isNullOrBlank()) return false
                 return handleExternalUri(Uri.parse(url))
             }
@@ -5843,6 +5877,22 @@ h1 {
                 view: WebView?,
                 request: WebResourceRequest?
             ): Boolean {
+
+                if (
+                    request?.url?.toString() ==
+                    "olikh://toggle-blocker"
+                ) {
+                    olikhBlocker.setEnabled(
+                        !olikhBlocker.isEnabled()
+                    )
+
+                    showOlikhStartPage(
+                        view ?: webView
+                    )
+
+                    return true
+                }
+
                 if (request?.url?.toString() == "olikh://retry") {
                     retryFailedPage()
                     return true
@@ -5919,6 +5969,22 @@ h1 {
                 view: WebView?,
                 request: WebResourceRequest?
             ): Boolean {
+
+                if (
+                    request?.url?.toString() ==
+                    "olikh://toggle-blocker"
+                ) {
+                    olikhBlocker.setEnabled(
+                        !olikhBlocker.isEnabled()
+                    )
+
+                    showOlikhStartPage(
+                        view ?: webView
+                    )
+
+                    return true
+                }
+
                 val uri = request?.url ?: return false
                 return handleExternalUri(uri)
             }
@@ -5928,6 +5994,19 @@ h1 {
                 view: WebView?,
                 url: String?
             ): Boolean {
+
+                if (url == "olikh://toggle-blocker") {
+                    olikhBlocker.setEnabled(
+                        !olikhBlocker.isEnabled()
+                    )
+
+                    showOlikhStartPage(
+                        view ?: webView
+                    )
+
+                    return true
+                }
+
                 if (url.isNullOrBlank()) return false
                 return handleExternalUri(Uri.parse(url))
             }
