@@ -123,12 +123,19 @@ class TabManagerDialog(
                 setOnLongClickListener {
                     androidx.appcompat.app.AlertDialog.Builder(context)
                         .setTitle(tab.title.replace("\n", " ").trim().ifBlank { "Tab" })
-                        .setItems(arrayOf("Duplicate tab", "Close tab")) { dialog, which ->
+                        .setItems(
+                            arrayOf(
+                                "Switch to tab",
+                                "Duplicate tab",
+                                "Close tab"
+                            )
+                        ) { dialog, which ->
                             dialog.dismiss()
                             dismiss()
                             when (which) {
-                                0 -> onDuplicateTab(index)
-                                1 -> onCloseTab(index)
+                                0 -> onSelectTab(index)
+                                1 -> onDuplicateTab(index)
+                                2 -> onCloseTab(index)
                             }
                         }
                         .setNegativeButton("Cancel", null)

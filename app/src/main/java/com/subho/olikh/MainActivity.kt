@@ -1545,24 +1545,64 @@ h1 {
         }
 
         addressBar.setOnLongClickListener {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val text = clipboard.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()?.trim().orEmpty()
-            if (text.isBlank()) {
-                Toast.makeText(this, "Clipboard is empty", Toast.LENGTH_SHORT).show()
-            } else {
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("Address bar")
-                    .setItems(arrayOf("Paste", "Paste & Go")) { _, which ->
-                        addressBar.setText(text)
-                        addressBar.setSelection(addressBar.text.length)
-                        if (which == 1) {
-                            openInput(text)
+            val clipboard =
+                getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+            val clipboardText =
+                clipboard.primaryClip
+                    ?.getItemAt(0)
+                    ?.coerceToText(this)
+                    ?.toString()
+                    ?.trim()
+                    .orEmpty()
+
+            val currentText = addressBar.text.toString().trim()
+            val actions = mutableListOf<String>()
+
+            if (clipboardText.isNotBlank()) {
+                actions += "Paste"
+                actions += "Paste & Go"
+            }
+
+            if (currentText.isNotBlank()) {
+                actions += "Copy"
+                actions += "Clear"
+            }
+
+            if (actions.isEmpty()) {
+                Toast.makeText(this, "Nothing to paste or copy", Toast.LENGTH_SHORT).show()
+                return@setOnLongClickListener true
+            }
+
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Address bar")
+                .setItems(actions.toTypedArray()) { _, which ->
+                    when (actions[which]) {
+                        "Paste" -> {
+                            addressBar.setText(clipboardText)
+                            addressBar.setSelection(addressBar.text.length)
+                        }
+                        "Paste & Go" -> {
+                            addressBar.setText(clipboardText)
+                            addressBar.setSelection(addressBar.text.length)
+                            openInput(clipboardText)
                             addressBar.clearFocus()
                         }
+                        "Copy" -> {
+                            clipboard.setPrimaryClip(
+                                ClipData.newPlainText("OLIKH address", currentText)
+                            )
+                            Toast.makeText(this, "Address copied", Toast.LENGTH_SHORT).show()
+                        }
+                        "Clear" -> {
+                            addressBar.text?.clear()
+                            addressBar.requestFocus()
+                        }
                     }
-                    .setNegativeButton("Cancel", null)
-                    .show()
-            }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+
             true
         }
 
