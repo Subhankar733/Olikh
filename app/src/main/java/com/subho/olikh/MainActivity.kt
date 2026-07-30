@@ -3186,6 +3186,10 @@ h1 {
         popup.menu.add("Downloads")
         popup.menu.add("Page tools")
         popup.menu.add("Quick access")
+        popup.menu.add("Open start page")
+        popup.menu.add("Paste and go")
+        popup.menu.add("Duplicate tab")
+        popup.menu.add("Close current tab")
         popup.menu.add("Settings")
 
         popup.menu.add(
@@ -3252,6 +3256,26 @@ h1 {
 
                 "Quick access" -> {
                     showQuickAccessManager()
+                    true
+                }
+
+                "Open start page" -> {
+                    showOlikhStartPage()
+                    true
+                }
+
+                "Paste and go" -> {
+                    pasteAndGo()
+                    true
+                }
+
+                "Duplicate tab" -> {
+                    duplicateCurrentTab()
+                    true
+                }
+
+                "Close current tab" -> {
+                    closeCurrentTab()
                     true
                 }
 
@@ -6517,6 +6541,57 @@ h1 {
                 shareIntent,
                 "Share page"
             )
+        )
+    }
+
+    private fun pasteAndGo() {
+        val clipboard =
+            getSystemService(Context.CLIPBOARD_SERVICE)
+                as ClipboardManager
+
+        val clip = clipboard.primaryClip
+
+        if (clip == null || clip.itemCount == 0) {
+            Toast.makeText(
+                this,
+                "Clipboard is empty",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val value =
+            clip.getItemAt(0)
+                .coerceToText(this)
+                ?.toString()
+                ?.trim()
+                .orEmpty()
+
+        if (value.isBlank()) {
+            Toast.makeText(
+                this,
+                "Clipboard has no text",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        addressBar.setText(value)
+        openInput(value)
+    }
+
+    private fun duplicateCurrentTab() {
+        val currentUrl =
+            webView.url
+                ?.takeIf {
+                    it.startsWith("http://") ||
+                        it.startsWith("https://")
+                }
+                ?: "about:blank"
+
+        createNewTab(
+            incognito = activeTab?.incognito == true,
+            initialUrl = currentUrl
         )
     }
 
