@@ -306,7 +306,7 @@ class MainActivity : AppCompatActivity() {
                     it.url.startsWith("https://")
                 }
                 .distinctBy { it.url }
-                .take(4)
+                .take(2)
                 .map { entry ->
                     val safeTitle =
                         escapeHtml(
@@ -353,7 +353,7 @@ class MainActivity : AppCompatActivity() {
 
         val bookmarkHtml =
             bookmarkManager.getAll()
-                .take(4)
+                .take(2)
                 .joinToString("\n") { entry ->
                     val safeTitle =
                         escapeHtml(
@@ -434,9 +434,9 @@ html, body {
 
 body {
     padding:
-        max(28px, env(safe-area-inset-top))
-        22px
-        38px;
+        max(18px, env(safe-area-inset-top))
+        18px
+        24px;
 }
 
 .page {
@@ -446,14 +446,14 @@ body {
 }
 
 .brand {
-    margin-top: 4vh;
+    margin-top: 1.5vh;
     text-align: center;
 }
 
 .logo {
-    width: 78px;
-    height: 78px;
-    margin: 0 auto 16px;
+    width: 62px;
+    height: 62px;
+    margin: 0 auto 10px;
     border-radius: 25px;
 
     display: flex;
@@ -497,7 +497,7 @@ body {
 
 h1 {
     margin: 0;
-    font-size: 35px;
+    font-size: 30px;
     font-weight: 800;
     letter-spacing: -1.5px;
 }
@@ -509,8 +509,8 @@ h1 {
 }
 
 .search {
-    margin-top: 30px;
-    min-height: 58px;
+    margin-top: 20px;
+    min-height: 52px;
 
     padding: 0 17px;
 
@@ -568,8 +568,8 @@ h1 {
 }
 
 .protection {
-    margin-top: 20px;
-    padding: 19px;
+    margin-top: 14px;
+    padding: 14px;
 
     border-radius: 22px;
 
@@ -665,7 +665,7 @@ h1 {
 }
 
 .section {
-    margin-top: 27px;
+    margin-top: 18px;
 }
 
 .section-title {
@@ -688,9 +688,9 @@ h1 {
 
 .site {
     min-width: 0;
-    min-height: 80px;
+    min-height: 66px;
 
-    padding: 10px 5px;
+    padding: 7px 4px;
 
     border-radius: 18px;
 
@@ -777,9 +777,9 @@ h1 {
 }
 
 .row {
-    min-height: 59px;
+    min-height: 48px;
 
-    padding: 10px 14px;
+    padding: 7px 11px;
 
     display: flex;
     align-items: center;
@@ -858,7 +858,7 @@ h1 {
 
 
 .actions {
-    margin-top: 24px;
+    margin-top: 18px;
 }
 
 .actions-title {
@@ -877,8 +877,8 @@ h1 {
 }
 
 .action {
-    min-height: 78px;
-    padding: 12px 8px;
+    min-height: 62px;
+    padding: 8px 6px;
     border-radius: 18px;
 
     display: flex;
@@ -915,7 +915,7 @@ h1 {
 }
 
 .footer {
-    margin-top: 32px;
+    margin-top: 20px;
 
     text-align: center;
 
@@ -1050,30 +1050,6 @@ h1 {
 
     </div>
 
-    <div class="section">
-
-        <div class="section-title">
-            Recent Sites
-        </div>
-
-        <div class="panel">
-            $recentHtml
-        </div>
-
-    </div>
-
-    <div class="section">
-
-        <div class="section-title">
-            Bookmarks
-        </div>
-
-        <div class="panel">
-            $bookmarkHtml
-        </div>
-
-    </div>
-
     <div class="actions">
 
         <div class="actions-title">
@@ -1112,6 +1088,31 @@ h1 {
                 <div class="action-name">Settings</div>
             </a>
 
+        </div>
+
+    </div>
+
+
+    <div class="section">
+
+        <div class="section-title">
+            Recent Sites
+        </div>
+
+        <div class="panel">
+            $recentHtml
+        </div>
+
+    </div>
+
+    <div class="section">
+
+        <div class="section-title">
+            Bookmarks
+        </div>
+
+        <div class="panel">
+            $bookmarkHtml
         </div>
 
     </div>
