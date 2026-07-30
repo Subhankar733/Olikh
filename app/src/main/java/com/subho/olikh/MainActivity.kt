@@ -856,6 +856,64 @@ h1 {
     font-size: 11px;
 }
 
+
+.actions {
+    margin-top: 24px;
+}
+
+.actions-title {
+    margin-bottom: 12px;
+    color: #8f97a3;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.action {
+    min-height: 78px;
+    padding: 12px 8px;
+    border-radius: 18px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-decoration: none;
+    text-align: center;
+
+    color: #eef1f5;
+
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.075);
+
+    transition:
+        transform .12s ease,
+        background .12s ease;
+}
+
+.action:active {
+    transform: scale(.97);
+    background: rgba(255,255,255,.09);
+}
+
+.action-icon {
+    margin-bottom: 7px;
+    font-size: 21px;
+}
+
+.action-name {
+    color: #a8afb9;
+    font-size: 11px;
+}
+
 .footer {
     margin-top: 32px;
 
@@ -1012,6 +1070,48 @@ h1 {
 
         <div class="panel">
             $bookmarkHtml
+        </div>
+
+    </div>
+
+    <div class="actions">
+
+        <div class="actions-title">
+            Browser
+        </div>
+
+        <div class="actions-grid">
+
+            <a class="action" href="olikh://new-tab">
+                <div class="action-icon">＋</div>
+                <div class="action-name">New Tab</div>
+            </a>
+
+            <a class="action" href="olikh://incognito">
+                <div class="action-icon">&#128373;</div>
+                <div class="action-name">Incognito</div>
+            </a>
+
+            <a class="action" href="olikh://history">
+                <div class="action-icon">&#8634;</div>
+                <div class="action-name">History</div>
+            </a>
+
+            <a class="action" href="olikh://bookmarks">
+                <div class="action-icon">&#9734;</div>
+                <div class="action-name">Bookmarks</div>
+            </a>
+
+            <a class="action" href="olikh://downloads">
+                <div class="action-icon">&#8681;</div>
+                <div class="action-name">Downloads</div>
+            </a>
+
+            <a class="action" href="olikh://settings">
+                <div class="action-icon">&#9881;</div>
+                <div class="action-name">Settings</div>
+            </a>
+
         </div>
 
     </div>
@@ -3003,6 +3103,7 @@ h1 {
         popup.menu.add("Copy URL")
         popup.menu.add("Downloads")
         popup.menu.add("Page tools")
+        popup.menu.add("Quick access")
         popup.menu.add("Settings")
 
         popup.menu.add(
@@ -3064,6 +3165,11 @@ h1 {
 
             "Page tools" -> {
                     showPageToolsMenu()
+                    true
+                }
+
+                "Quick access" -> {
+                    showQuickAccessManager()
                     true
                 }
 
@@ -3866,6 +3972,48 @@ h1 {
                     openInput(query)
                 }
 
+                return true
+            }
+
+            "new-tab" -> {
+                createNewTab(
+                    initialUrl = "about:blank"
+                )
+                return true
+            }
+
+            "incognito" -> {
+                createNewTab(
+                    incognito = true,
+                    initialUrl = "about:blank"
+                )
+
+                Toast.makeText(
+                    this,
+                    "Incognito tab opened",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return true
+            }
+
+            "history" -> {
+                showHistory()
+                return true
+            }
+
+            "bookmarks" -> {
+                showBookmarks()
+                return true
+            }
+
+            "downloads" -> {
+                showDownloads()
+                return true
+            }
+
+            "settings" -> {
+                showSettings()
                 return true
             }
 
