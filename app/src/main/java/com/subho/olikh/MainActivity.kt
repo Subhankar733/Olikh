@@ -3343,7 +3343,10 @@ h1 {
             "Zoom",
             "View page source",
             "Save page offline",
-            "Refresh page"
+            "Refresh page",
+            "Copy page title",
+            "Copy link as text",
+            "Open current page in new tab"
         )
 
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
@@ -3357,6 +3360,9 @@ h1 {
                     4 -> viewPageSource()
                     5 -> saveWebArchive()
                     6 -> refreshCurrentPage()
+                    7 -> copyCurrentPageTitle()
+                    8 -> copyCurrentLinkAsText()
+                    9 -> openCurrentPageInNewTab()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -6593,6 +6599,30 @@ h1 {
             incognito = activeTab?.incognito == true,
             initialUrl = currentUrl
         )
+    }
+
+    private fun copyCurrentPageTitle() {
+        val value = webView.title?.replace("\n", " ")?.trim().orEmpty()
+        if (value.isBlank()) {
+            Toast.makeText(this, "Page has no title", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("OLIKH page title", value))
+        Toast.makeText(this, "Page title copied", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun copyCurrentLinkAsText() {
+        val url = webView.url?.takeIf { it.startsWith("http://") || it.startsWith("https://") } ?: return
+        val pageTitle = webView.title?.replace("\n", " ")?.trim()?.takeIf { it.isNotBlank() } ?: url
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("OLIKH page", "$pageTitle\n$url"))
+        Toast.makeText(this, "Page title and URL copied", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun openCurrentPageInNewTab() {
+        val url = webView.url?.takeIf { it.startsWith("http://") || it.startsWith("https://") } ?: return
+        createNewTab(incognito = activeTab?.incognito == true, initialUrl = url)
     }
 
     private fun copyCurrentUrl() {
