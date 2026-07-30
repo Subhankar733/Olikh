@@ -1539,6 +1539,32 @@ h1 {
 
         installSitePermissionChromeClient(webView)
 
+        addressBar.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) addressBar.post { addressBar.selectAll() }
+        }
+
+        addressBar.setOnLongClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val text = clipboard.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()?.trim().orEmpty()
+            if (text.isBlank()) {
+                Toast.makeText(this, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+            } else {
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Address bar")
+                    .setItems(arrayOf("Paste", "Paste & Go")) { _, which ->
+                        addressBar.setText(text)
+                        addressBar.setSelection(addressBar.text.length)
+                        if (which == 1) {
+                            openInput(text)
+                            addressBar.clearFocus()
+                        }
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+            true
+        }
+
         addressBar.setOnEditorActionListener { _, actionId, event ->
 
             val enterPressed =
@@ -1892,10 +1918,25 @@ h1 {
                 closeTab(index)
             },
 
+            onDuplicateTab = { index ->
+                duplicateTab(index)
+            },
+
             onNewTab = {
-                createNewTab()
+                createNewTab(initialUrl = "about:blank")
             }
         ).show()
+    }
+
+    private fun duplicateTab(index: Int) {
+        val source = tabs.getOrNull(index) ?: return
+        val sourceUrl = source.webView.url?.trim()?.takeIf { it.isNotBlank() } ?: source.url.trim()
+
+        if (sourceUrl.isBlank() || sourceUrl == "about:blank" || isOlikhStartPageUrl(sourceUrl)) {
+            createNewTab(incognito = source.incognito, initialUrl = "about:blank")
+        } else {
+            createNewTab(incognito = source.incognito, initialUrl = sourceUrl)
+        }
     }
 
     private data class ClosedTabEntry(
@@ -6516,8 +6557,7 @@ h1 {
                 !input.contains(" ") -> "https://$input"
 
             else -> {
-                val query = URLEncoder.encode(input, "UTF-8")
-                "https://www.google.com/search?q=$query"
+                buildSearchUrl(input)
             }
         }
 

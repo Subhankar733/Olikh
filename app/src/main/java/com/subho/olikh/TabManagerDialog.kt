@@ -18,6 +18,7 @@ class TabManagerDialog(
     private val activeIndex: Int,
     private val onSelectTab: (Int) -> Unit,
     private val onCloseTab: (Int) -> Unit,
+    private val onDuplicateTab: (Int) -> Unit,
     private val onNewTab: () -> Unit
 ) : Dialog(browserTabs.firstOrNull()?.webView?.context ?: error("No tabs")) {
 
@@ -118,6 +119,21 @@ class TabManagerDialog(
                 setOnClickListener {
                     dismiss()
                     onSelectTab(index)
+                }
+                setOnLongClickListener {
+                    androidx.appcompat.app.AlertDialog.Builder(context)
+                        .setTitle(tab.title.replace("\n", " ").trim().ifBlank { "Tab" })
+                        .setItems(arrayOf("Duplicate tab", "Close tab")) { dialog, which ->
+                            dialog.dismiss()
+                            dismiss()
+                            when (which) {
+                                0 -> onDuplicateTab(index)
+                                1 -> onCloseTab(index)
+                            }
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                    true
                 }
                 installPressAnimation(this)
             }
