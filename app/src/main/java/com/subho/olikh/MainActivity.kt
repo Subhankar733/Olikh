@@ -3363,7 +3363,17 @@ h1 {
             "Stop loading",
             "Open homepage in new tab",
             "Open start page in new tab",
-            "Share title + URL"
+            "Share title + URL",
+            "Copy host name",
+            "Copy page HTML",
+            "Copy selected text",
+            "Scroll up",
+            "Scroll down",
+            "Go to middle",
+            "Reload without cache",
+            "Open HTTP version",
+            "Open HTTPS version",
+            "Search page title"
         )
 
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
@@ -3385,6 +3395,16 @@ h1 {
                     12 -> createNewTab(initialUrl = homePage)
                     13 -> createNewTab(initialUrl = "about:blank")
                     14 -> sharePageTitleAndUrl()
+                    15 -> copyCurrentHostName()
+                    16 -> copyCurrentPageHtml()
+                    17 -> copySelectedPageText()
+                    18 -> scrollPageBy(-600)
+                    19 -> scrollPageBy(600)
+                    20 -> goToPageMiddle()
+                    21 -> reloadWithoutCache()
+                    22 -> openCurrentScheme("http")
+                    23 -> openCurrentScheme("https")
+                    24 -> searchCurrentPageTitle()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -3420,6 +3440,62 @@ h1 {
             putExtra(Intent.EXTRA_TEXT, pageTitle + "\n" + url)
         }
         startActivity(Intent.createChooser(shareIntent, "Share page"))
+    }
+
+    private fun copyCurrentHostName() {
+        val host = runCatching { Uri.parse(webView.url.orEmpty()).host.orEmpty() }.getOrDefault("")
+        if (host.isBlank()) return
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("OLIKH host", host))
+        Toast.makeText(this, "Host copied", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun copyCurrentPageHtml() {
+        webView.evaluateJavascript("(function(){return document.documentElement.outerHTML;})();") { result ->
+            val text = runCatching { org.json.JSONArray("[" + result + "]").getString(0) }.getOrDefault("")
+            if (text.isNotBlank()) {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("OLIKH HTML", text))
+                Toast.makeText(this, "Page HTML copied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun copySelectedPageText() {
+        webView.evaluateJavascript("(function(){return window.getSelection().toString();})();") { result ->
+            val text = runCatching { org.json.JSONArray("[" + result + "]").getString(0) }.getOrDefault("")
+            if (text.isBlank()) {
+                Toast.makeText(this, "No text selected", Toast.LENGTH_SHORT).show()
+            } else {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("OLIKH selection", text))
+                Toast.makeText(this, "Selected text copied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun scrollPageBy(amount: Int) {
+        webView.evaluateJavascript("window.scrollBy({top:" + amount + ",left:0,behavior:'smooth'});", null)
+    }
+
+    private fun goToPageMiddle() {
+        webView.evaluateJavascript("window.scrollTo({top:document.documentElement.scrollHeight/2,left:0,behavior:'smooth'});", null)
+    }
+
+    private fun reloadWithoutCache() {
+        webView.clearCache(false)
+        webView.reload()
+    }
+
+    private fun openCurrentScheme(scheme: String) {
+        val uri = runCatching { Uri.parse(webView.url.orEmpty()) }.getOrNull()
+        if (uri?.host.isNullOrBlank()) return
+        webView.loadUrl(uri!!.buildUpon().scheme(scheme).build().toString())
+    }
+
+    private fun searchCurrentPageTitle() {
+        val pageTitle = webView.title?.trim().orEmpty()
+        if (pageTitle.isNotBlank()) webView.loadUrl(buildSearchUrl(pageTitle))
     }
 
     private fun showPageInfo() {
