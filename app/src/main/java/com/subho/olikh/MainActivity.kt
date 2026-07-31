@@ -3189,6 +3189,8 @@ h1 {
         popup.menu.add("Open start page")
         popup.menu.add("Paste and go")
         popup.menu.add("Duplicate tab")
+        popup.menu.add("Back to top")
+        popup.menu.add("Scroll to bottom")
         popup.menu.add("Close current tab")
         popup.menu.add("Settings")
 
@@ -3271,6 +3273,16 @@ h1 {
 
                 "Duplicate tab" -> {
                     duplicateCurrentTab()
+                    true
+                }
+
+                "Back to top" -> {
+                    webView.evaluateJavascript("window.scrollTo(0,0);", null)
+                    true
+                }
+
+                "Scroll to bottom" -> {
+                    webView.evaluateJavascript("window.scrollTo(0,document.documentElement.scrollHeight);", null)
                     true
                 }
 
