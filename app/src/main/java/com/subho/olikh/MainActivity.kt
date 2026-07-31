@@ -3373,7 +3373,30 @@ h1 {
             "Reload without cache",
             "Open HTTP version",
             "Open HTTPS version",
-            "Search page title"
+            "Search page title",
+            "Copy domain + path",
+            "Copy origin",
+            "Copy page text",
+            "Copy meta description",
+            "Copy canonical URL",
+            "Copy user agent",
+            "Scroll one screen up",
+            "Scroll one screen down",
+            "Jump to 25%",
+            "Jump to 75%",
+            "Zoom 100%",
+            "Zoom 125%",
+            "Zoom 150%",
+            "Disable page images",
+            "Enable page images",
+            "Disable JavaScript",
+            "Enable JavaScript",
+            "Clear page cache",
+            "Clear session cookies",
+            "Open domain root",
+            "Search selected text",
+            "Search host name",
+            "Share selected text"
         )
 
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
@@ -3405,6 +3428,29 @@ h1 {
                     22 -> openCurrentScheme("http")
                     23 -> openCurrentScheme("https")
                     24 -> searchCurrentPageTitle()
+                    25 -> copyDomainAndPath()
+                    26 -> copyCurrentOrigin()
+                    27 -> copyPagePlainText()
+                    28 -> copyMetaDescription()
+                    29 -> copyCanonicalUrl()
+                    30 -> copyCurrentUserAgent()
+                    31 -> scrollViewport(-1)
+                    32 -> scrollViewport(1)
+                    33 -> jumpPagePercent(25)
+                    34 -> jumpPagePercent(75)
+                    35 -> setQuickZoom(100)
+                    36 -> setQuickZoom(125)
+                    37 -> setQuickZoom(150)
+                    38 -> togglePageImages(false)
+                    39 -> togglePageImages(true)
+                    40 -> togglePageJavaScript(false)
+                    41 -> togglePageJavaScript(true)
+                    42 -> clearPageCacheQuick()
+                    43 -> clearSessionCookiesQuick()
+                    44 -> openDomainRoot()
+                    45 -> searchSelectedTextQuick()
+                    46 -> searchHostQuick()
+                    47 -> shareSelectedTextQuick()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -3496,6 +3542,126 @@ h1 {
     private fun searchCurrentPageTitle() {
         val pageTitle = webView.title?.trim().orEmpty()
         if (pageTitle.isNotBlank()) webView.loadUrl(buildSearchUrl(pageTitle))
+    }
+
+    private fun megaCopy(label: String, text: String, message: String) {
+        if (text.isBlank()) {
+            Toast.makeText(this, "Nothing available", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val cb = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cb.setPrimaryClip(ClipData.newPlainText(label, text))
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun megaJs(script: String, done: (String) -> Unit) {
+        webView.evaluateJavascript(script) { result ->
+            val text = runCatching {
+                if (result == "null") "" else org.json.JSONArray("[" + result + "]").getString(0)
+            }.getOrDefault("")
+            done(text)
+        }
+    }
+
+    private fun copyDomainAndPath() {
+        val u = runCatching { Uri.parse(webView.url.orEmpty()) }.getOrNull()
+        megaCopy("OLIKH domain path", if (u?.host == null) "" else u.host.orEmpty() + u.encodedPath.orEmpty(), "Domain + path copied")
+    }
+
+    private fun copyCurrentOrigin() {
+        val u = runCatching { Uri.parse(webView.url.orEmpty()) }.getOrNull()
+        megaCopy("OLIKH origin", if (u?.host == null) "" else u.scheme.orEmpty() + "://" + u.host.orEmpty(), "Origin copied")
+    }
+
+    private fun copyPagePlainText() {
+        megaJs("(function(){return document.body?document.body.innerText:'';})();") {
+            megaCopy("OLIKH page text", it, "Page text copied")
+        }
+    }
+
+    private fun copyMetaDescription() {
+        megaJs("(function(){var e=document.querySelector('meta[name=description]');return e?e.content:'';})();") {
+            megaCopy("OLIKH description", it, "Description copied")
+        }
+    }
+
+    private fun copyCanonicalUrl() {
+        megaJs("(function(){var e=document.querySelector('link[rel=canonical]');return e?e.href:'';})();") {
+            megaCopy("OLIKH canonical", it, "Canonical URL copied")
+        }
+    }
+
+    private fun copyCurrentUserAgent() {
+        megaCopy("OLIKH user agent", webView.settings.userAgentString.orEmpty(), "User agent copied")
+    }
+
+    private fun scrollViewport(direction: Int) {
+        webView.evaluateJavascript("window.scrollBy({top:window.innerHeight*" + direction + ",behavior:'smooth'});", null)
+    }
+
+    private fun jumpPagePercent(percent: Int) {
+        webView.evaluateJavascript("window.scrollTo({top:document.documentElement.scrollHeight*" + percent + "/100,behavior:'smooth'});", null)
+    }
+
+    private fun setQuickZoom(percent: Int) {
+        webView.setInitialScale(percent)
+        Toast.makeText(this, "Zoom " + percent + "%", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun togglePageImages(enabled: Boolean) {
+        webView.settings.loadsImagesAutomatically = enabled
+        webView.settings.blockNetworkImage = !enabled
+        if (enabled) webView.reload()
+        Toast.makeText(this, if (enabled) "Images enabled" else "Images disabled", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun togglePageJavaScript(enabled: Boolean) {
+        webView.settings.javaScriptEnabled = enabled
+        webView.reload()
+        Toast.makeText(this, if (enabled) "JavaScript enabled" else "JavaScript disabled", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun clearPageCacheQuick() {
+        webView.clearCache(false)
+        Toast.makeText(this, "Page cache cleared", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun clearSessionCookiesQuick() {
+        android.webkit.CookieManager.getInstance().removeSessionCookies {
+            Toast.makeText(this, "Session cookies cleared", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun openDomainRoot() {
+        val u = runCatching { Uri.parse(webView.url.orEmpty()) }.getOrNull() ?: return
+        if (u.host.isNullOrBlank()) return
+        webView.loadUrl(u.scheme.orEmpty() + "://" + u.host.orEmpty() + "/")
+    }
+
+    private fun searchSelectedTextQuick() {
+        megaJs("(function(){return window.getSelection().toString();})();") {
+            if (it.isNotBlank()) createNewTab(initialUrl = buildSearchUrl(it))
+            else Toast.makeText(this, "No text selected", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun searchHostQuick() {
+        val host = runCatching { Uri.parse(webView.url.orEmpty()).host.orEmpty() }.getOrDefault("")
+        if (host.isNotBlank()) createNewTab(initialUrl = buildSearchUrl(host))
+    }
+
+    private fun shareSelectedTextQuick() {
+        megaJs("(function(){return window.getSelection().toString();})();") { text ->
+            if (text.isBlank()) {
+                Toast.makeText(this, "No text selected", Toast.LENGTH_SHORT).show()
+            } else {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                startActivity(Intent.createChooser(intent, "Share selected text"))
+            }
+        }
     }
 
     private fun showPageInfo() {
