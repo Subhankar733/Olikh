@@ -3396,7 +3396,46 @@ h1 {
             "Open domain root",
             "Search selected text",
             "Search host name",
-            "Share selected text"
+            "Share selected text",
+            "Copy clean URL",
+            "Copy query string",
+            "Copy fragment",
+            "Copy page language",
+            "Copy charset",
+            "Copy viewport size",
+            "Copy scroll position",
+            "Copy link count",
+            "Copy image count",
+            "Copy heading count",
+            "Copy word count",
+            "Copy first H1",
+            "Copy all headings",
+            "Copy all links",
+            "Copy all image URLs",
+            "Copy favicon URL",
+            "Copy referrer",
+            "Copy page dimensions",
+            "Search current URL",
+            "Open in incognito tab",
+            "Open domain root in new tab",
+            "Jump to 10%",
+            "Jump to 50%",
+            "Jump to 90%",
+            "Zoom 75%",
+            "Zoom 90%",
+            "Zoom 110%",
+            "Zoom 175%",
+            "Zoom 200%",
+            "Invert page colors",
+            "Grayscale page",
+            "Reset page filters",
+            "Hide page images",
+            "Show page images",
+            "Increase page text",
+            "Decrease page text",
+            "Reset page text",
+            "Share URL only",
+            "Share title only"
         )
 
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
@@ -3451,6 +3490,45 @@ h1 {
                     45 -> searchSelectedTextQuick()
                     46 -> searchHostQuick()
                     47 -> shareSelectedTextQuick()
+                    48 -> copyCleanUrlV10()
+                    49 -> copyQueryV10()
+                    50 -> copyFragmentV10()
+                    51 -> copyJsV10("document.documentElement.lang||''", "Page language")
+                    52 -> copyJsV10("document.characterSet||''", "Charset")
+                    53 -> copyJsV10("'width='+window.innerWidth+', height='+window.innerHeight", "Viewport")
+                    54 -> copyJsV10("'x='+window.scrollX+', y='+window.scrollY", "Scroll position")
+                    55 -> copyJsV10("String(document.links.length)", "Link count")
+                    56 -> copyJsV10("String(document.images.length)", "Image count")
+                    57 -> copyJsV10("String(document.querySelectorAll('h1,h2,h3,h4,h5,h6').length)", "Heading count")
+                    58 -> copyJsV10("String((document.body.innerText.match(/\\S+/g)||[]).length)", "Word count")
+                    59 -> copyJsV10("(document.querySelector('h1')||{}).innerText||''", "First H1")
+                    60 -> copyJsV10("Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6')).map(e=>e.innerText).join('\\n')", "Headings")
+                    61 -> copyJsV10("Array.from(document.links).map(e=>e.href).join('\\n')", "Links")
+                    62 -> copyJsV10("Array.from(document.images).map(e=>e.src).join('\\n')", "Image URLs")
+                    63 -> copyJsV10("(document.querySelector('link[rel*=icon]')||{}).href||''", "Favicon")
+                    64 -> copyJsV10("document.referrer||''", "Referrer")
+                    65 -> copyJsV10("'width='+document.documentElement.scrollWidth+', height='+document.documentElement.scrollHeight", "Page dimensions")
+                    66 -> searchUrlV10()
+                    67 -> openIncognitoV10()
+                    68 -> openRootNewTabV10()
+                    69 -> jumpPagePercent(10)
+                    70 -> jumpPagePercent(50)
+                    71 -> jumpPagePercent(90)
+                    72 -> setQuickZoom(75)
+                    73 -> setQuickZoom(90)
+                    74 -> setQuickZoom(110)
+                    75 -> setQuickZoom(175)
+                    76 -> setQuickZoom(200)
+                    77 -> pageFilterV10("invert(1) hue-rotate(180deg)")
+                    78 -> pageFilterV10("grayscale(1)")
+                    79 -> pageFilterV10("none")
+                    80 -> imageDisplayV10(false)
+                    81 -> imageDisplayV10(true)
+                    82 -> textScaleV10(1.15)
+                    83 -> textScaleV10(0.90)
+                    84 -> textResetV10()
+                    85 -> shareSimpleV10(webView.url.orEmpty(), "Share URL")
+                    86 -> shareSimpleV10(webView.title.orEmpty(), "Share title")
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -3662,6 +3740,66 @@ h1 {
                 startActivity(Intent.createChooser(intent, "Share selected text"))
             }
         }
+    }
+
+    private fun copyJsV10(expression: String, label: String) {
+        megaJs("(function(){return " + expression + ";})();") {
+            megaCopy("OLIKH " + label, it, label + " copied")
+        }
+    }
+
+    private fun copyCleanUrlV10() {
+        val u = runCatching { Uri.parse(webView.url.orEmpty()) }.getOrNull() ?: return
+        megaCopy("OLIKH clean URL", u.buildUpon().clearQuery().fragment(null).build().toString(), "Clean URL copied")
+    }
+
+    private fun copyQueryV10() {
+        megaCopy("OLIKH query", runCatching { Uri.parse(webView.url.orEmpty()).encodedQuery.orEmpty() }.getOrDefault(""), "Query copied")
+    }
+
+    private fun copyFragmentV10() {
+        megaCopy("OLIKH fragment", runCatching { Uri.parse(webView.url.orEmpty()).fragment.orEmpty() }.getOrDefault(""), "Fragment copied")
+    }
+
+    private fun searchUrlV10() {
+        val value = webView.url.orEmpty()
+        if (value.isNotBlank()) createNewTab(initialUrl = buildSearchUrl(value))
+    }
+
+    private fun openIncognitoV10() {
+        createNewTab(incognito = true, initialUrl = webView.url.orEmpty().ifBlank { "about:blank" })
+    }
+
+    private fun openRootNewTabV10() {
+        val u = runCatching { Uri.parse(webView.url.orEmpty()) }.getOrNull() ?: return
+        if (u.host.isNullOrBlank()) return
+        createNewTab(initialUrl = u.scheme.orEmpty() + "://" + u.host.orEmpty() + "/")
+    }
+
+    private fun pageFilterV10(filter: String) {
+        webView.evaluateJavascript("document.documentElement.style.filter='" + filter + "';", null)
+    }
+
+    private fun imageDisplayV10(show: Boolean) {
+        val display = if (show) "" else "none"
+        webView.evaluateJavascript("Array.from(document.images).forEach(function(i){i.style.display='" + display + "';});", null)
+    }
+
+    private fun textScaleV10(factor: Double) {
+        webView.evaluateJavascript("(function(){var b=document.body;var n=parseFloat(b.dataset.olikhScale||'1');n=n*" + factor + ";b.dataset.olikhScale=String(n);b.style.fontSize=(n*100)+'%';})();", null)
+    }
+
+    private fun textResetV10() {
+        webView.evaluateJavascript("(function(){document.body.dataset.olikhScale='1';document.body.style.fontSize='';})();", null)
+    }
+
+    private fun shareSimpleV10(text: String, title: String) {
+        if (text.isBlank()) return
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        startActivity(Intent.createChooser(intent, title))
     }
 
     private fun showPageInfo() {
