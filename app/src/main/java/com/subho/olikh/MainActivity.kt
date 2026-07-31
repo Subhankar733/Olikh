@@ -2512,6 +2512,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Privacy dashboard V20")
         popup.menu.add("Web app & media V21")
         popup.menu.add("Command center V22")
+        popup.menu.add("Navigation & tabs V23")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2667,6 +2668,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Navigation & tabs V23" -> {
+                    showNavigationTabsV23()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2709,6 +2715,104 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showNavigationTabsV23() {
+        val current = if (tabs.isEmpty()) 0 else activeTabIndex + 1
+        val items = arrayOf(
+            "Tab overview", "Previous tab", "Next tab", "New tab",
+            "New private tab", "Duplicate current tab", "Close current tab",
+            "Close other tabs", "Reopen last closed tab", "Tab status"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Navigation & tabs V23")
+            .setMessage("Active tab: $current / ${tabs.size}")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> showTabManager()
+                    1 -> switchToPreviousTabV23()
+                    2 -> switchToNextTabV23()
+                    3 -> createNewTab(initialUrl = "about:blank")
+                    4 -> createNewTab(incognito = true)
+                    5 -> duplicateCurrentTab()
+                    6 -> closeCurrentTab()
+                    7 -> closeOtherTabsV23()
+                    8 -> reopenLastClosedTab()
+                    9 -> showTabStatusV23()
+                }
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun switchToPreviousTabV23() {
+        if (tabs.size < 2) {
+            Toast.makeText(this, "No previous tab", Toast.LENGTH_SHORT).show()
+            return
+        }
+        switchToTab(if (activeTabIndex <= 0) tabs.lastIndex else activeTabIndex - 1)
+    }
+
+    private fun switchToNextTabV23() {
+        if (tabs.size < 2) {
+            Toast.makeText(this, "No next tab", Toast.LENGTH_SHORT).show()
+            return
+        }
+        switchToTab(if (activeTabIndex >= tabs.lastIndex) 0 else activeTabIndex + 1)
+    }
+
+    private fun closeOtherTabsV23() {
+        if (tabs.size <= 1) {
+            Toast.makeText(this, "No other tabs to close", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val keepTab = tabs.getOrNull(activeTabIndex) ?: return
+        val closingTabs = tabs.filter { it !== keepTab }
+
+        closingTabs.forEach { tab ->
+            rememberClosedTab(tab)
+            (tab.webView.parent as? ViewGroup)?.removeView(tab.webView)
+            tab.webView.stopLoading()
+            tab.webView.webChromeClient = null
+            tab.webView.webViewClient = WebViewClient()
+            tab.webView.removeAllViews()
+            tab.webView.destroy()
+        }
+
+        tabs.clear()
+        tabs.add(keepTab)
+        activeTabIndex = 0
+        switchToTab(0)
+
+        Toast.makeText(
+            this,
+            "${closingTabs.size} other tab(s) closed",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun showTabStatusV23() {
+        val tab = activeTab
+        val current = if (tabs.isEmpty()) 0 else activeTabIndex + 1
+        val titleText = tab?.title?.trim()?.ifBlank { "Untitled" } ?: "None"
+        val urlText = tab?.webView?.url?.trim()?.takeIf { it.isNotBlank() }
+            ?: tab?.url?.trim()?.ifBlank { "about:blank" }
+            ?: "None"
+        val mode = if (tab?.incognito == true) "Private" else "Normal"
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Tab status V23")
+            .setMessage(
+                "Tabs: ${tabs.size}\n" +
+                "Active: $current / ${tabs.size}\n" +
+                "Mode: $mode\n" +
+                "Title: $titleText\n" +
+                "URL: $urlText"
+            )
+            .setPositiveButton("OK", null)
+            .show()
+    }
 
     private fun showCommandCenterV22() {
         val items=arrayOf("Privacy & security","Downloads & permissions","Web app & media","Research & inspection","Productivity","Library & sessions","Smart browser","Page utilities","Power controls","Browser systems","Quick access","Downloads","Settings","Open start page","New private tab","Duplicate current tab","Reopen closed tab","Share page","Copy URL","Desktop / mobile site","Clear browsing data","Command center status")
