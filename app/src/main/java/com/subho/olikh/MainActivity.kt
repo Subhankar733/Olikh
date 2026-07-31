@@ -2509,6 +2509,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Security center V17")
         popup.menu.add("Page utility V18")
         popup.menu.add("Download & permissions V19")
+        popup.menu.add("Privacy dashboard V20")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2649,6 +2650,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Privacy dashboard V20" -> {
+                    showPrivacyDashboardV20()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2691,6 +2697,114 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showPrivacyDashboardV20() {
+        val items=arrayOf("Privacy report","Clear current site storage","Clear cookies","Clear WebView cache",
+            "Clear browsing history","Clear form data","Third-party cookies status","Toggle third-party cookies",
+            "JavaScript status","Toggle JavaScript","Mixed content status","Block mixed content",
+            "Compatibility mixed content","Connection info","Copy current URL","Share current URL",
+            "Open externally","Incognito status","Open private tab","Clear privacy bundle","Copy privacy report","V20 status")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Privacy dashboard V20").setItems(items){_,i->
+            when(i){
+                0->privacyReportDialogV20()
+                1->clearSiteDataV20()
+                2->clearCookiesV20()
+                3->{webView.clearCache(true);toastV20("Cache cleared")}
+                4->{historyManager.clear();toastV20("History cleared")}
+                5->{webView.clearFormData();toastV20("Form data cleared")}
+                6->toastV20("Third-party cookies: "+if(android.webkit.CookieManager.getInstance().acceptThirdPartyCookies(webView))"ALLOWED" else "BLOCKED")
+                7->toggleThirdPartyV20()
+                8->toastV20("JavaScript: "+if(webView.settings.javaScriptEnabled)"ON" else "OFF")
+                9->{webView.settings.javaScriptEnabled=!webView.settings.javaScriptEnabled;toastV20("JavaScript: "+if(webView.settings.javaScriptEnabled)"ON" else "OFF")}
+                10->mixedStatusV20()
+                11->{webView.settings.mixedContentMode=android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW;toastV20("Mixed content blocked")}
+                12->{webView.settings.mixedContentMode=android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE;toastV20("Compatibility mode enabled")}
+                13->connectionInfoV20()
+                14->megaCopy("OLIKH URL",webView.url.orEmpty(),"URL copied")
+                15->shareV20()
+                16->externalV20()
+                17->toastV20("Incognito: "+if(activeTab?.incognito==true)"YES" else "NO")
+                18->createNewTab(incognito=true)
+                19->clearPrivacyBundleV20()
+                20->megaCopy("OLIKH privacy report",privacyReportV20(),"Privacy report copied")
+                21->toastV20("V20 privacy tools ready")
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun toastV20(t:String)=Toast.makeText(this,t,Toast.LENGTH_SHORT).show()
+
+    private fun clearCookiesV20(){
+        android.webkit.CookieManager.getInstance().removeAllCookies{toastV20("Cookies cleared")}
+        android.webkit.CookieManager.getInstance().flush()
+    }
+
+    private fun clearSiteDataV20(){
+        webView.evaluateJavascript("try{localStorage.clear();sessionStorage.clear();}catch(e){}",null)
+        toastV20("Current site storage cleared")
+    }
+
+    private fun toggleThirdPartyV20(){
+        val cm=android.webkit.CookieManager.getInstance()
+        val next=!cm.acceptThirdPartyCookies(webView)
+        cm.setAcceptThirdPartyCookies(webView,next)
+        toastV20("Third-party cookies: "+if(next)"ALLOWED" else "BLOCKED")
+    }
+
+    private fun mixedStatusV20(){
+        val t=when(webView.settings.mixedContentMode){
+            android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW->"BLOCKED"
+            android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE->"COMPATIBILITY"
+            else->"ALLOWED"
+        }
+        toastV20("Mixed content: $t")
+    }
+
+    private fun connectionInfoV20(){
+        val u=android.net.Uri.parse(webView.url.orEmpty())
+        val t="Scheme: ${u.scheme.orEmpty()}\nHost: ${u.host.orEmpty()}\nHTTPS: ${u.scheme.equals("https",true)}\nIncognito: ${activeTab?.incognito==true}"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Connection info").setMessage(t).setPositiveButton("Close",null).show()
+    }
+
+    private fun shareV20(){
+        val u=webView.url.orEmpty()
+        if(u.isBlank()){toastV20("No URL");return}
+        startActivity(android.content.Intent.createChooser(android.content.Intent(android.content.Intent.ACTION_SEND).apply{
+            type="text/plain";putExtra(android.content.Intent.EXTRA_TEXT,u)
+        },"Share page"))
+    }
+
+    private fun externalV20(){
+        val u=webView.url.orEmpty()
+        if(u.isBlank()){toastV20("No URL");return}
+        try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(u)))}
+        catch(e:Exception){toastV20("No external browser")}
+    }
+
+    private fun clearPrivacyBundleV20(){
+        webView.clearCache(true);webView.clearFormData()
+        android.webkit.CookieManager.getInstance().removeAllCookies(null)
+        android.webkit.CookieManager.getInstance().flush()
+        historyManager.clear()
+        toastV20("Privacy data bundle cleared")
+    }
+
+    private fun privacyReportV20():String{
+        val u=android.net.Uri.parse(webView.url.orEmpty())
+        val third=android.webkit.CookieManager.getInstance().acceptThirdPartyCookies(webView)
+        val mixed=when(webView.settings.mixedContentMode){
+            android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW->"Blocked"
+            android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE->"Compatibility"
+            else->"Allowed"
+        }
+        return "Site: ${u.host.orEmpty()}\nHTTPS: ${u.scheme.equals("https",true)}\nIncognito: ${activeTab?.incognito==true}\nJavaScript: ${webView.settings.javaScriptEnabled}\nThird-party cookies: $third\nMixed content: $mixed\nBlocker: ${olikhBlocker.isEnabled()}"
+    }
+
+    private fun privacyReportDialogV20(){
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Privacy report").setMessage(privacyReportV20())
+            .setPositiveButton("Copy"){_,_->megaCopy("OLIKH privacy report",privacyReportV20(),"Privacy report copied")}
+            .setNegativeButton("Close",null).show()
+    }
 
     private fun showDownloadPermissionsV19() {
         val options=arrayOf(
