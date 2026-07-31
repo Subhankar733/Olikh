@@ -2514,6 +2514,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Command center V22")
         popup.menu.add("Navigation & tabs V23")
         popup.menu.add("Session controls V24")
+        popup.menu.add("Bookmarks & history V25")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2679,6 +2680,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Bookmarks & history V25" -> {
+                    showBookmarksHistoryV25()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2721,6 +2727,31 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showBookmarksHistoryV25() {
+        val items=arrayOf("Bookmark current page","Open bookmarks","Remove current bookmark","Clear bookmarks","Add current page to history","Open history","Clear history","Workspace status")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Bookmarks & history V25").setItems(items){_,i->
+            when(i){0->savePageV25("bookmarks");1->openListV25("bookmarks");2->removeBookmarkV25();3->clearListV25("bookmarks");4->savePageV25("history");5->openListV25("history");6->clearListV25("history");7->statusV25()}
+        }.setNegativeButton("Close",null).show()
+    }
+    private fun prefsV25()=getSharedPreferences("olikh_v25",MODE_PRIVATE)
+    private fun rowsV25(k:String)=prefsV25().getString(k,"").orEmpty().lines().filter{it.isNotBlank()}.toMutableList()
+    private fun writeV25(k:String,r:List<String>){prefsV25().edit().putString(k,r.joinToString("\n")).apply()}
+    private fun savePageV25(k:String){
+        if(activeTab?.incognito==true){Toast.makeText(this,"Private pages are not saved",Toast.LENGTH_SHORT).show();return}
+        val u=webView.url.orEmpty().trim();if(u.isBlank()||u=="about:blank")return
+        val t=webView.title.orEmpty().replace("\t"," ").replace("\n"," ").ifBlank{u}
+        val r=rowsV25(k);r.removeAll{it.substringAfter("\t","")==u};r.add(0,t+"\t"+u);writeV25(k,r.take(if(k=="history")300 else 200))
+        Toast.makeText(this,if(k=="history")"Added to history" else "Bookmark saved",Toast.LENGTH_SHORT).show()
+    }
+    private fun openListV25(k:String){
+        val r=rowsV25(k);if(r.isEmpty()){Toast.makeText(this,"Nothing saved",Toast.LENGTH_SHORT).show();return}
+        val labels=r.map{it.substringBefore("\t")+"\n"+it.substringAfter("\t")}.toTypedArray()
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle(if(k=="history")"History V25" else "Bookmarks V25").setItems(labels){_,i->webView.loadUrl(r[i].substringAfter("\t"))}.setNegativeButton("Close",null).show()
+    }
+    private fun removeBookmarkV25(){val u=webView.url.orEmpty();val r=rowsV25("bookmarks");val n=r.size;r.removeAll{it.substringAfter("\t","")==u};writeV25("bookmarks",r);Toast.makeText(this,if(r.size<n)"Bookmark removed" else "Not bookmarked",Toast.LENGTH_SHORT).show()}
+    private fun clearListV25(k:String){prefsV25().edit().remove(k).apply();Toast.makeText(this,"Cleared",Toast.LENGTH_SHORT).show()}
+    private fun statusV25(){androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Workspace status V25").setMessage("Bookmarks: "+rowsV25("bookmarks").size+"\nHistory: "+rowsV25("history").size+"\nPrivate pages excluded").setPositiveButton("OK",null).show()}
 
     private fun showSessionControlsV24() {
         val items = arrayOf(
