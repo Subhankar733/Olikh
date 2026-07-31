@@ -2510,6 +2510,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Page utility V18")
         popup.menu.add("Download & permissions V19")
         popup.menu.add("Privacy dashboard V20")
+        popup.menu.add("Web app & media V21")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2655,6 +2656,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Web app & media V21" -> {
+                    showWebAppMediaV21()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2697,6 +2703,126 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showWebAppMediaV21() {
+        val items=arrayOf(
+            "Web app diagnostics","Detect manifest","Open manifest","Service worker clues",
+            "Add page shortcut","Copy app metadata","Media diagnostics","List video sources",
+            "List audio sources","Pause all media","Resume all media","Mute all media",
+            "Unmute all media","Playback 0.75x","Playback 1x","Playback 1.25x",
+            "Playback 1.5x","Playback 2x","Loop video ON","Loop video OFF",
+            "Picture-in-Picture request","Fullscreen first video","Exit fullscreen",
+            "Disable autoplay","Enable autoplay","Keep screen awake","Release screen awake",
+            "Copy media report","V21 status"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Web app & media V21").setItems(items){_,i->
+            when(i){
+                0->webAppDiagnosticsV21()
+                1->manifestV21(false)
+                2->manifestV21(true)
+                3->serviceWorkerV21()
+                4->shortcutV21()
+                5->appMetadataV21()
+                6->mediaDiagnosticsV21()
+                7->mediaSourcesV21("video")
+                8->mediaSourcesV21("audio")
+                9->mediaJsV21("document.querySelectorAll('video,audio').forEach(e=>e.pause())","Media paused")
+                10->mediaJsV21("document.querySelectorAll('video,audio').forEach(e=>e.play().catch(()=>{}))","Resume requested")
+                11->mediaJsV21("document.querySelectorAll('video,audio').forEach(e=>e.muted=true)","Muted")
+                12->mediaJsV21("document.querySelectorAll('video,audio').forEach(e=>e.muted=false)","Unmuted")
+                13->rateV21(0.75)
+                14->rateV21(1.0)
+                15->rateV21(1.25)
+                16->rateV21(1.5)
+                17->rateV21(2.0)
+                18->mediaJsV21("let v=document.querySelector('video');if(v)v.loop=true","Loop ON")
+                19->mediaJsV21("let v=document.querySelector('video');if(v)v.loop=false","Loop OFF")
+                20->pipV21()
+                21->mediaJsV21("let v=document.querySelector('video');if(v&&v.requestFullscreen)v.requestFullscreen()","Fullscreen requested")
+                22->mediaJsV21("if(document.fullscreenElement)document.exitFullscreen()","Exit requested")
+                23->mediaJsV21("document.querySelectorAll('video,audio').forEach(e=>{e.autoplay=false;e.removeAttribute('autoplay')})","Autoplay disabled")
+                24->mediaJsV21("document.querySelectorAll('video,audio').forEach(e=>e.autoplay=true)","Autoplay enabled")
+                25->{window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);toastV21("Screen awake ON")}
+                26->{window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);toastV21("Screen awake OFF")}
+                27->mediaReportV21()
+                28->statusV21()
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun toastV21(t:String)=Toast.makeText(this,t,Toast.LENGTH_SHORT).show()
+    private fun mediaJsV21(js:String,msg:String){webView.evaluateJavascript(js,null);toastV21(msg)}
+
+    private fun webAppDiagnosticsV21(){
+        val js="(function(){let m=document.querySelector('link[rel=manifest]');let t=document.querySelector('meta[name=theme-color]');return 'Manifest: '+(m?m.href:'none')+' | Theme: '+(t?t.content:'none')+' | HTTPS: '+(location.protocol==='https:')})()"
+        webView.evaluateJavascript(js){r->
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Web app diagnostics").setMessage(r.trim('"')).setPositiveButton("Close",null).show()
+        }
+    }
+
+    private fun manifestV21(open:Boolean){
+        webView.evaluateJavascript("(function(){let m=document.querySelector('link[rel=manifest]');return m?m.href:''})()"){r->
+            val u=r.trim('"')
+            if(u.isBlank())toastV21("No manifest found")
+            else if(open)createNewTab(initialUrl=u) else toastV21("Manifest found")
+        }
+    }
+
+    private fun serviceWorkerV21(){
+        webView.evaluateJavascript("(function(){return 'ServiceWorker API: '+('serviceWorker' in navigator)+' | Cache API: '+('caches' in window)+' | HTTPS: '+(location.protocol==='https:')})()"){r->
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Service worker clues").setMessage(r.trim('"')).setPositiveButton("Close",null).show()
+        }
+    }
+
+    private fun shortcutV21(){
+        val u=webView.url.orEmpty()
+        if(u.isBlank()){toastV21("No page");return}
+        val shortcut=android.content.Intent("com.android.launcher.action.INSTALL_SHORTCUT").apply{
+            putExtra(android.content.Intent.EXTRA_SHORTCUT_NAME,webView.title ?: "OLIKH Web App")
+            putExtra(android.content.Intent.EXTRA_SHORTCUT_INTENT,android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(u)))
+            putExtra("duplicate",false)
+        }
+        try{sendBroadcast(shortcut);toastV21("Shortcut requested")}catch(e:Exception){toastV21("Shortcut unavailable")}
+    }
+
+    private fun appMetadataV21(){
+        webView.evaluateJavascript("(function(){let m=document.querySelector('link[rel=manifest]');return 'Title: '+document.title+' | URL: '+location.href+' | Manifest: '+(m?m.href:'none')})()"){r->
+            megaCopy("OLIKH web app",r.trim('"'),"App metadata copied")
+        }
+    }
+
+    private fun mediaDiagnosticsV21(){
+        webView.evaluateJavascript("(function(){let m=[...document.querySelectorAll('video,audio')];return 'Media: '+m.length+' | Playing: '+m.filter(x=>!x.paused).length+' | Muted: '+m.filter(x=>x.muted).length})()"){r->
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Media diagnostics").setMessage(r.trim('"')).setPositiveButton("Close",null).show()
+        }
+    }
+
+    private fun mediaSourcesV21(tag:String){
+        webView.evaluateJavascript("(function(){return [...document.querySelectorAll('$tag')].map(x=>x.currentSrc||x.src).filter(Boolean).join(' | ')})()"){r->
+            val t=r.trim('"')
+            if(t.isBlank())toastV21("No $tag source") else megaCopy("OLIKH $tag sources",t,"Sources copied")
+        }
+    }
+
+    private fun rateV21(rate:Double){
+        mediaJsV21("document.querySelectorAll('video,audio').forEach(e=>e.playbackRate=$rate)","Playback ${rate}x")
+    }
+
+    private fun pipV21(){
+        val js="(async function(){let v=document.querySelector('video');if(!v)return 'No video';if(!document.pictureInPictureEnabled)return 'PiP unavailable';try{await v.requestPictureInPicture();return 'PiP requested'}catch(e){return 'PiP failed'}})()"
+        webView.evaluateJavascript(js){r->toastV21(r.trim('"'))}
+    }
+
+    private fun mediaReportV21(){
+        webView.evaluateJavascript("(function(){let m=[...document.querySelectorAll('video,audio')];return 'Page: '+location.href+' | Media: '+m.length+' | Playing: '+m.filter(x=>!x.paused).length+' | Fullscreen: '+!!document.fullscreenElement})()"){r->
+            megaCopy("OLIKH media report",r.trim('"'),"Media report copied")
+        }
+    }
+
+    private fun statusV21(){
+        val t="Page: ${webView.title.orEmpty()}\nURL: ${webView.url.orEmpty()}\nFullscreen: ${fullscreenView!=null}\nScreen awake: ${(window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)!=0}"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("V21 status").setMessage(t).setPositiveButton("Close",null).show()
+    }
 
     private fun showPrivacyDashboardV20() {
         val items=arrayOf("Privacy report","Clear current site storage","Clear cookies","Clear WebView cache",
