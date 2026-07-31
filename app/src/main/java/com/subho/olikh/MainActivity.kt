@@ -2504,6 +2504,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Productivity tools")
         popup.menu.add("Research tools")
         popup.menu.add("Power controls")
+        popup.menu.add("Library & sessions")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2619,6 +2620,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Library & sessions" -> {
+                    showLibrarySessionsV15()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2661,6 +2667,162 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showLibrarySessionsV15() {
+        val options=arrayOf(
+            "Pin current tab","Unpin current tab","Show pinned tabs","Open all pinned tabs",
+            "Save current tab to session","Save all open tabs to session","Restore saved session",
+            "Show saved session","Clear saved session","Copy saved session URLs",
+            "Create bookmark folder","Save current page to folder","Show bookmark folders",
+            "Open bookmark folder","Rename bookmark folder","Delete bookmark folder",
+            "Export bookmark folders","Import bookmark folders","Create tab group",
+            "Add current tab to group","Show tab groups","Open tab group","Rename tab group",
+            "Delete tab group","Copy tab group URLs"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Library & sessions").setItems(options){_,w->
+            when(w){
+                0->pinCurrentV15()
+                1->unpinCurrentV15()
+                2->showUrlListV15("Pinned tabs",readLinesV15("pinned_tabs"))
+                3->readLinesV15("pinned_tabs").forEach{createNewTab(initialUrl=it)}
+                4->{val u=webView.url.orEmpty();if(u.isNotBlank()){writeLinesV15("saved_session",listOf(u));toastV15("Current tab saved")}}
+                5->{val urls=tabs.mapNotNull{it.webView.url}.filter{it.startsWith("http")}.distinct();writeLinesV15("saved_session",urls);toastV15("Open tabs saved: "+urls.size)}
+                6->readLinesV15("saved_session").forEach{createNewTab(initialUrl=it)}
+                7->showUrlListV15("Saved session",readLinesV15("saved_session"))
+                8->{writeLinesV15("saved_session",emptyList());toastV15("Saved session cleared")}
+                9->megaCopy("OLIKH session",readLinesV15("saved_session").joinToString("\\n"),"Session URLs copied")
+                10->createNamedBucketV15("bookmark_folders","New bookmark folder")
+                11->addCurrentToBucketV15("bookmark_folders","Save to bookmark folder")
+                12->showBucketsV15("Bookmark folders","bookmark_folders")
+                13->openBucketV15("bookmark_folders","Open bookmark folder")
+                14->renameBucketV15("bookmark_folders","Rename bookmark folder")
+                15->deleteBucketV15("bookmark_folders","Delete bookmark folder")
+                16->megaCopy("OLIKH bookmark folders",prefsV15().getString("bookmark_folders","").orEmpty(),"Bookmark folders exported")
+                17->importBucketsV15("bookmark_folders","Import bookmark folders")
+                18->createNamedBucketV15("tab_groups","New tab group")
+                19->addCurrentToBucketV15("tab_groups","Add tab to group")
+                20->showBucketsV15("Tab groups","tab_groups")
+                21->openBucketV15("tab_groups","Open tab group")
+                22->renameBucketV15("tab_groups","Rename tab group")
+                23->deleteBucketV15("tab_groups","Delete tab group")
+                24->copyBucketV15("tab_groups","Copy tab group URLs")
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun prefsV15()=getSharedPreferences("olikh_v15",MODE_PRIVATE)
+    private fun toastV15(t:String)=Toast.makeText(this,t,Toast.LENGTH_SHORT).show()
+
+    private fun readLinesV15(key:String):MutableList<String>{
+        return prefsV15().getString(key,"").orEmpty().split("\\n").map{it.trim()}.filter{it.isNotBlank()}.distinct().toMutableList()
+    }
+
+    private fun writeLinesV15(key:String,lines:List<String>){
+        prefsV15().edit().putString(key,lines.distinct().joinToString("\\n")).apply()
+    }
+
+    private fun pinCurrentV15(){
+        val u=webView.url.orEmpty()
+        if(u.isBlank()){toastV15("Nothing to pin");return}
+        val x=readLinesV15("pinned_tabs")
+        if(u !in x)x.add(u)
+        writeLinesV15("pinned_tabs",x);toastV15("Tab pinned")
+    }
+
+    private fun unpinCurrentV15(){
+        val u=webView.url.orEmpty()
+        val x=readLinesV15("pinned_tabs")
+        x.removeAll{it==u};writeLinesV15("pinned_tabs",x);toastV15("Tab unpinned")
+    }
+
+    private fun showUrlListV15(title:String,urls:List<String>){
+        val a=if(urls.isEmpty()) arrayOf("Nothing saved") else urls.toTypedArray()
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle(title).setItems(a){_,i->
+            if(urls.isNotEmpty())createNewTab(initialUrl=urls[i])
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun decodeBucketsV15(key:String):MutableMap<String,MutableList<String>>{
+        val out=linkedMapOf<String,MutableList<String>>()
+        prefsV15().getString(key,"").orEmpty().split("\\n").filter{it.isNotBlank()}.forEach{line->
+            val parts=line.split("\\t",limit=2)
+            if(parts.isNotEmpty()){
+                val name=parts[0].trim()
+                val urls=if(parts.size>1)parts[1].split("||").map{it.trim()}.filter{it.isNotBlank()}.toMutableList() else mutableListOf()
+                if(name.isNotBlank())out[name]=urls
+            }
+        }
+        return out
+    }
+
+    private fun saveBucketsV15(key:String,b:Map<String,List<String>>){
+        val raw=b.entries.joinToString("\\n"){e->
+            e.key.replace("\\n"," ").replace("\\t"," ")+"\\t"+e.value.distinct().joinToString("||")
+        }
+        prefsV15().edit().putString(key,raw).apply()
+    }
+
+    private fun createNamedBucketV15(key:String,title:String){
+        val input=android.widget.EditText(this)
+        input.hint="Name"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle(title).setView(input).setPositiveButton("Create"){_,_->
+            val n=input.text.toString().trim()
+            if(n.isNotBlank()){val b=decodeBucketsV15(key);if(!b.containsKey(n))b[n]=mutableListOf();saveBucketsV15(key,b);toastV15("Created: "+n)}
+        }.setNegativeButton("Cancel",null).show()
+    }
+
+    private fun chooseBucketV15(key:String,title:String,done:(String)->Unit){
+        val b=decodeBucketsV15(key)
+        if(b.isEmpty()){toastV15("Create one first");return}
+        val names=b.keys.toTypedArray()
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle(title).setItems(names){_,i->done(names[i])}.setNegativeButton("Cancel",null).show()
+    }
+
+    private fun addCurrentToBucketV15(key:String,title:String){
+        val u=webView.url.orEmpty()
+        if(u.isBlank()){toastV15("No page URL");return}
+        chooseBucketV15(key,title){n->
+            val b=decodeBucketsV15(key);val x=b[n]?:mutableListOf()
+            if(u !in x)x.add(u);b[n]=x;saveBucketsV15(key,b);toastV15("Saved to "+n)
+        }
+    }
+
+    private fun showBucketsV15(title:String,key:String){
+        val b=decodeBucketsV15(key)
+        val text=if(b.isEmpty())"Nothing saved" else b.entries.joinToString("\\n"){it.key+" • "+it.value.size+" item(s)"}
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle(title).setMessage(text).setPositiveButton("Close",null).show()
+    }
+
+    private fun openBucketV15(key:String,title:String){
+        chooseBucketV15(key,title){n->decodeBucketsV15(key)[n].orEmpty().forEach{createNewTab(initialUrl=it)}}
+    }
+
+    private fun deleteBucketV15(key:String,title:String){
+        chooseBucketV15(key,title){n->val b=decodeBucketsV15(key);b.remove(n);saveBucketsV15(key,b);toastV15("Deleted: "+n)}
+    }
+
+    private fun renameBucketV15(key:String,title:String){
+        chooseBucketV15(key,title){old->
+            val input=android.widget.EditText(this);input.setText(old)
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle(title).setView(input).setPositiveButton("Rename"){_,_->
+                val n=input.text.toString().trim()
+                if(n.isNotBlank()&&n!=old){val b=decodeBucketsV15(key);val v=b.remove(old).orEmpty().toMutableList();b[n]=v;saveBucketsV15(key,b);toastV15("Renamed")}
+            }.setNegativeButton("Cancel",null).show()
+        }
+    }
+
+    private fun copyBucketV15(key:String,title:String){
+        chooseBucketV15(key,title){n->megaCopy("OLIKH "+n,decodeBucketsV15(key)[n].orEmpty().joinToString("\\n"),"URLs copied")}
+    }
+
+    private fun importBucketsV15(key:String,title:String){
+        val input=android.widget.EditText(this)
+        input.hint="Paste exported folder data"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle(title).setView(input).setPositiveButton("Import"){_,_->
+            val raw=input.text.toString().trim()
+            if(raw.isNotBlank()){prefsV15().edit().putString(key,raw).apply();toastV15("Imported")}
+        }.setNegativeButton("Cancel",null).show()
+    }
 
     private fun showPowerControlsV14() {
         val options=arrayOf(
