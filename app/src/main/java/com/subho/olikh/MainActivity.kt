@@ -2503,6 +2503,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Close current tab")
         popup.menu.add("Productivity tools")
         popup.menu.add("Research tools")
+        popup.menu.add("Power controls")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2613,6 +2614,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Power controls" -> {
+                    showPowerControlsV14()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2655,6 +2661,98 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showPowerControlsV14() {
+        val options=arrayOf(
+            "JavaScript ON/OFF","Images ON/OFF","DOM storage ON/OFF","Text zoom 80%",
+            "Text zoom 100%","Text zoom 120%","Text zoom 150%","Wide viewport ON/OFF",
+            "Overview mode ON/OFF","Built-in zoom ON/OFF","Media gesture ON/OFF",
+            "Cache: Default","Cache: No cache","Cache: Cache else network","Clear page cache",
+            "Clear cookies","Clear WebView storage","Clear form data","Clear SSL preferences",
+            "Custom user agent","Reset user agent","Copy user agent","Force dark page",
+            "Light page override","Reset page colors","Disable autoplay","Mute media",
+            "Unmute media","Pause media","Resume media","Stop loading","Reload bypass cache",
+            "Page source","Page info","Save current page session","Restore saved page",
+            "Copy saved session URL","Open page incognito","Site settings summary"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Power controls").setItems(options){_,w->
+            when(w){
+                0->{webView.settings.javaScriptEnabled=!webView.settings.javaScriptEnabled;toastV14("JavaScript: "+webView.settings.javaScriptEnabled)}
+                1->{webView.settings.loadsImagesAutomatically=!webView.settings.loadsImagesAutomatically;toastV14("Images: "+webView.settings.loadsImagesAutomatically)}
+                2->{webView.settings.domStorageEnabled=!webView.settings.domStorageEnabled;toastV14("DOM storage: "+webView.settings.domStorageEnabled)}
+                3->webView.settings.textZoom=80
+                4->webView.settings.textZoom=100
+                5->webView.settings.textZoom=120
+                6->webView.settings.textZoom=150
+                7->{webView.settings.useWideViewPort=!webView.settings.useWideViewPort;toastV14("Wide viewport: "+webView.settings.useWideViewPort)}
+                8->{webView.settings.loadWithOverviewMode=!webView.settings.loadWithOverviewMode;toastV14("Overview: "+webView.settings.loadWithOverviewMode)}
+                9->{webView.settings.builtInZoomControls=!webView.settings.builtInZoomControls;webView.settings.displayZoomControls=false;toastV14("Zoom controls: "+webView.settings.builtInZoomControls)}
+                10->{webView.settings.mediaPlaybackRequiresUserGesture=!webView.settings.mediaPlaybackRequiresUserGesture;toastV14("Media gesture: "+webView.settings.mediaPlaybackRequiresUserGesture)}
+                11->{webView.settings.cacheMode=android.webkit.WebSettings.LOAD_DEFAULT;toastV14("Cache default")}
+                12->{webView.settings.cacheMode=android.webkit.WebSettings.LOAD_NO_CACHE;toastV14("No cache")}
+                13->{webView.settings.cacheMode=android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK;toastV14("Cache else network")}
+                14->{webView.clearCache(true);toastV14("Cache cleared")}
+                15->{android.webkit.CookieManager.getInstance().removeAllCookies(null);android.webkit.CookieManager.getInstance().flush();toastV14("Cookies cleared")}
+                16->{android.webkit.WebStorage.getInstance().deleteAllData();toastV14("Web storage cleared")}
+                17->{webView.clearFormData();toastV14("Form data cleared")}
+                18->{webView.clearSslPreferences();toastV14("SSL preferences cleared")}
+                19->showUserAgentV14()
+                20->{webView.settings.userAgentString=null;webView.reload();toastV14("User agent reset")}
+                21->megaCopy("OLIKH user agent",webView.settings.userAgentString.orEmpty(),"User agent copied")
+                22->jsV14("document.documentElement.style.filter='invert(1) hue-rotate(180deg)';document.querySelectorAll('img,video,picture').forEach(e=>e.style.filter='invert(1) hue-rotate(180deg)')")
+                23->jsV14("document.body.style.background='white';document.body.style.color='black'")
+                24->jsV14("document.documentElement.style.filter='';document.body.style.background='';document.body.style.color='';document.querySelectorAll('img,video,picture').forEach(e=>e.style.filter='')")
+                25->jsV14("document.querySelectorAll('video,audio').forEach(e=>{e.autoplay=false;e.pause()})")
+                26->jsV14("document.querySelectorAll('video,audio').forEach(e=>e.muted=true)")
+                27->jsV14("document.querySelectorAll('video,audio').forEach(e=>e.muted=false)")
+                28->jsV14("document.querySelectorAll('video,audio').forEach(e=>e.pause())")
+                29->jsV14("document.querySelectorAll('video,audio').forEach(e=>e.play().catch(()=>{}))")
+                30->{webView.stopLoading();toastV14("Loading stopped")}
+                31->{val u=webView.url.orEmpty();if(u.isNotBlank())webView.loadUrl(u,mapOf("Cache-Control" to "no-cache"))}
+                32->{val u=webView.url.orEmpty();if(u.startsWith("http"))createNewTab(initialUrl="view-source:"+u)}
+                33->showPageInfoV14()
+                34->{getSharedPreferences("olikh_v14",MODE_PRIVATE).edit().putString("session_url",webView.url.orEmpty()).apply();toastV14("Page saved")}
+                35->{val u=getSharedPreferences("olikh_v14",MODE_PRIVATE).getString("session_url","").orEmpty();if(u.isNotBlank())createNewTab(initialUrl=u)else toastV14("No saved page")}
+                36->{val u=getSharedPreferences("olikh_v14",MODE_PRIVATE).getString("session_url","").orEmpty();megaCopy("OLIKH session",u,"Session URL copied")}
+                37->{val u=webView.url.orEmpty();if(u.isNotBlank())createNewTab(incognito=true,initialUrl=u)}
+                38->showSiteSummaryV14()
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun toastV14(text:String)=Toast.makeText(this,text,Toast.LENGTH_SHORT).show()
+
+    private fun jsV14(code:String){
+        webView.evaluateJavascript("(function(){try{"+code+";return true}catch(e){return false}})();",null)
+        toastV14("Done")
+    }
+
+    private fun showUserAgentV14(){
+        val input=android.widget.EditText(this)
+        input.setText(webView.settings.userAgentString.orEmpty())
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Custom user agent").setView(input)
+            .setPositiveButton("Apply"){_,_->val ua=input.text.toString().trim();if(ua.isNotBlank()){webView.settings.userAgentString=ua;webView.reload()}}
+            .setNegativeButton("Cancel",null).show()
+    }
+
+    private fun showPageInfoV14(){
+        val info="Title: "+webView.title.orEmpty()+"\\nURL: "+webView.url.orEmpty()+
+            "\\nProgress: "+webView.progress+"%\\nText zoom: "+webView.settings.textZoom+"%"+
+            "\\nJavaScript: "+webView.settings.javaScriptEnabled+"\\nDOM storage: "+webView.settings.domStorageEnabled+
+            "\\nImages: "+webView.settings.loadsImagesAutomatically
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Page info").setMessage(info)
+            .setPositiveButton("Copy"){_,_->megaCopy("OLIKH page info",info,"Page info copied")}.setNegativeButton("Close",null).show()
+    }
+
+    private fun showSiteSummaryV14(){
+        val host=try{android.net.Uri.parse(webView.url.orEmpty()).host.orEmpty()}catch(e:Exception){""}
+        val text="Site: "+host+"\\nJavaScript: "+webView.settings.javaScriptEnabled+
+            "\\nImages: "+webView.settings.loadsImagesAutomatically+"\\nDOM storage: "+webView.settings.domStorageEnabled+
+            "\\nText zoom: "+webView.settings.textZoom+"%\\nCache mode: "+webView.settings.cacheMode+
+            "\\nMedia gesture: "+webView.settings.mediaPlaybackRequiresUserGesture
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Site settings summary").setMessage(text)
+            .setPositiveButton("Copy"){_,_->megaCopy("OLIKH site settings",text,"Site settings copied")}.setNegativeButton("Close",null).show()
+    }
 
     private fun showResearchToolsV13() {
         val options=arrayOf(
