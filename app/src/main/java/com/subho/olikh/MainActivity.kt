@@ -2511,6 +2511,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Download & permissions V19")
         popup.menu.add("Privacy dashboard V20")
         popup.menu.add("Web app & media V21")
+        popup.menu.add("Command center V22")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2661,6 +2662,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Command center V22" -> {
+                    showCommandCenterV22()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2703,6 +2709,47 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showCommandCenterV22() {
+        val items=arrayOf("Privacy & security","Downloads & permissions","Web app & media","Research & inspection","Productivity","Library & sessions","Smart browser","Page utilities","Power controls","Browser systems","Quick access","Downloads","Settings","Open start page","New private tab","Duplicate current tab","Reopen closed tab","Share page","Copy URL","Desktop / mobile site","Clear browsing data","Command center status")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("OLIKH Command Center V22").setItems(items){_,i->
+            when(i){
+                0->showPrivacyDashboardV20()
+                1->showDownloadPermissionsV19()
+                2->showWebAppMediaV21()
+                3->showResearchToolsV13()
+                4->showProductivityToolsV12()
+                5->showLibrarySessionsV15()
+                6->showSmartBrowserV16()
+                7->showPageUtilityV18()
+                8->showPowerControlsV14()
+                9->showBrowserSystemsV11()
+                10->showQuickAccessManager()
+                11->showDownloads()
+                12->showSettings()
+                13->showOlikhStartPage()
+                14->createNewTab(incognito=true)
+                15->duplicateCurrentTab()
+                16->reopenLastClosedTab()
+                17->shareCurrentPage()
+                18->copyCurrentUrl()
+                19->toggleDesktopSite()
+                20->confirmClearBrowsingData()
+                21->commandCenterStatusV22()
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun commandCenterStatusV22(){
+        val mode=if(webView.settings.userAgentString?.contains("OLIKH_DESKTOP")==true)"Desktop" else "Mobile"
+        val text="OLIKH V22
+Tab: ${webView.title.orEmpty()}
+Mode: $mode
+Incognito: ${activeTab?.incognito==true}
+JavaScript: ${webView.settings.javaScriptEnabled}
+Blocker: ${olikhBlocker.isEnabled()}"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Command center status").setMessage(text).setPositiveButton("Close",null).show()
+    }
 
     private fun showWebAppMediaV21() {
         val items=arrayOf(
