@@ -2683,13 +2683,13 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                 9->copyResearchV13("Code blocks","Array.from(document.querySelectorAll('pre,code')).map(e=>e.innerText).filter(Boolean).join('\\n\\n')")
                 10->copyResearchV13("Blockquotes","Array.from(document.querySelectorAll('blockquote')).map(e=>e.innerText).filter(Boolean).join('\\n\\n')")
                 11->copyResearchV13("List items","Array.from(document.querySelectorAll('li')).map(e=>e.innerText.trim()).filter(Boolean).join('\\n')")
-                12->copyResearchV13("JSON-LD","Array.from(document.querySelectorAll('script[type=\"application/ld+json\"]')).map(e=>e.textContent).join('\\n\\n')")
-                13->copyResearchV13("Open Graph","Array.from(document.querySelectorAll('meta[property^=\"og:\"]')).map(e=>e.getAttribute('property')+': '+e.content).join('\\n')")
-                14->copyResearchV13("Twitter card","Array.from(document.querySelectorAll('meta[name^=\"twitter:\"]')).map(e=>e.name+': '+e.content).join('\\n')")
+                12->copyResearchV13("JSON-LD","Array.from(document.querySelectorAll('script[type=application/ld+json]')).map(e=>e.textContent).join('\\n\\n')")
+                13->copyResearchV13("Open Graph","Array.from(document.querySelectorAll('meta[property^=og:]')).map(e=>e.getAttribute('property')+': '+e.content).join('\\n')")
+                14->copyResearchV13("Twitter card","Array.from(document.querySelectorAll('meta[name^=twitter:]')).map(e=>e.name+': '+e.content).join('\\n')")
                 15->copyResearchV13("Meta keywords","(document.querySelector('meta[name=keywords]')||{}).content||''")
                 16->copyResearchV13("Author","(document.querySelector('meta[name=author]')||{}).content||''")
-                17->copyResearchV13("Publish date","(document.querySelector('meta[property=\"article:published_time\"],meta[name=date],time[datetime]')||{}).content||(document.querySelector('time[datetime]')||{}).dateTime||''")
-                18->copyResearchV13("Modified date","(document.querySelector('meta[property=\"article:modified_time\"]')||{}).content||''")
+                17->copyResearchV13("Publish date","(document.querySelector('meta[property=article:published_time],meta[name=date],time[datetime]')||{}).content||(document.querySelector('time[datetime]')||{}).dateTime||''")
+                18->copyResearchV13("Modified date","(document.querySelector('meta[property=article:modified_time]')||{}).content||''")
                 19->copyResearchV13("Robots","(document.querySelector('meta[name=robots]')||{}).content||''")
                 20->copyResearchV13("Hreflang","Array.from(document.querySelectorAll('link[rel=alternate][hreflang]')).map(e=>e.hreflang+' '+e.href).join('\\n')")
                 21->copyResearchV13("Stylesheets","Array.from(document.styleSheets).map(x=>x.href).filter(Boolean).join('\\n')")
@@ -2704,12 +2704,12 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                 30->researchJsV13("document.querySelectorAll('table').forEach(e=>e.style.outline='3px solid #9b5cff')")
                 31->researchJsV13("document.querySelectorAll('pre,code').forEach(e=>e.style.outline='2px solid #00c853')")
                 32->researchJsV13("document.querySelectorAll('blockquote').forEach(e=>e.style.outline='2px solid #ff4081')")
-                33->researchJsV13("document.querySelectorAll('img:not([alt]),img[alt=\"\"]').forEach(e=>e.style.outline='4px solid red')")
+                33->researchJsV13("document.querySelectorAll('img').forEach(e=>{if(!e.hasAttribute('alt')||!e.alt)e.style.outline='4px solid red'})")
                 34->researchJsV13("document.querySelectorAll('a[href]').forEach(a=>{if(!a.dataset.olikhHref){a.dataset.olikhHref='1';var x=document.createElement('small');x.className='olikh-v13-href';x.textContent=' ['+a.href+']';x.style.opacity='.65';a.after(x)}})")
                 35->researchJsV13("document.querySelectorAll('.olikh-v13-href').forEach(e=>e.remove());document.querySelectorAll('*').forEach(e=>e.style.outline='')")
                 36->selectedV12{q->megaCopy("OLIKH selection source",if(q.isBlank())"" else q+"\\n— "+webView.url.orEmpty(),"Selection + source copied")}
                 37->{val t=webView.title.orEmpty();if(t.isNotBlank())createNewTab(initialUrl=buildSearchUrl(t))}
-                38->selectedV12{q->if(q.isNotBlank())createNewTab(initialUrl=buildSearchUrl("\\""+q+"\\""))}
+                38->selectedV12{q->if(q.isNotBlank())createNewTab(initialUrl=buildSearchUrl(q))}
             }
         }.setNegativeButton("Close",null).show()
     }
