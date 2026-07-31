@@ -2683,7 +2683,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                 9->copyResearchV13("Code blocks","Array.from(document.querySelectorAll('pre,code')).map(e=>e.innerText).filter(Boolean).join('\\n\\n')")
                 10->copyResearchV13("Blockquotes","Array.from(document.querySelectorAll('blockquote')).map(e=>e.innerText).filter(Boolean).join('\\n\\n')")
                 11->copyResearchV13("List items","Array.from(document.querySelectorAll('li')).map(e=>e.innerText.trim()).filter(Boolean).join('\\n')")
-                12->copyResearchV13("JSON-LD","Array.from(document.querySelectorAll('script[type=\\"application/ld+json\\"]')).map(e=>e.textContent).join('\\n\\n')")
+                12->copyResearchV13("JSON-LD","Array.from(document.querySelectorAll('script[type=\"application/ld+json\"]')).map(e=>e.textContent).join('\\n\\n')")
                 13->copyResearchV13("Open Graph","Array.from(document.querySelectorAll('meta[property^=\\"og:\\"]')).map(e=>e.getAttribute('property')+': '+e.content).join('\\n')")
                 14->copyResearchV13("Twitter card","Array.from(document.querySelectorAll('meta[name^=\\"twitter:\\"]')).map(e=>e.name+': '+e.content).join('\\n')")
                 15->copyResearchV13("Meta keywords","(document.querySelector('meta[name=keywords]')||{}).content||''")
