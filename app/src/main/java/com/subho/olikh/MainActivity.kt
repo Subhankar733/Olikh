@@ -2506,6 +2506,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Power controls")
         popup.menu.add("Library & sessions")
         popup.menu.add("Smart browser V16")
+        popup.menu.add("Security center V17")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2631,6 +2632,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Security center V17" -> {
+                    showSecurityCenterV17()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2673,6 +2679,134 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showSecurityCenterV17() {
+        val options=arrayOf(
+            "Security dashboard","HTTPS-only ON/OFF","Upgrade page to HTTPS","Cookie status",
+            "Accept cookies ON/OFF","Third-party cookies ON/OFF","Clear site cookies","Clear all cookies",
+            "Clear WebView storage","Permission center","Open Android app settings","Desktop UA",
+            "Mobile UA","Reset UA","Copy UA","Media dashboard","Pause all media","Resume all media",
+            "Mute all media","Unmute all media","Disable autoplay","Enable autoplay","Video fullscreen",
+            "Exit fullscreen","Open Downloads","Share page","Copy page URL","Backup browser data",
+            "V17 status"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Security center V17").setItems(options){_,i->
+            when(i){
+                0->securityDashboardV17()
+                1->toggleHttpsV17()
+                2->upgradeHttpsV17()
+                3->cookieStatusV17()
+                4->{val c=android.webkit.CookieManager.getInstance();val n=!c.acceptCookie();c.setAcceptCookie(n);toastV17("Cookies: "+n)}
+                5->{val c=android.webkit.CookieManager.getInstance();val n=!c.acceptThirdPartyCookies(webView);c.setAcceptThirdPartyCookies(webView,n);toastV17("Third-party cookies: "+n)}
+                6->clearSiteCookiesV17()
+                7->{android.webkit.CookieManager.getInstance().removeAllCookies(null);android.webkit.CookieManager.getInstance().flush();toastV17("All cookies cleared")}
+                8->{android.webkit.WebStorage.getInstance().deleteAllData();toastV17("Web storage cleared")}
+                9->permissionCenterV17()
+                10->openAppSettingsV17()
+                11->setDesktopUaV17()
+                12->setMobileUaV17()
+                13->{webView.settings.userAgentString=null;webView.reload();toastV17("UA reset")}
+                14->megaCopy("OLIKH UA",webView.settings.userAgentString.orEmpty(),"UA copied")
+                15->mediaDashboardV17()
+                16->mediaV17("document.querySelectorAll('video,audio').forEach(e=>e.pause())","Media paused")
+                17->mediaV17("document.querySelectorAll('video,audio').forEach(e=>e.play().catch(()=>{}))","Resume requested")
+                18->mediaV17("document.querySelectorAll('video,audio').forEach(e=>e.muted=true)","Muted")
+                19->mediaV17("document.querySelectorAll('video,audio').forEach(e=>e.muted=false)","Unmuted")
+                20->mediaV17("document.querySelectorAll('video,audio').forEach(e=>{e.autoplay=false;e.pause()})","Autoplay disabled")
+                21->mediaV17("document.querySelectorAll('video,audio').forEach(e=>e.autoplay=true)","Autoplay enabled")
+                22->mediaV17("let v=document.querySelector('video');if(v&&v.requestFullscreen)v.requestFullscreen()","Fullscreen requested")
+                23->mediaV17("if(document.fullscreenElement)document.exitFullscreen()","Fullscreen exit requested")
+                24->showDownloads()
+                25->shareCurrentPage()
+                26->copyCurrentUrl()
+                27->backupV17()
+                28->statusV17()
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun prefsV17()=getSharedPreferences("olikh_v17",MODE_PRIVATE)
+    private fun toastV17(t:String)=Toast.makeText(this,t,Toast.LENGTH_SHORT).show()
+    private fun hostV17()=try{android.net.Uri.parse(webView.url.orEmpty()).host.orEmpty()}catch(e:Exception){""}
+
+    private fun securityReportV17():String{
+        val c=android.webkit.CookieManager.getInstance()
+        return "Host: "+hostV17()+"\nHTTPS: "+webView.url.orEmpty().startsWith("https://")+
+            "\nHTTPS-only: "+prefsV17().getBoolean("https_only",false)+"\nCookies: "+c.acceptCookie()+
+            "\nThird-party: "+c.acceptThirdPartyCookies(webView)+"\nJavaScript: "+webView.settings.javaScriptEnabled+
+            "\nDOM storage: "+webView.settings.domStorageEnabled
+    }
+
+    private fun securityDashboardV17(){
+        val r=securityReportV17()
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Security dashboard").setMessage(r)
+            .setPositiveButton("Copy"){_,_->megaCopy("OLIKH security",r,"Security report copied")}
+            .setNegativeButton("Close",null).show()
+    }
+
+    private fun toggleHttpsV17(){
+        val n=!prefsV17().getBoolean("https_only",false);prefsV17().edit().putBoolean("https_only",n).apply()
+        if(n)upgradeHttpsV17();toastV17("HTTPS-only: "+if(n)"ON" else "OFF")
+    }
+
+    private fun upgradeHttpsV17(){
+        val u=webView.url.orEmpty()
+        if(u.startsWith("http://"))webView.loadUrl("https://"+u.removePrefix("http://")) else toastV17(if(u.startsWith("https://"))"Already HTTPS" else "Not HTTP")
+    }
+
+    private fun cookieStatusV17(){
+        val c=android.webkit.CookieManager.getInstance()
+        val t="Cookies: "+c.acceptCookie()+"\nThird-party: "+c.acceptThirdPartyCookies(webView)+"\nSite data: "+c.getCookie(webView.url.orEmpty()).orEmpty().isNotBlank()
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Cookie status").setMessage(t).setPositiveButton("Close",null).show()
+    }
+
+    private fun clearSiteCookiesV17(){
+        val c=android.webkit.CookieManager.getInstance();val u=webView.url.orEmpty()
+        c.getCookie(u).orEmpty().split(";").map{it.substringBefore("=").trim()}.filter{it.isNotBlank()}.forEach{c.setCookie(u,it+"=; Max-Age=0; Path=/")}
+        c.flush();toastV17("Site cookies cleared")
+    }
+
+    private fun permissionCenterV17(){
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Permission center")
+            .setMessage("Review OLIKH camera, microphone, location and notification permissions in Android App settings.")
+            .setPositiveButton("App settings"){_,_->openAppSettingsV17()}.setNegativeButton("Close",null).show()
+    }
+
+    private fun openAppSettingsV17(){
+        startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,android.net.Uri.parse("package:"+packageName)))
+    }
+
+    private fun setDesktopUaV17(){
+        webView.settings.userAgentString="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0 Safari/537.36"
+        webView.reload();toastV17("Desktop UA")
+    }
+
+    private fun setMobileUaV17(){
+        webView.settings.userAgentString="Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0 Mobile Safari/537.36"
+        webView.reload();toastV17("Mobile UA")
+    }
+
+    private fun mediaV17(js:String,msg:String){webView.evaluateJavascript(js,null);toastV17(msg)}
+
+    private fun mediaDashboardV17(){
+        webView.evaluateJavascript("(function(){return 'Videos: '+document.querySelectorAll('video').length+' | Audio: '+document.querySelectorAll('audio').length})();"){r->
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Media dashboard").setMessage(r.trim('"')).setPositiveButton("Close",null).show()
+        }
+    }
+
+    private fun backupV17(){
+        val a=getSharedPreferences("olikh_v15",MODE_PRIVATE)
+        val b=getSharedPreferences("olikh_v16",MODE_PRIVATE)
+        val d="BOOKMARKS="+a.getString("bookmark_folders","").orEmpty()+"\nGROUPS="+a.getString("tab_groups","").orEmpty()+
+            "\nPINNED="+a.getString("pinned_tabs","").orEmpty()+"\nSESSION="+a.getString("saved_session","").orEmpty()+
+            "\nRECOVERY="+b.getString("recovery_urls","").orEmpty()
+        megaCopy("OLIKH backup",d,"Backup copied")
+    }
+
+    private fun statusV17(){
+        val t=securityReportV17()+"\nUA: "+webView.settings.userAgentString.orEmpty().take(60)
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("V17 status").setMessage(t).setPositiveButton("Close",null).show()
+    }
 
     private fun showSmartBrowserV16() {
         val options=arrayOf(
