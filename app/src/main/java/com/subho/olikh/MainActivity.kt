@@ -2505,6 +2505,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Research tools")
         popup.menu.add("Power controls")
         popup.menu.add("Library & sessions")
+        popup.menu.add("Smart browser V16")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2625,6 +2626,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Smart browser V16" -> {
+                    showSmartBrowserV16()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2667,6 +2673,190 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showSmartBrowserV16() {
+        val options=arrayOf(
+            "Smart tab switcher","Search open tabs","Save recovery session","Restore recovery session",
+            "Auto recovery ON/OFF","Search bookmark folders","Reading mode","Reading text 90%",
+            "Reading text 110%","Reading text 130%","Reading text 150%","Exit reading mode",
+            "Desktop mode for this site ON/OFF","JavaScript for this site ON/OFF",
+            "Images for this site ON/OFF","Remember current site settings","Apply saved site settings",
+            "Forget current site settings","Privacy dashboard","Clear current site cookies",
+            "Clear current site storage","Copy current site host","Copy privacy report",
+            "Compact page UI","Comfort page UI","Reset page UI","Reload current tab",
+            "Stop current tab","Duplicate current tab","Open current page incognito",
+            "Copy all open tab URLs","Save all open tabs as recovery","V16 status"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Smart browser V16").setItems(options){_,w->
+            when(w){
+                0->smartTabSwitcherV16()
+                1->searchOpenTabsV16()
+                2->saveRecoveryV16()
+                3->restoreRecoveryV16()
+                4->toggleAutoRecoveryV16()
+                5->searchBookmarksV16()
+                6->readingModeV16()
+                7->{webView.settings.textZoom=90;toastV16("Text zoom 90%")}
+                8->{webView.settings.textZoom=110;toastV16("Text zoom 110%")}
+                9->{webView.settings.textZoom=130;toastV16("Text zoom 130%")}
+                10->{webView.settings.textZoom=150;toastV16("Text zoom 150%")}
+                11->{val u=webView.url.orEmpty();if(u.isNotBlank())webView.loadUrl(u)}
+                12->toggleDesktopSiteV16()
+                13->{webView.settings.javaScriptEnabled=!webView.settings.javaScriptEnabled;toastV16("JavaScript: "+webView.settings.javaScriptEnabled)}
+                14->{webView.settings.loadsImagesAutomatically=!webView.settings.loadsImagesAutomatically;toastV16("Images: "+webView.settings.loadsImagesAutomatically)}
+                15->rememberSiteSettingsV16()
+                16->applySiteSettingsV16()
+                17->forgetSiteSettingsV16()
+                18->privacyDashboardV16()
+                19->clearSiteCookiesV16()
+                20->{webView.evaluateJavascript("try{localStorage.clear();sessionStorage.clear();true}catch(e){false}",null);toastV16("Site storage cleared")}
+                21->megaCopy("OLIKH host",hostV16(),"Host copied")
+                22->megaCopy("OLIKH privacy",privacyReportV16(),"Privacy report copied")
+                23->{webView.settings.textZoom=90;webView.evaluateJavascript("document.body.style.lineHeight='1.25';document.body.style.zoom='0.92';",null)}
+                24->{webView.settings.textZoom=115;webView.evaluateJavascript("document.body.style.lineHeight='1.65';document.body.style.zoom='1';",null)}
+                25->{webView.settings.textZoom=100;val u=webView.url.orEmpty();if(u.isNotBlank())webView.loadUrl(u)}
+                26->webView.reload()
+                27->webView.stopLoading()
+                28->duplicateCurrentTab()
+                29->{val u=webView.url.orEmpty();if(u.isNotBlank())createNewTab(incognito=true,initialUrl=u)}
+                30->megaCopy("OLIKH open tabs",currentOpenUrlsV16().joinToString("\n"),"Open tab URLs copied")
+                31->saveRecoveryV16()
+                32->statusV16()
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun prefsV16()=getSharedPreferences("olikh_v16",MODE_PRIVATE)
+    private fun toastV16(t:String)=Toast.makeText(this,t,Toast.LENGTH_SHORT).show()
+
+    private fun hostV16():String=
+        try{android.net.Uri.parse(webView.url.orEmpty()).host.orEmpty()}catch(e:Exception){""}
+
+    private fun currentOpenUrlsV16():List<String> =
+        tabs.mapNotNull{it.webView.url}.filter{it.startsWith("http://")||it.startsWith("https://")}.distinct()
+
+    private fun smartTabSwitcherV16(){
+        if(tabs.isEmpty()){toastV16("No tabs");return}
+        val labels=tabs.mapIndexed{i,t->
+            val title=t.webView.title?.takeIf{it.isNotBlank()} ?: "Tab ${i+1}"
+            val host=try{android.net.Uri.parse(t.webView.url.orEmpty()).host.orEmpty()}catch(e:Exception){""}
+            title+"\n"+host+(if(t.incognito)" • Incognito" else "")
+        }.toTypedArray()
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Smart tabs").setItems(labels){_,i->switchToTab(i)}
+            .setNegativeButton("Close",null).show()
+    }
+
+    private fun searchOpenTabsV16(){
+        val input=android.widget.EditText(this);input.hint="Title or URL"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Search open tabs").setView(input)
+            .setPositiveButton("Search"){_,_->
+                val q=input.text.toString().trim()
+                val hits=tabs.mapIndexedNotNull{i,t->if(q.isNotBlank()&&(t.webView.title.orEmpty()+" "+t.webView.url.orEmpty()).contains(q,true))i else null}
+                if(hits.isEmpty())toastV16("No matching tab") else switchToTab(hits.first())
+            }.setNegativeButton("Cancel",null).show()
+    }
+
+    private fun saveRecoveryV16(){
+        val urls=currentOpenUrlsV16()
+        prefsV16().edit().putString("recovery_urls",urls.joinToString("\n")).apply()
+        toastV16("Recovery saved: "+urls.size)
+    }
+
+    private fun restoreRecoveryV16(){
+        val urls=prefsV16().getString("recovery_urls","").orEmpty().split("\n").map{it.trim()}.filter{it.isNotBlank()}
+        if(urls.isEmpty()){toastV16("No recovery session");return}
+        urls.forEach{createNewTab(initialUrl=it)}
+        toastV16("Recovery restored")
+    }
+
+    private fun toggleAutoRecoveryV16(){
+        val now=!prefsV16().getBoolean("auto_recovery",false)
+        prefsV16().edit().putBoolean("auto_recovery",now).apply()
+        if(now)saveRecoveryV16()
+        toastV16("Auto recovery: "+if(now)"ON" else "OFF")
+    }
+
+    private fun searchBookmarksV16(){
+        val raw=getSharedPreferences("olikh_v15",MODE_PRIVATE).getString("bookmark_folders","").orEmpty()
+        val input=android.widget.EditText(this);input.hint="Search folders / URLs"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Search bookmarks").setView(input)
+            .setPositiveButton("Search"){_,_->
+                val q=input.text.toString().trim()
+                val result=raw.split("\n").filter{q.isNotBlank()&&it.contains(q,true)}.take(100).joinToString("\n").ifBlank{"No matches"}
+                androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Results").setMessage(result).setPositiveButton("Close",null).show()
+            }.setNegativeButton("Cancel",null).show()
+    }
+
+    private fun readingModeV16(){
+        val js="document.querySelectorAll('nav,aside,footer,header,form,iframe').forEach(e=>e.style.display='none');document.body.style.maxWidth='820px';document.body.style.margin='0 auto';document.body.style.padding='24px';document.body.style.lineHeight='1.75';document.body.style.fontSize='18px';"
+        webView.evaluateJavascript(js,null);toastV16("Reading mode applied")
+    }
+
+    private fun toggleDesktopSiteV16(){
+        val h=hostV16();if(h.isBlank()){toastV16("No website");return}
+        val key="desktop_"+h
+        val now=!prefsV16().getBoolean(key,false)
+        prefsV16().edit().putBoolean(key,now).apply()
+        if(now){
+            val ua=webView.settings.userAgentString.orEmpty()
+            webView.settings.userAgentString=ua.replace("Mobile","").replace("Android","X11; Linux x86_64")
+        }else webView.settings.userAgentString=null
+        webView.reload();toastV16("Desktop mode: "+if(now)"ON" else "OFF")
+    }
+
+    private fun rememberSiteSettingsV16(){
+        val h=hostV16();if(h.isBlank()){toastV16("No website");return}
+        prefsV16().edit().putBoolean("js_"+h,webView.settings.javaScriptEnabled)
+            .putBoolean("img_"+h,webView.settings.loadsImagesAutomatically)
+            .putInt("zoom_"+h,webView.settings.textZoom).putBoolean("has_"+h,true).apply()
+        toastV16("Site settings remembered")
+    }
+
+    private fun applySiteSettingsV16(){
+        val h=hostV16()
+        if(h.isBlank()||!prefsV16().getBoolean("has_"+h,false)){toastV16("No saved settings");return}
+        webView.settings.javaScriptEnabled=prefsV16().getBoolean("js_"+h,true)
+        webView.settings.loadsImagesAutomatically=prefsV16().getBoolean("img_"+h,true)
+        webView.settings.textZoom=prefsV16().getInt("zoom_"+h,100)
+        webView.reload();toastV16("Site settings applied")
+    }
+
+    private fun forgetSiteSettingsV16(){
+        val h=hostV16()
+        prefsV16().edit().remove("js_"+h).remove("img_"+h).remove("zoom_"+h).remove("has_"+h).remove("desktop_"+h).apply()
+        toastV16("Site settings forgotten")
+    }
+
+    private fun privacyReportV16():String{
+        val cookies=android.webkit.CookieManager.getInstance().getCookie(webView.url.orEmpty()).orEmpty()
+        return "Site: "+hostV16()+"\nHTTPS: "+webView.url.orEmpty().startsWith("https://")+
+            "\nCookies present: "+cookies.isNotBlank()+"\nJavaScript: "+webView.settings.javaScriptEnabled+
+            "\nDOM storage: "+webView.settings.domStorageEnabled+"\nImages: "+webView.settings.loadsImagesAutomatically+
+            "\nIncognito: "+(activeTab?.incognito==true)+"\nText zoom: "+webView.settings.textZoom+"%"
+    }
+
+    private fun privacyDashboardV16(){
+        val r=privacyReportV16()
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Privacy dashboard").setMessage(r)
+            .setPositiveButton("Copy"){_,_->megaCopy("OLIKH privacy",r,"Privacy report copied")}
+            .setNegativeButton("Close",null).show()
+    }
+
+    private fun clearSiteCookiesV16(){
+        val cm=android.webkit.CookieManager.getInstance()
+        val u=webView.url.orEmpty()
+        cm.getCookie(u).orEmpty().split(";").map{it.substringBefore("=").trim()}.filter{it.isNotBlank()}.forEach{
+            cm.setCookie(u,it+"=; Max-Age=0; Path=/")
+        }
+        cm.flush();toastV16("Current site cookies cleared")
+    }
+
+    private fun statusV16(){
+        val saved=prefsV16().getString("recovery_urls","").orEmpty().split("\n").count{it.isNotBlank()}
+        val text="Open tabs: "+tabs.size+"\nRecovery tabs: "+saved+"\nAuto recovery: "+
+            prefsV16().getBoolean("auto_recovery",false)+"\nCurrent site: "+hostV16()
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("V16 status").setMessage(text).setPositiveButton("Close",null).show()
+    }
 
     private fun showLibrarySessionsV15() {
         val options=arrayOf(
