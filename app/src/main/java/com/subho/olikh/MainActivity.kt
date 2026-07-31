@@ -2507,6 +2507,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Library & sessions")
         popup.menu.add("Smart browser V16")
         popup.menu.add("Security center V17")
+        popup.menu.add("Page utility V18")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2637,6 +2638,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Page utility V18" -> {
+                    showPageUtilityV18()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2679,6 +2685,126 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showPageUtilityV18() {
+        val options=arrayOf(
+            "Translate page","Translate selection","QR current URL","Search selected text",
+            "Copy selected text","Extract links","Extract images","Extract headings",
+            "Extract emails","Extract phone numbers","Copy page text","Word count",
+            "Reading time","Page diagnostics","Dark page","Light page","Sepia page",
+            "High contrast","Reset page style","Disable animations","Hide images",
+            "Show images","Hide videos","Show videos","Zoom 80%","Zoom 100%",
+            "Zoom 125%","Zoom 150%","Open externally","V18 status"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Page utility V18").setItems(options){_,i->
+            when(i){
+                0->translatePageV18()
+                1->translateSelectionV18()
+                2->qrV18()
+                3->selectionV18("search")
+                4->selectionV18("copy")
+                5->extractV18("links")
+                6->extractV18("images")
+                7->extractV18("headings")
+                8->extractV18("emails")
+                9->extractV18("phones")
+                10->extractV18("text")
+                11->statsV18(false)
+                12->statsV18(true)
+                13->diagnosticsV18()
+                14->styleV18("document.documentElement.style.filter='brightness(.72)'")
+                15->styleV18("document.documentElement.style.filter='brightness(1.18)'")
+                16->styleV18("document.body.style.background='#f4ecd8';document.body.style.color='#3b2f2f'")
+                17->styleV18("document.documentElement.style.filter='contrast(1.6)'")
+                18->{val u=webView.url.orEmpty();if(u.isNotBlank())webView.loadUrl(u)}
+                19->styleV18("document.querySelectorAll('*').forEach(e=>{e.style.animation='none';e.style.transition='none'})")
+                20->styleV18("document.querySelectorAll('img,picture').forEach(e=>e.style.display='none')")
+                21->styleV18("document.querySelectorAll('img,picture').forEach(e=>e.style.display='')")
+                22->styleV18("document.querySelectorAll('video').forEach(e=>e.style.display='none')")
+                23->styleV18("document.querySelectorAll('video').forEach(e=>e.style.display='')")
+                24->{webView.settings.textZoom=80;toastV18("Zoom 80%")}
+                25->{webView.settings.textZoom=100;toastV18("Zoom 100%")}
+                26->{webView.settings.textZoom=125;toastV18("Zoom 125%")}
+                27->{webView.settings.textZoom=150;toastV18("Zoom 150%")}
+                28->openExternalV18()
+                29->statusV18()
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun toastV18(t:String)=Toast.makeText(this,t,Toast.LENGTH_SHORT).show()
+
+    private fun translatePageV18(){
+        val u=webView.url.orEmpty()
+        if(u.isBlank()){toastV18("No page");return}
+        webView.loadUrl("https://translate.google.com/translate?sl=auto&tl=en&u="+android.net.Uri.encode(u))
+    }
+
+    private fun translateSelectionV18(){
+        webView.evaluateJavascript("window.getSelection().toString()"){r->
+            val q=r.trim('"').replace("\\n"," ").trim()
+            if(q.isBlank())toastV18("Select text first")
+            else webView.loadUrl("https://translate.google.com/?sl=auto&tl=en&text="+android.net.Uri.encode(q))
+        }
+    }
+
+    private fun qrV18(){
+        val u=webView.url.orEmpty()
+        if(u.isBlank()){toastV18("No URL");return}
+        createNewTab(initialUrl="https://quickchart.io/qr?size=300&text="+android.net.Uri.encode(u))
+    }
+
+    private fun selectionV18(mode:String){
+        webView.evaluateJavascript("window.getSelection().toString()"){r->
+            val t=r.trim('"').replace("\\n"," ").trim()
+            if(t.isBlank())toastV18("Select text first")
+            else if(mode=="search")createNewTab(initialUrl="https://www.google.com/search?q="+android.net.Uri.encode(t))
+            else megaCopy("OLIKH selection",t,"Selection copied")
+        }
+    }
+
+    private fun extractV18(kind:String){
+        val js=when(kind){
+            "links"->"(function(){return Array.from(document.links).map(a=>a.href).filter(Boolean).slice(0,300).join('\\n')})()"
+            "images"->"(function(){return Array.from(document.images).map(a=>a.src).filter(Boolean).slice(0,300).join('\\n')})()"
+            "headings"->"(function(){return Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6')).map(a=>a.innerText.trim()).filter(Boolean).slice(0,300).join('\\n')})()"
+            "emails"->"(function(){let m=document.body.innerText.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi)||[];return [...new Set(m)].join('\\n')})()"
+            "phones"->"(function(){let m=document.body.innerText.match(/\\+?[0-9][0-9 ()-]{7,}[0-9]/g)||[];return [...new Set(m)].slice(0,200).join('\\n')})()"
+            else->"(function(){return document.body.innerText.slice(0,50000)})()"
+        }
+        webView.evaluateJavascript(js){r->
+            val t=r.trim('"').replace("\\n","\n").replace("\\t","\t")
+            megaCopy("OLIKH "+kind,t,kind+" copied")
+        }
+    }
+
+    private fun statsV18(reading:Boolean){
+        webView.evaluateJavascript("(function(){return (document.body.innerText.trim().match(/\\S+/g)||[]).length})()"){r->
+            val w=r.toIntOrNull() ?: 0
+            val msg=if(reading)"Approx reading time: "+kotlin.math.max(1,(w+199)/200)+" min" else "Words: "+w
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle(if(reading)"Reading time" else "Word count").setMessage(msg).setPositiveButton("Close",null).show()
+        }
+    }
+
+    private fun diagnosticsV18(){
+        webView.evaluateJavascript("(function(){return 'Links: '+document.links.length+' | Images: '+document.images.length+' | Scripts: '+document.scripts.length+' | Frames: '+document.querySelectorAll('iframe').length})()"){r->
+            val t="Title: "+webView.title.orEmpty()+"\nURL: "+webView.url.orEmpty()+"\n"+r.trim('"')
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Page diagnostics").setMessage(t)
+                .setPositiveButton("Copy"){_,_->megaCopy("OLIKH diagnostics",t,"Diagnostics copied")}.setNegativeButton("Close",null).show()
+        }
+    }
+
+    private fun styleV18(js:String){webView.evaluateJavascript(js,null);toastV18("Page style applied")}
+
+    private fun openExternalV18(){
+        try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(webView.url.orEmpty())))}
+        catch(e:Exception){toastV18("No external app")}
+    }
+
+    private fun statusV18(){
+        val t="Title: "+webView.title.orEmpty()+"\nURL: "+webView.url.orEmpty()+"\nText zoom: "+webView.settings.textZoom+"%"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("V18 status").setMessage(t).setPositiveButton("Close",null).show()
+    }
 
     private fun showSecurityCenterV17() {
         val options=arrayOf(
