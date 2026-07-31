@@ -2513,6 +2513,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Web app & media V21")
         popup.menu.add("Command center V22")
         popup.menu.add("Navigation & tabs V23")
+        popup.menu.add("Session controls V24")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2673,6 +2674,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Session controls V24" -> {
+                    showSessionControlsV24()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2715,6 +2721,102 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showSessionControlsV24() {
+        val items = arrayOf(
+            "Save current session",
+            "Restore saved session",
+            "Saved session status",
+            "Clear saved session",
+            "Close other tabs",
+            "Recently closed",
+            "Reopen last closed tab"
+        )
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Session controls V24")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> saveCurrentSessionV24()
+                    1 -> restoreSavedSessionV24()
+                    2 -> showSavedSessionStatusV24()
+                    3 -> clearSavedSessionV24()
+                    4 -> closeOtherTabsV23()
+                    5 -> showRecentlyClosedTabs()
+                    6 -> reopenLastClosedTab()
+                }
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun saveCurrentSessionV24() {
+        val urls = tabs.mapNotNull { tab ->
+            if (tab.incognito) return@mapNotNull null
+            val url = tab.webView.url?.trim()?.takeIf { it.isNotBlank() }
+                ?: tab.url.trim().takeIf { it.isNotBlank() }
+            url
+        }
+
+        if (urls.isEmpty()) {
+            Toast.makeText(this, "No normal tabs to save", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        getSharedPreferences("olikh_session_v24", MODE_PRIVATE)
+            .edit()
+            .putString("urls", urls.joinToString("\n"))
+            .putInt("active", activeTabIndex.coerceAtLeast(0))
+            .apply()
+
+        Toast.makeText(this, "Session saved: ${urls.size} tab(s)", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun restoreSavedSessionV24() {
+        val prefs = getSharedPreferences("olikh_session_v24", MODE_PRIVATE)
+        val urls = prefs.getString("urls", null)
+            ?.lines()
+            ?.map { it.trim() }
+            ?.filter { it.isNotBlank() }
+            .orEmpty()
+
+        if (urls.isEmpty()) {
+            Toast.makeText(this, "No saved session", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        urls.forEach { url ->
+            createNewTab(incognito = false, initialUrl = url)
+        }
+
+        Toast.makeText(this, "Restored ${urls.size} tab(s)", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showSavedSessionStatusV24() {
+        val prefs = getSharedPreferences("olikh_session_v24", MODE_PRIVATE)
+        val urls = prefs.getString("urls", null)
+            ?.lines()
+            ?.filter { it.isNotBlank() }
+            .orEmpty()
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Saved session V24")
+            .setMessage(
+                if (urls.isEmpty()) "No saved session."
+                else "Saved tabs: ${urls.size}\nPrivate tabs are never stored."
+            )
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun clearSavedSessionV24() {
+        getSharedPreferences("olikh_session_v24", MODE_PRIVATE)
+            .edit()
+            .clear()
+            .apply()
+
+        Toast.makeText(this, "Saved session cleared", Toast.LENGTH_SHORT).show()
+    }
 
     private fun showNavigationTabsV23() {
         val current = if (tabs.isEmpty()) 0 else activeTabIndex + 1
