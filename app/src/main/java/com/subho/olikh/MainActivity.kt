@@ -2501,6 +2501,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Back to top")
         popup.menu.add("Scroll to bottom")
         popup.menu.add("Close current tab")
+        popup.menu.add("Productivity tools")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2601,6 +2602,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Productivity tools" -> {
+                    showProductivityToolsV12()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2641,6 +2647,90 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         anchor.alpha = 1f
 
         popup.show()
+    }
+
+
+    private fun showProductivityToolsV12() {
+        val options = arrayOf(
+            "Reader mode","Copy page summary","Copy selected quote","Search selected text",
+            "Translate current page","Wayback lookup","Copy Markdown link","Copy HTML link",
+            "Copy citation","Extract emails","Extract social links","Extract video links",
+            "Extract download links","List forms","List buttons","List inputs",
+            "Highlight links","Highlight headings","Highlight images","Remove overlays",
+            "Remove sticky elements","Pause animations","Resume animations","Focus reading column",
+            "Print / Save PDF","Share selected quote + URL","Copy timestamp + URL","Open page twice"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Productivity tools")
+            .setItems(options) { _, w ->
+                when (w) {
+                    0 -> readerModeV12()
+                    1 -> copySummaryV12()
+                    2 -> selectedV12 { megaCopy("OLIKH quote", it, "Quote copied") }
+                    3 -> selectedV12 { if (it.isNotBlank()) createNewTab(initialUrl=buildSearchUrl(it)) }
+                    4 -> translatePageV12()
+                    5 -> externalLookupV12("https://web.archive.org/web/*/")
+                    6 -> megaCopy("Markdown link","["+(webView.title?:"Page")+"]("+webView.url.orEmpty()+")","Markdown link copied")
+                    7 -> megaCopy("HTML link","<a href=\""+webView.url.orEmpty()+"\">"+(webView.title?:"Page")+"</a>","HTML link copied")
+                    8 -> megaCopy("Citation",(webView.title?:"Untitled")+" — "+webView.url.orEmpty(),"Citation copied")
+                    9 -> extractV12("Emails","Array.from(new Set((document.body.innerText.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi)||[]))).join('\\n')")
+                    10 -> extractV12("Social links","Array.from(new Set(Array.from(document.links).map(a=>a.href).filter(h=>/instagram|facebook|twitter|x\\.com|linkedin|youtube|tiktok/i.test(h)))).join('\\n')")
+                    11 -> extractV12("Video links","Array.from(new Set(Array.from(document.querySelectorAll('video,video source')).map(e=>e.currentSrc||e.src).filter(Boolean))).join('\\n')")
+                    12 -> extractV12("Download links","Array.from(new Set(Array.from(document.links).filter(a=>a.download||/\\.(pdf|zip|apk|docx?|xlsx?|pptx?|mp3|mp4)(\\?|$)/i.test(a.href)).map(a=>a.href))).join('\\n')")
+                    13 -> extractV12("Forms","Array.from(document.forms).map((f,i)=>(i+1)+'. '+(f.action||location.href)).join('\\n')")
+                    14 -> extractV12("Buttons","Array.from(document.querySelectorAll('button,input[type=button],input[type=submit]')).map((e,i)=>(i+1)+'. '+(e.innerText||e.value||'Button')).join('\\n')")
+                    15 -> extractV12("Inputs","Array.from(document.querySelectorAll('input,textarea,select')).map((e,i)=>(i+1)+'. '+e.tagName.toLowerCase()+' '+(e.name||e.id||e.type||'')).join('\\n')")
+                    16 -> jsV12("document.querySelectorAll('a').forEach(e=>e.style.outline='2px solid #5B8CFF')")
+                    17 -> jsV12("document.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(e=>e.style.outline='2px solid #8B5CF6')")
+                    18 -> jsV12("document.querySelectorAll('img').forEach(e=>e.style.outline='2px solid #22C55E')")
+                    19 -> jsV12("document.querySelectorAll('[role=dialog],[aria-modal=true],.modal,.overlay,.popup').forEach(e=>e.remove());document.body.style.overflow='auto'")
+                    20 -> jsV12("document.querySelectorAll('*').forEach(e=>{var p=getComputedStyle(e).position;if(p==='fixed'||p==='sticky')e.style.position='static'})")
+                    21 -> jsV12("document.querySelectorAll('*').forEach(e=>{e.style.animationPlayState='paused';e.style.transition='none'})")
+                    22 -> jsV12("document.querySelectorAll('*').forEach(e=>e.style.animationPlayState='running')")
+                    23 -> jsV12("document.body.style.maxWidth='760px';document.body.style.margin='auto';document.body.style.padding='24px';document.body.style.lineHeight='1.7'")
+                    24 -> savePageAsPdf()
+                    25 -> selectedV12 { if(it.isNotBlank()) shareSimpleV10("\""+it+"\"\\n"+webView.url.orEmpty(),"Share quote") }
+                    26 -> megaCopy("Timestamp URL",java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss",java.util.Locale.getDefault()).format(java.util.Date())+" — "+webView.url.orEmpty(),"Timestamp + URL copied")
+                    27 -> { val u=webView.url.orEmpty(); if(u.isNotBlank()){createNewTab(initialUrl=u);createNewTab(initialUrl=u)} }
+                }
+            }.setNegativeButton("Close",null).show()
+    }
+
+    private fun jsV12(code:String) {
+        webView.evaluateJavascript("(function(){try{"+code+";return 'Done'}catch(e){return String(e)}})();",null)
+        Toast.makeText(this,"Done",Toast.LENGTH_SHORT).show()
+    }
+
+    private fun selectedV12(done:(String)->Unit) {
+        megaJs("(function(){return window.getSelection().toString();})();",done)
+    }
+
+    private fun extractV12(title:String, expression:String) {
+        megaJs("(function(){return "+expression+";})();") { value ->
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle(title)
+                .setMessage(value.ifBlank{"Nothing found"})
+                .setPositiveButton("Copy"){_,_->megaCopy("OLIKH "+title,value,title+" copied")}
+                .setNegativeButton("Close",null).show()
+        }
+    }
+
+    private fun readerModeV12() {
+        jsV12("var a=document.querySelector('article,main,[role=main]')||document.body;document.body.innerHTML='<main id=\"olikhReader\">'+a.innerHTML+'</main>';var r=document.getElementById('olikhReader');r.style.maxWidth='760px';r.style.margin='auto';r.style.padding='28px 22px';r.style.fontSize='18px';r.style.lineHeight='1.75';document.body.style.background='#10131a';document.body.style.color='#f4f6fb';document.querySelectorAll('script,nav,aside,footer,iframe').forEach(e=>e.remove())")
+    }
+
+    private fun copySummaryV12() {
+        megaJs("(function(){var t=(document.body?document.body.innerText:'').replace(/\\s+/g,' ').trim();return t.substring(0,1200);})();") {
+            megaCopy("OLIKH summary",it,"Page summary copied")
+        }
+    }
+
+    private fun translatePageV12() {
+        val u=webView.url.orEmpty()
+        if(u.isNotBlank()) createNewTab(initialUrl="https://translate.google.com/translate?sl=auto&tl=en&u="+Uri.encode(u))
+    }
+
+    private fun externalLookupV12(prefix:String) {
+        val u=webView.url.orEmpty()
+        if(u.isNotBlank()) createNewTab(initialUrl=prefix+u)
     }
 
     private val v11Prefs by lazy {
