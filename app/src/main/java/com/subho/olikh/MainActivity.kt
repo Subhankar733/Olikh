@@ -2741,14 +2741,18 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
     }
 
     private fun commandCenterStatusV22(){
-        val mode=if(webView.settings.userAgentString?.contains("OLIKH_DESKTOP")==true)"Desktop" else "Mobile"
-        val text="OLIKH V22
+        val mode = if (webView.settings.userAgentString?.contains("OLIKH_DESKTOP") == true) "Desktop" else "Mobile"
+        val text = """OLIKH V22
 Tab: ${webView.title.orEmpty()}
 Mode: $mode
-Incognito: ${activeTab?.incognito==true}
+Incognito: ${activeTab?.incognito == true}
 JavaScript: ${webView.settings.javaScriptEnabled}
-Blocker: ${olikhBlocker.isEnabled()}"
-        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Command center status").setMessage(text).setPositiveButton("Close",null).show()
+Blocker: ${olikhBlocker.isEnabled()}"""
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Command center status")
+            .setMessage(text)
+            .setPositiveButton("Close", null)
+            .show()
     }
 
     private fun showWebAppMediaV21() {
