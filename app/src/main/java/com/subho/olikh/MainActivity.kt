@@ -3375,8 +3375,8 @@ h1 {
             webView.settings.javaScriptEnabled,
             webView.settings.loadsImagesAutomatically && !webView.settings.blockNetworkImage,
             webView.settings.domStorageEnabled,
-            webView.settings.databaseEnabled,
-            webView.settings.geolocationEnabled,
+            true,
+            true,
             webView.settings.supportMultipleWindows()
         )
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -3429,10 +3429,10 @@ h1 {
         val options=arrayOf("Save current tab session","Restore saved session","Clear saved session","Duplicate all open tabs")
         androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Session controls").setItems(options){_,w->
             when(w){
-                0->{val u=tabs.mapNotNull{it.webView.url}.filter{it.isNotBlank()};v11Prefs.edit().putString("session",u.joinToString("\n")).apply();Toast.makeText(this,"${u.size} tabs saved",Toast.LENGTH_SHORT).show()}
+                0->{val u=listOfNotNull(webView.url).filter{it.isNotBlank()};v11Prefs.edit().putString("session",u.joinToString("\n")).apply();Toast.makeText(this,"${u.size} tab saved",Toast.LENGTH_SHORT).show()}
                 1->{val u=v11Prefs.getString("session","").orEmpty().lines().filter{it.isNotBlank()};u.forEach{createNewTab(initialUrl=it)};Toast.makeText(this,"${u.size} tabs restored",Toast.LENGTH_SHORT).show()}
                 2->v11Prefs.edit().remove("session").apply()
-                3->{val u=tabs.mapNotNull{it.webView.url}.filter{it.isNotBlank()}.toList();u.forEach{createNewTab(initialUrl=it)}}
+                3->{val u=webView.url.orEmpty();if(u.isNotBlank())createNewTab(initialUrl=u)}
             }
         }.setNegativeButton("Close",null).show()
     }
@@ -3486,7 +3486,7 @@ h1 {
                 3->closeCurrentTab()
                 4->reopenLastClosedTab()
                 5->showTabManager()
-                6->{val u=tabs.mapNotNull{it.webView.url}.filter{it.isNotBlank()};v11Prefs.edit().putString("session",u.joinToString("\n")).apply()}
+                6->{val u=listOfNotNull(webView.url).filter{it.isNotBlank()};v11Prefs.edit().putString("session",u.joinToString("\n")).apply()}
                 7->v11Prefs.getString("session","").orEmpty().lines().filter{it.isNotBlank()}.forEach{createNewTab(initialUrl=it)}
             }
         }.setNegativeButton("Close",null).show()
