@@ -3358,7 +3358,12 @@ h1 {
             "Refresh page",
             "Copy page title",
             "Copy link as text",
-            "Open current page in new tab"
+            "Open current page in new tab",
+            "Select all text",
+            "Stop loading",
+            "Open homepage in new tab",
+            "Open start page in new tab",
+            "Share title + URL"
         )
 
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
@@ -3375,6 +3380,11 @@ h1 {
                     7 -> copyCurrentPageTitle()
                     8 -> copyCurrentLinkAsText()
                     9 -> openCurrentPageInNewTab()
+                    10 -> selectAllPageText()
+                    11 -> stopCurrentPageLoading()
+                    12 -> createNewTab(initialUrl = homePage)
+                    13 -> createNewTab(initialUrl = "about:blank")
+                    14 -> sharePageTitleAndUrl()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -3385,6 +3395,31 @@ h1 {
         }
 
         dialog.show()
+    }
+
+    private fun selectAllPageText() {
+        webView.evaluateJavascript(
+            "(function(){var s=window.getSelection();var r=document.createRange();r.selectNodeContents(document.body);s.removeAllRanges();s.addRange(r);})();",
+            null
+        )
+    }
+
+    private fun stopCurrentPageLoading() {
+        webView.stopLoading()
+        progressBar.visibility = View.GONE
+        Toast.makeText(this, "Loading stopped", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun sharePageTitleAndUrl() {
+        val url = webView.url.orEmpty()
+        if (!url.startsWith("http://") && !url.startsWith("https://")) return
+        val pageTitle = webView.title?.trim().orEmpty().ifBlank { "OLIKH" }
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, pageTitle)
+            putExtra(Intent.EXTRA_TEXT, pageTitle + "\n" + url)
+        }
+        startActivity(Intent.createChooser(shareIntent, "Share page"))
     }
 
     private fun showPageInfo() {
