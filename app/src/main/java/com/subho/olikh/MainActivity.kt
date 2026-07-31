@@ -2508,6 +2508,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Smart browser V16")
         popup.menu.add("Security center V17")
         popup.menu.add("Page utility V18")
+        popup.menu.add("Download & permissions V19")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2643,6 +2644,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Download & permissions V19" -> {
+                    showDownloadPermissionsV19()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2685,6 +2691,165 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showDownloadPermissionsV19() {
+        val options=arrayOf(
+            "Download manager","Download summary","Open Android Downloads","Clear download history",
+            "Current site permissions","Open OLIKH app permissions","Camera permission status",
+            "Microphone permission status","Location permission status","Request camera permission",
+            "Request microphone permission","Request location permission","File upload readiness",
+            "Open document picker","Open image picker","Fullscreen status","Enter video fullscreen",
+            "Exit fullscreen","Pause page media","Resume page media","Mute page media",
+            "Unmute page media","Save recovery snapshot","Restore recovery snapshot",
+            "Crash recovery status","Current tab diagnostics","Copy V19 report","V19 status"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Download & permissions V19").setItems(options){_,i->
+            when(i){
+                0->showDownloads()
+                1->downloadSummaryV19()
+                2->openDownloadsV19()
+                3->{getSharedPreferences("olikh_downloads",MODE_PRIVATE).edit().clear().apply();toastV19("Download history cleared")}
+                4->sitePermissionsV19()
+                5->openPermissionsV19()
+                6->permissionStatusV19(android.Manifest.permission.CAMERA,"Camera")
+                7->permissionStatusV19(android.Manifest.permission.RECORD_AUDIO,"Microphone")
+                8->permissionStatusV19(android.Manifest.permission.ACCESS_FINE_LOCATION,"Location")
+                9->requestPermissionV19(android.Manifest.permission.CAMERA,"Camera")
+                10->requestPermissionV19(android.Manifest.permission.RECORD_AUDIO,"Microphone")
+                11->requestPermissionV19(android.Manifest.permission.ACCESS_FINE_LOCATION,"Location")
+                12->fileUploadStatusV19()
+                13->openPickerV19("*/*")
+                14->openPickerV19("image/*")
+                15->toastV19("Fullscreen: "+if(fullscreenView!=null)"ACTIVE" else "INACTIVE")
+                16->mediaV19("let v=document.querySelector('video');if(v&&v.requestFullscreen)v.requestFullscreen()","Fullscreen requested")
+                17->mediaV19("if(document.fullscreenElement)document.exitFullscreen()","Fullscreen exit requested")
+                18->mediaV19("document.querySelectorAll('video,audio').forEach(e=>e.pause())","Media paused")
+                19->mediaV19("document.querySelectorAll('video,audio').forEach(e=>e.play().catch(()=>{}))","Resume requested")
+                20->mediaV19("document.querySelectorAll('video,audio').forEach(e=>e.muted=true)","Media muted")
+                21->mediaV19("document.querySelectorAll('video,audio').forEach(e=>e.muted=false)","Media unmuted")
+                22->saveRecoveryV19()
+                23->restoreRecoveryV19()
+                24->recoveryStatusV19()
+                25->tabDiagnosticsV19()
+                26->megaCopy("OLIKH V19",reportV19(),"V19 report copied")
+                27->statusV19()
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun prefsV19()=getSharedPreferences("olikh_v19",MODE_PRIVATE)
+    private fun toastV19(t:String)=Toast.makeText(this,t,Toast.LENGTH_SHORT).show()
+
+    private fun downloadSummaryV19(){
+        val prefs=getSharedPreferences("olikh_downloads",MODE_PRIVATE)
+        val ids=prefs.all.keys.filter{it.startsWith("download_")}
+        val manager=getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        var active=0
+        var complete=0
+        var failed=0
+        ids.forEach{key->
+            val id=key.removePrefix("download_").toLongOrNull() ?: return@forEach
+            runCatching{
+                manager.query(DownloadManager.Query().setFilterById(id))?.use{c->
+                    if(c.moveToFirst()){
+                        val x=c.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                        when(if(x>=0)c.getInt(x) else -1){
+                            DownloadManager.STATUS_RUNNING,DownloadManager.STATUS_PENDING,DownloadManager.STATUS_PAUSED->active++
+                            DownloadManager.STATUS_SUCCESSFUL->complete++
+                            DownloadManager.STATUS_FAILED->failed++
+                        }
+                    }
+                }
+            }
+        }
+        val t="Tracked: ${ids.size}\nActive/queued: $active\nComplete: $complete\nFailed: $failed"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Download summary").setMessage(t).setPositiveButton("Close",null).show()
+    }
+
+    private fun openDownloadsV19(){
+        try{startActivity(android.content.Intent(DownloadManager.ACTION_VIEW_DOWNLOADS))}
+        catch(e:Exception){toastV19("Downloads app unavailable")}
+    }
+
+    private fun hasPermissionV19(p:String)=
+        androidx.core.content.ContextCompat.checkSelfPermission(this,p)==android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    private fun sitePermissionsV19(){
+        val host=try{android.net.Uri.parse(webView.url.orEmpty()).host.orEmpty()}catch(e:Exception){""}
+        val t="Site: $host\nCamera: ${hasPermissionV19(android.Manifest.permission.CAMERA)}\nMicrophone: ${hasPermissionV19(android.Manifest.permission.RECORD_AUDIO)}\nLocation: ${hasPermissionV19(android.Manifest.permission.ACCESS_FINE_LOCATION)}"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Current site permissions").setMessage(t)
+            .setPositiveButton("App permissions"){_,_->openPermissionsV19()}.setNegativeButton("Close",null).show()
+    }
+
+    private fun openPermissionsV19(){
+        startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,android.net.Uri.parse("package:"+packageName)))
+    }
+
+    private fun permissionStatusV19(p:String,name:String){
+        toastV19("$name permission: "+if(hasPermissionV19(p))"GRANTED" else "NOT GRANTED")
+    }
+
+    private fun requestPermissionV19(p:String,name:String){
+        if(hasPermissionV19(p)){toastV19("$name already granted");return}
+        androidx.core.app.ActivityCompat.requestPermissions(this,arrayOf(p),7190)
+    }
+
+    private fun fileUploadStatusV19(){
+        val t="File chooser: "+if(fileUploadCallback!=null)"ACTIVE" else "READY"+"\nRequest code: $fileChooserRequestCode"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("File upload").setMessage(t).setPositiveButton("Close",null).show()
+    }
+
+    private fun openPickerV19(type:String){
+        val i=android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT).apply{
+            addCategory(android.content.Intent.CATEGORY_OPENABLE)
+            this.type=type
+        }
+        try{startActivityForResult(i,7191)}catch(e:Exception){toastV19("Document picker unavailable")}
+    }
+
+    private fun mediaV19(js:String,msg:String){webView.evaluateJavascript(js,null);toastV19(msg)}
+
+    private fun currentUrlsV19():List<String> =
+        tabs.mapNotNull{it.webView.url}.filter{it.startsWith("http://")||it.startsWith("https://")}.distinct()
+
+    private fun saveRecoveryV19(){
+        val urls=currentUrlsV19()
+        prefsV19().edit().putString("recovery",urls.joinToString("\n")).putLong("saved_at",System.currentTimeMillis()).apply()
+        toastV19("Recovery saved: "+urls.size+" tabs")
+    }
+
+    private fun restoreRecoveryV19(){
+        val urls=prefsV19().getString("recovery","").orEmpty().split("\n").map{it.trim()}.filter{it.isNotBlank()}
+        if(urls.isEmpty()){toastV19("No recovery snapshot");return}
+        urls.forEach{createNewTab(initialUrl=it)}
+        toastV19("Recovery restored")
+    }
+
+    private fun recoveryStatusV19(){
+        val count=prefsV19().getString("recovery","").orEmpty().split("\n").count{it.isNotBlank()}
+        val saved=prefsV19().getLong("saved_at",0L)
+        val t="Saved tabs: $count\nSnapshot: "+if(saved>0)java.util.Date(saved).toString() else "None"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Crash recovery").setMessage(t).setPositiveButton("Close",null).show()
+    }
+
+    private fun tabDiagnosticsV19(){
+        val t="Tabs: ${tabs.size}\nActive index: $activeTabIndex\nIncognito: ${activeTab?.incognito==true}\nURL: ${webView.url.orEmpty()}\nBack: ${webView.canGoBack()}\nForward: ${webView.canGoForward()}\nProgress: ${webView.progress}%"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Tab diagnostics").setMessage(t)
+            .setPositiveButton("Copy"){_,_->megaCopy("OLIKH diagnostics",t,"Diagnostics copied")}
+            .setNegativeButton("Close",null).show()
+    }
+
+    private fun reportV19():String =
+        "Downloads tracked: "+getSharedPreferences("olikh_downloads",MODE_PRIVATE).all.size+
+        "\nCamera: "+hasPermissionV19(android.Manifest.permission.CAMERA)+
+        "\nMicrophone: "+hasPermissionV19(android.Manifest.permission.RECORD_AUDIO)+
+        "\nLocation: "+hasPermissionV19(android.Manifest.permission.ACCESS_FINE_LOCATION)+
+        "\nFullscreen: "+(fullscreenView!=null)+
+        "\nOpen tabs: "+tabs.size
+
+    private fun statusV19(){
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("V19 status").setMessage(reportV19()).setPositiveButton("Close",null).show()
+    }
 
     private fun showPageUtilityV18() {
         val options=arrayOf(
