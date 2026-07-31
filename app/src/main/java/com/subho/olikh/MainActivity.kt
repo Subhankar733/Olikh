@@ -2502,6 +2502,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Scroll to bottom")
         popup.menu.add("Close current tab")
         popup.menu.add("Productivity tools")
+        popup.menu.add("Research tools")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2607,6 +2608,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Research tools" -> {
+                    showResearchToolsV13()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2649,6 +2655,79 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showResearchToolsV13() {
+        val options=arrayOf(
+            "Page statistics","Copy page outline","Copy numbered headings","Copy unique links",
+            "Copy external links","Copy internal links","Copy mail links","Copy image alt text",
+            "Copy table text","Copy code blocks","Copy blockquotes","Copy list items",
+            "Copy JSON-LD","Copy Open Graph data","Copy Twitter card data","Copy meta keywords",
+            "Copy author","Copy publish date","Copy modified date","Copy robots meta",
+            "Copy hreflang links","Copy stylesheet URLs","Copy script URLs","Copy iframe URLs",
+            "Copy media sources","Copy form actions","Copy ARIA labels","Highlight external links",
+            "Highlight nofollow links","Highlight forms","Highlight tables","Highlight code blocks",
+            "Highlight quotes","Highlight missing image alt","Show link destinations","Remove highlights",
+            "Copy selection + source","Search page title","Search selected exact quote"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Research tools").setItems(options){_,w->
+            when(w){
+                0->researchStatsV13()
+                1->copyResearchV13("Outline","Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6')).map(e=>e.tagName+' '+e.innerText.trim()).join('\\n')")
+                2->copyResearchV13("Numbered headings","Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6')).map((e,i)=>(i+1)+'. '+e.innerText.trim()).join('\\n')")
+                3->copyResearchV13("Unique links","Array.from(new Set(Array.from(document.links).map(a=>a.href))).join('\\n')")
+                4->copyResearchV13("External links","Array.from(new Set(Array.from(document.links).map(a=>a.href).filter(h=>{try{return new URL(h).host!==location.host}catch(e){return false}}))).join('\\n')")
+                5->copyResearchV13("Internal links","Array.from(new Set(Array.from(document.links).map(a=>a.href).filter(h=>{try{return new URL(h).host===location.host}catch(e){return false}}))).join('\\n')")
+                6->copyResearchV13("Mail links","Array.from(new Set(Array.from(document.querySelectorAll('a[href^=mailto]')).map(a=>a.href))).join('\\n')")
+                7->copyResearchV13("Image alt text","Array.from(document.images).map((i,n)=>(n+1)+'. '+(i.alt||'[missing]')).join('\\n')")
+                8->copyResearchV13("Tables","Array.from(document.querySelectorAll('table')).map((t,i)=>'TABLE '+(i+1)+'\\n'+t.innerText).join('\\n\\n')")
+                9->copyResearchV13("Code blocks","Array.from(document.querySelectorAll('pre,code')).map(e=>e.innerText).filter(Boolean).join('\\n\\n')")
+                10->copyResearchV13("Blockquotes","Array.from(document.querySelectorAll('blockquote')).map(e=>e.innerText).filter(Boolean).join('\\n\\n')")
+                11->copyResearchV13("List items","Array.from(document.querySelectorAll('li')).map(e=>e.innerText.trim()).filter(Boolean).join('\\n')")
+                12->copyResearchV13("JSON-LD","Array.from(document.querySelectorAll('script[type=\\"application/ld+json\\"]')).map(e=>e.textContent).join('\\n\\n')")
+                13->copyResearchV13("Open Graph","Array.from(document.querySelectorAll('meta[property^=\\"og:\\"]')).map(e=>e.getAttribute('property')+': '+e.content).join('\\n')")
+                14->copyResearchV13("Twitter card","Array.from(document.querySelectorAll('meta[name^=\\"twitter:\\"]')).map(e=>e.name+': '+e.content).join('\\n')")
+                15->copyResearchV13("Meta keywords","(document.querySelector('meta[name=keywords]')||{}).content||''")
+                16->copyResearchV13("Author","(document.querySelector('meta[name=author]')||{}).content||''")
+                17->copyResearchV13("Publish date","(document.querySelector('meta[property=\\"article:published_time\\"],meta[name=date],time[datetime]')||{}).content||(document.querySelector('time[datetime]')||{}).dateTime||''")
+                18->copyResearchV13("Modified date","(document.querySelector('meta[property=\\"article:modified_time\\"]')||{}).content||''")
+                19->copyResearchV13("Robots","(document.querySelector('meta[name=robots]')||{}).content||''")
+                20->copyResearchV13("Hreflang","Array.from(document.querySelectorAll('link[rel=alternate][hreflang]')).map(e=>e.hreflang+' '+e.href).join('\\n')")
+                21->copyResearchV13("Stylesheets","Array.from(document.styleSheets).map(x=>x.href).filter(Boolean).join('\\n')")
+                22->copyResearchV13("Scripts","Array.from(document.scripts).map(x=>x.src).filter(Boolean).join('\\n')")
+                23->copyResearchV13("Iframes","Array.from(document.querySelectorAll('iframe')).map(x=>x.src).filter(Boolean).join('\\n')")
+                24->copyResearchV13("Media sources","Array.from(new Set(Array.from(document.querySelectorAll('video,audio,source')).map(x=>x.currentSrc||x.src).filter(Boolean))).join('\\n')")
+                25->copyResearchV13("Form actions","Array.from(document.forms).map((f,i)=>(i+1)+'. '+(f.action||location.href)+' ['+(f.method||'get')+']').join('\\n')")
+                26->copyResearchV13("ARIA labels","Array.from(document.querySelectorAll('[aria-label]')).map(e=>e.tagName+' — '+e.getAttribute('aria-label')).join('\\n')")
+                27->researchJsV13("document.querySelectorAll('a').forEach(a=>{try{if(new URL(a.href).host!==location.host)a.style.outline='2px solid #ff7a59'}catch(e){}})")
+                28->researchJsV13("document.querySelectorAll('a[rel~=nofollow]').forEach(a=>a.style.outline='2px dashed #ffd166')")
+                29->researchJsV13("document.querySelectorAll('form').forEach(e=>e.style.outline='3px solid #00d4ff')")
+                30->researchJsV13("document.querySelectorAll('table').forEach(e=>e.style.outline='3px solid #9b5cff')")
+                31->researchJsV13("document.querySelectorAll('pre,code').forEach(e=>e.style.outline='2px solid #00c853')")
+                32->researchJsV13("document.querySelectorAll('blockquote').forEach(e=>e.style.outline='2px solid #ff4081')")
+                33->researchJsV13("document.querySelectorAll('img:not([alt]),img[alt=\\"\\"]').forEach(e=>e.style.outline='4px solid red')")
+                34->researchJsV13("document.querySelectorAll('a[href]').forEach(a=>{if(!a.dataset.olikhHref){a.dataset.olikhHref='1';var x=document.createElement('small');x.className='olikh-v13-href';x.textContent=' ['+a.href+']';x.style.opacity='.65';a.after(x)}})")
+                35->researchJsV13("document.querySelectorAll('.olikh-v13-href').forEach(e=>e.remove());document.querySelectorAll('*').forEach(e=>e.style.outline='')")
+                36->selectedV12{q->megaCopy("OLIKH selection source",if(q.isBlank())"" else q+"\\n— "+webView.url.orEmpty(),"Selection + source copied")}
+                37->{val t=webView.title.orEmpty();if(t.isNotBlank())createNewTab(initialUrl=buildSearchUrl(t))}
+                38->selectedV12{q->if(q.isNotBlank())createNewTab(initialUrl=buildSearchUrl("\\\""+q+"\\\""))}
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun copyResearchV13(label:String,expression:String){
+        megaJs("(function(){try{return "+expression+"}catch(e){return ''}})();"){v->megaCopy("OLIKH "+label,v,label+" copied")}
+    }
+
+    private fun researchJsV13(code:String){
+        webView.evaluateJavascript("(function(){try{"+code+";return true}catch(e){return false}})();",null)
+        Toast.makeText(this,"Done",Toast.LENGTH_SHORT).show()
+    }
+
+    private fun researchStatsV13(){
+        megaJs("(function(){var t=(document.body?document.body.innerText:'').trim();return 'Title: '+document.title+'\\nWords: '+((t.match(/\\\\S+/g)||[]).length)+'\\nLinks: '+document.links.length+'\\nImages: '+document.images.length+'\\nHeadings: '+document.querySelectorAll('h1,h2,h3,h4,h5,h6').length+'\\nForms: '+document.forms.length+'\\nTables: '+document.querySelectorAll('table').length+'\\nScripts: '+document.scripts.length+'\\nIframes: '+document.querySelectorAll('iframe').length;})();"){r->
+            androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Page statistics").setMessage(r).setPositiveButton("Copy"){_,_->megaCopy("OLIKH statistics",r,"Statistics copied")}.setNegativeButton("Close",null).show()
+        }
+    }
 
     private fun showProductivityToolsV12() {
         val options = arrayOf(
