@@ -3192,6 +3192,7 @@ h1 {
         popup.menu.add("Back to top")
         popup.menu.add("Scroll to bottom")
         popup.menu.add("Close current tab")
+        popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
         popup.menu.add(
@@ -3291,6 +3292,11 @@ h1 {
                     true
                 }
 
+                "Browser systems" -> {
+                    showBrowserSystemsV11()
+                    true
+                }
+
                 "Settings" -> {
                     showSettings()
                     true
@@ -3326,6 +3332,180 @@ h1 {
         anchor.alpha = 1f
 
         popup.show()
+    }
+
+    private val v11Prefs by lazy {
+        getSharedPreferences("olikh_v11_systems", MODE_PRIVATE)
+    }
+
+    private fun showBrowserSystemsV11() {
+        val options = arrayOf(
+            "Site controls",
+            "Cookie controls",
+            "Privacy controls",
+            "Session controls",
+            "Media controls",
+            "Accessibility",
+            "Security report",
+            "Tab tools",
+            "Storage tools"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Browser systems")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showSiteControlsV11()
+                    1 -> showCookieControlsV11()
+                    2 -> showPrivacyControlsV11()
+                    3 -> showSessionControlsV11()
+                    4 -> showMediaControlsV11()
+                    5 -> showAccessibilityV11()
+                    6 -> showSecurityReportV11()
+                    7 -> showTabToolsV11()
+                    8 -> showStorageToolsV11()
+                }
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showSiteControlsV11() {
+        val labels = arrayOf("JavaScript","Images","DOM storage","Database storage","Geolocation","Multiple windows")
+        val values = booleanArrayOf(
+            webView.settings.javaScriptEnabled,
+            webView.settings.loadsImagesAutomatically && !webView.settings.blockNetworkImage,
+            webView.settings.domStorageEnabled,
+            webView.settings.databaseEnabled,
+            webView.settings.geolocationEnabled,
+            webView.settings.supportMultipleWindows()
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Site controls")
+            .setMultiChoiceItems(labels, values) { _, which, checked ->
+                when (which) {
+                    0 -> webView.settings.javaScriptEnabled = checked
+                    1 -> { webView.settings.loadsImagesAutomatically = checked; webView.settings.blockNetworkImage = !checked }
+                    2 -> webView.settings.domStorageEnabled = checked
+                    3 -> webView.settings.databaseEnabled = checked
+                    4 -> webView.settings.setGeolocationEnabled(checked)
+                    5 -> webView.settings.setSupportMultipleWindows(checked)
+                }
+            }
+            .setPositiveButton("Reload") { _, _ -> webView.reload() }
+            .setNegativeButton("Close", null).show()
+    }
+
+    private fun showCookieControlsV11() {
+        val cm = android.webkit.CookieManager.getInstance()
+        val options = arrayOf("Toggle cookies","Toggle third-party cookies","Clear session cookies","Clear all cookies","Show current-site cookies")
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Cookie controls")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> { val n=!cm.acceptCookie(); cm.setAcceptCookie(n); Toast.makeText(this,"Cookies: $n",Toast.LENGTH_SHORT).show() }
+                    1 -> { val n=!v11Prefs.getBoolean("third_party",true); cm.setAcceptThirdPartyCookies(webView,n); v11Prefs.edit().putBoolean("third_party",n).apply(); Toast.makeText(this,"Third-party cookies: $n",Toast.LENGTH_SHORT).show() }
+                    2 -> cm.removeSessionCookies { Toast.makeText(this,"Session cookies cleared",Toast.LENGTH_SHORT).show() }
+                    3 -> cm.removeAllCookies { cm.flush(); Toast.makeText(this,"All cookies cleared",Toast.LENGTH_SHORT).show() }
+                    4 -> androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Current-site cookies").setMessage(cm.getCookie(webView.url.orEmpty()).orEmpty().ifBlank{"No cookies found"}).setPositiveButton("Close",null).show()
+                }
+            }.setNegativeButton("Close",null).show()
+    }
+
+    private fun showPrivacyControlsV11() {
+        val options=arrayOf("Clear cache","Clear history","Clear SSL preferences","Clear cookies + cache","Clear form data")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Privacy controls").setItems(options){_,w->
+            when(w){
+                0->webView.clearCache(true)
+                1->webView.clearHistory()
+                2->webView.clearSslPreferences()
+                3->{webView.clearCache(true);android.webkit.CookieManager.getInstance().removeAllCookies(null);android.webkit.CookieManager.getInstance().flush()}
+                4->webView.clearFormData()
+            }
+            Toast.makeText(this,"Done",Toast.LENGTH_SHORT).show()
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun showSessionControlsV11() {
+        val options=arrayOf("Save current tab session","Restore saved session","Clear saved session","Duplicate all open tabs")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Session controls").setItems(options){_,w->
+            when(w){
+                0->{val u=tabs.mapNotNull{it.webView.url}.filter{it.isNotBlank()};v11Prefs.edit().putString("session",u.joinToString("\n")).apply();Toast.makeText(this,"${u.size} tabs saved",Toast.LENGTH_SHORT).show()}
+                1->{val u=v11Prefs.getString("session","").orEmpty().lines().filter{it.isNotBlank()};u.forEach{createNewTab(initialUrl=it)};Toast.makeText(this,"${u.size} tabs restored",Toast.LENGTH_SHORT).show()}
+                2->v11Prefs.edit().remove("session").apply()
+                3->{val u=tabs.mapNotNull{it.webView.url}.filter{it.isNotBlank()}.toList();u.forEach{createNewTab(initialUrl=it)}}
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun showMediaControlsV11() {
+        val options=arrayOf("Play media","Pause media","Mute media","Unmute media","Speed 0.75x","Speed 1x","Speed 1.25x","Speed 1.5x","Speed 2x")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Media controls").setItems(options){_,w->
+            val js=when(w){
+                0->"document.querySelectorAll('video,audio').forEach(e=>e.play())"
+                1->"document.querySelectorAll('video,audio').forEach(e=>e.pause())"
+                2->"document.querySelectorAll('video,audio').forEach(e=>e.muted=true)"
+                3->"document.querySelectorAll('video,audio').forEach(e=>e.muted=false)"
+                4->"document.querySelectorAll('video,audio').forEach(e=>e.playbackRate=.75)"
+                5->"document.querySelectorAll('video,audio').forEach(e=>e.playbackRate=1)"
+                6->"document.querySelectorAll('video,audio').forEach(e=>e.playbackRate=1.25)"
+                7->"document.querySelectorAll('video,audio').forEach(e=>e.playbackRate=1.5)"
+                else->"document.querySelectorAll('video,audio').forEach(e=>e.playbackRate=2)"
+            }
+            webView.evaluateJavascript(js,null)
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun showAccessibilityV11() {
+        val options=arrayOf("Text 80%","Text 100%","Text 120%","Text 150%","High contrast","Grayscale","Reset filters")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Accessibility").setItems(options){_,w->
+            when(w){
+                0->webView.settings.textZoom=80
+                1->webView.settings.textZoom=100
+                2->webView.settings.textZoom=120
+                3->webView.settings.textZoom=150
+                4->pageFilterV10("contrast(1.35)")
+                5->pageFilterV10("grayscale(1)")
+                6->pageFilterV10("none")
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun showSecurityReportV11() {
+        val u=runCatching{Uri.parse(webView.url.orEmpty())}.getOrNull()
+        val report="Host: ${u?.host.orEmpty()}\nScheme: ${u?.scheme.orEmpty()}\nHTTPS: ${u?.scheme.equals("https",true)}\nJavaScript: ${webView.settings.javaScriptEnabled}\nDOM storage: ${webView.settings.domStorageEnabled}\nIncognito: ${activeTab?.incognito==true}\nUser agent: ${webView.settings.userAgentString.orEmpty()}"
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Security report").setMessage(report).setPositiveButton("Copy"){_,_->megaCopy("OLIKH security",report,"Security report copied")}.setNegativeButton("Close",null).show()
+    }
+
+    private fun showTabToolsV11() {
+        val options=arrayOf("New tab","New incognito tab","Duplicate current tab","Close current tab","Reopen closed tab","Tab manager","Save session","Restore session")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Tab tools").setItems(options){_,w->
+            when(w){
+                0->createNewTab()
+                1->createNewTab(incognito=true)
+                2->duplicateCurrentTab()
+                3->closeCurrentTab()
+                4->reopenLastClosedTab()
+                5->showTabManager()
+                6->{val u=tabs.mapNotNull{it.webView.url}.filter{it.isNotBlank()};v11Prefs.edit().putString("session",u.joinToString("\n")).apply()}
+                7->v11Prefs.getString("session","").orEmpty().lines().filter{it.isNotBlank()}.forEach{createNewTab(initialUrl=it)}
+            }
+        }.setNegativeButton("Close",null).show()
+    }
+
+    private fun showStorageToolsV11() {
+        val options=arrayOf("Clear cache","Clear history","Clear cookies","Clear form data","Clear SSL preferences","Clear localStorage","Clear sessionStorage")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Storage tools").setItems(options){_,w->
+            when(w){
+                0->webView.clearCache(true)
+                1->webView.clearHistory()
+                2->android.webkit.CookieManager.getInstance().removeAllCookies(null)
+                3->webView.clearFormData()
+                4->webView.clearSslPreferences()
+                5->webView.evaluateJavascript("localStorage.clear();",null)
+                6->webView.evaluateJavascript("sessionStorage.clear();",null)
+            }
+            Toast.makeText(this,"Done",Toast.LENGTH_SHORT).show()
+        }.setNegativeButton("Close",null).show()
     }
 
     private fun animateDialogEntrance(
