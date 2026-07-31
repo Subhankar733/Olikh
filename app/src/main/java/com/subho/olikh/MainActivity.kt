@@ -2515,6 +2515,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.menu.add("Navigation & tabs V23")
         popup.menu.add("Session controls V24")
         popup.menu.add("Bookmarks & history V25")
+        popup.menu.add("Search & address V26")
         popup.menu.add("Browser systems")
         popup.menu.add("Settings")
 
@@ -2685,6 +2686,11 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                     true
                 }
 
+                "Search & address V26" -> {
+                    showSearchAddressV26()
+                    true
+                }
+
                 "Browser systems" -> {
                     showBrowserSystemsV11()
                     true
@@ -2727,6 +2733,31 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         popup.show()
     }
 
+
+    private fun showSearchAddressV26() {
+        val items=arrayOf("Search or open address","Paste and go","Copy current URL","Share current page","Find in page","Reload","Stop loading","Open home page","Open start page","Google search","DuckDuckGo search","Bing search","Search & address status")
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Search & address V26").setItems(items){_,i->
+            when(i){0->promptNavigateV26();1->pasteAndGo();2->copyCurrentUrl();3->shareCurrentPage();4->showFindInPage();5->webView.reload();6->webView.stopLoading();7->webView.loadUrl(homePage);8->showOlikhStartPage();9->promptEngineV26("Google","https://www.google.com/search?q=");10->promptEngineV26("DuckDuckGo","https://duckduckgo.com/?q=");11->promptEngineV26("Bing","https://www.bing.com/search?q=");12->statusV26()}
+        }.setNegativeButton("Close",null).show()
+    }
+    private fun promptNavigateV26(){
+        val input=EditText(this);input.hint="Search or enter address";input.setSingleLine(true)
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Search or open").setView(input).setPositiveButton("Go"){_,_->navigateInputV26(input.text.toString())}.setNegativeButton("Cancel",null).show()
+    }
+    private fun navigateInputV26(raw:String){
+        val v=raw.trim();if(v.isBlank())return
+        val target=when{v.startsWith("http://",true)||v.startsWith("https://",true)->v;v.startsWith("about:",true)->v;v.contains(".")&&!v.contains(" ")->"https://"+v;else->"https://www.google.com/search?q="+URLEncoder.encode(v,"UTF-8")}
+        webView.loadUrl(target)
+    }
+    private fun promptEngineV26(name:String,base:String){
+        val input=EditText(this);input.hint="Search "+name;input.setSingleLine(true)
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle(name+" search").setView(input).setPositiveButton("Search"){_,_->val q=input.text.toString().trim();if(q.isNotBlank())webView.loadUrl(base+URLEncoder.encode(q,"UTF-8"))}.setNegativeButton("Cancel",null).show()
+    }
+    private fun statusV26(){
+        val u=webView.url.orEmpty();val host=runCatching{Uri.parse(u).host.orEmpty()}.getOrDefault("")
+        val text="Address: "+u+"\nHost: "+host+"\nProgress: "+webView.progress+"%\nCan go back: "+webView.canGoBack()+"\nCan go forward: "+webView.canGoForward()
+        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Search & address status V26").setMessage(text).setPositiveButton("OK",null).show()
+    }
 
     private fun showBookmarksHistoryV25() {
         val items=arrayOf("Bookmark current page","Open bookmarks","Remove current bookmark","Clear bookmarks","Add current page to history","Open history","Clear history","Workspace status")
