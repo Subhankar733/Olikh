@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- M3 Primary Colors -->
+    <color name="primary">#006495</color>
+    <color name="onPrimary">#FFFFFF</color>
+    <color name="primaryContainer">#CBE6FF</color>
+    <color name="onPrimaryContainer">#001E30</color>
+
+    <!-- M3 Secondary Colors -->
+    <color name="secondary">#51606F</color>
+    <color name="onSecondary">#FFFFFF</color>
+    <color name="secondaryContainer">#D4E4F6</color>
+    <color name="onSecondaryContainer">#0D1D2A</color>
+
+    <!-- M3 Surface/Background -->
+    <color name="background">#FCFCFF</color>
+    <color name="onBackground">#191C1E</color>
+    <color name="surface">#FCFCFF</color>
+    <color name="onSurface">#191C1E</color>
+    <color name="surfaceVariant">#DEE3EB</color>
+    <color name="onSurfaceVariant">#42474E</color>
+
+    <!-- Other Essentials -->
+    <color name="error">#BA1A1A</color>
+    <color name="onError">#FFFFFF</color>
+    <color name="outline">#72777F</color>
+</resources>
