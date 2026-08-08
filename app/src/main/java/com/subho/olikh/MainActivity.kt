@@ -2300,7 +2300,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
                 return@setDownloadListener
             }
 
-            DownloadHelper.download(
+            DownloadHelper(this).downloadFile(
                 context = this,
                 url = url,
                 userAgent = userAgent,
