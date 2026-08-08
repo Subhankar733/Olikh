@@ -1087,10 +1087,6 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         super.onPause()
     }
 
-    override fun onDestroy() {
-        persistTabSession()
-        super.onDestroy()
-    }
 
     private fun toggleCurrentBookmark() {
         val currentUrl = webView.url
@@ -9233,6 +9229,8 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         webView.webChromeClient = null
         webView.webViewClient = WebViewClient()
         webView.destroy()
+        persistTabSession()
+        super.onDestroy()
         super.onDestroy()
     }
 }
