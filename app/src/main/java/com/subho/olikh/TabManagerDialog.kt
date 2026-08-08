@@ -11,9 +11,9 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.HorizontalScrollView
-import android.widget.ImageView
 import android.widget.FrameLayout
+import android.widget.GridLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -34,9 +34,9 @@ class TabManagerDialog(
     private fun dp(value: Int): Int =
         (value * context.resources.displayMetrics.density).toInt()
 
-    private fun roundedBackground(
+    private fun rounded(
         color: Int,
-        radius: Int = 18,
+        radius: Int = 16,
         stroke: Int? = null
     ): GradientDrawable {
         return GradientDrawable().apply {
@@ -48,81 +48,73 @@ class TabManagerDialog(
 
     private fun previewBitmap(tab: BrowserTab): Bitmap? {
         return runCatching {
-            val width = dp(250).coerceAtLeast(180)
-            val height = dp(135).coerceAtLeast(100)
+            val width = dp(170).coerceAtLeast(150)
+            val height = dp(105).coerceAtLeast(90)
             val bitmap = Bitmap.createBitmap(
                 width,
                 height,
                 Bitmap.Config.ARGB_8888
             )
             val canvas = Canvas(bitmap)
-            canvas.drawColor(Color.rgb(18, 22, 29))
+            canvas.drawColor(Color.rgb(10, 13, 18))
             tab.webView.draw(canvas)
             bitmap
         }.getOrNull()
     }
 
-    private fun addSectionTitle(
-        root: LinearLayout,
-        text: String,
-        count: Int,
-        incognito: Boolean = false
-    ) {
-        val row = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(2), dp(16), dp(2), dp(8))
+    private fun text(
+        value: String,
+        size: Float,
+        color: Int
+    ): TextView {
+        return TextView(context).apply {
+            this.text = value
+            textSize = size
+            setTextColor(color)
         }
+    }
 
-        val title = TextView(context).apply {
-            this.text = text
-            textSize = 14f
-            setTextColor(
-                if (incognito) Color.rgb(198, 170, 255)
-                else Color.rgb(210, 216, 226)
+    private fun actionButton(
+        label: String,
+        callback: () -> Unit
+    ): Button {
+        return Button(context).apply {
+            text = label
+            textSize = 10f
+            isAllCaps = false
+            setTextColor(Color.rgb(218, 224, 234))
+            background = rounded(
+                Color.rgb(22, 27, 36),
+                14,
+                Color.rgb(48, 57, 72)
             )
+            setPadding(dp(12), 0, dp(12), 0)
+            setOnClickListener {
+                dismiss()
+                callback()
+            }
         }
-
-        val badge = TextView(context).apply {
-            this.text = count.toString()
-            textSize = 11f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            background = roundedBackground(
-                if (incognito) Color.rgb(73, 51, 105)
-                else Color.rgb(39, 48, 62),
-                99
-            )
-            setPadding(dp(9), dp(4), dp(9), dp(4))
-        }
-
-        row.addView(
-            title,
-            LinearLayout.LayoutParams(0, dp(34), 1f)
-        )
-        row.addView(badge)
-
-        root.addView(row)
     }
 
     private fun addTabCard(
-        root: LinearLayout,
+        grid: GridLayout,
         index: Int,
-        tab: BrowserTab
+        tab: BrowserTab,
+        columnCount: Int
     ) {
         val active = index == activeIndex
-
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            background = roundedBackground(
-                if (active) Color.rgb(31, 39, 52)
-                else Color.rgb(20, 24, 31),
-                20,
-                if (active) Color.rgb(99, 89, 220) else Color.rgb(42, 49, 61)
+            setPadding(dp(7), dp(7), dp(7), dp(7))
+            background = rounded(
+                if (active) Color.rgb(25, 30, 42)
+                else Color.rgb(16, 20, 27),
+                18,
+                if (active) Color.rgb(116, 101, 255)
+                else Color.rgb(40, 48, 61)
             )
             isClickable = true
             isFocusable = true
-            setPadding(dp(8), dp(8), dp(8), dp(8))
 
             setOnClickListener {
                 dismiss()
@@ -134,7 +126,7 @@ class TabManagerDialog(
                     .setTitle(
                         tab.title.replace("\n", " ")
                             .trim()
-                            .ifBlank { "Tab" }
+                            .ifBlank { "New Tab" }
                     )
                     .setItems(
                         arrayOf(
@@ -160,46 +152,40 @@ class TabManagerDialog(
         }
 
         val previewFrame = FrameLayout(context).apply {
-            background = roundedBackground(Color.rgb(12, 15, 20), 15)
+            background = rounded(Color.rgb(9, 12, 17), 13)
             clipToOutline = true
         }
 
         val preview = ImageView(context).apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
-            setBackgroundColor(Color.rgb(12, 15, 20))
+            setBackgroundColor(Color.rgb(9, 12, 17))
         }
 
-        previewBitmap(tab)?.let {
-            preview.setImageBitmap(it)
-        }
+        previewBitmap(tab)?.let(preview::setImageBitmap)
 
         previewFrame.addView(
             preview,
-            ViewGroup.LayoutParams(
+            FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(150)
+                dp(105)
             )
         )
 
-        val overlay = TextView(context).apply {
-            text = if (active) "ACTIVE" else ""
-            textSize = 9f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            background = roundedBackground(Color.rgb(99, 89, 220), 99)
-            setPadding(dp(8), dp(3), dp(8), dp(3))
-        }
-
         if (active) {
+            val badge = text("ACTIVE", 8.5f, Color.WHITE).apply {
+                gravity = Gravity.CENTER
+                background = rounded(Color.rgb(101, 88, 235), 99)
+                setPadding(dp(8), dp(3), dp(8), dp(3))
+            }
             previewFrame.addView(
-                overlay,
+                badge,
                 FrameLayout.LayoutParams(
-                    dp(62),
-                    dp(26)
+                    dp(55),
+                    dp(23)
                 ).apply {
                     gravity = Gravity.TOP or Gravity.START
-                    topMargin = dp(8)
-                    leftMargin = dp(8)
+                    leftMargin = dp(7)
+                    topMargin = dp(7)
                 }
             )
         }
@@ -208,50 +194,56 @@ class TabManagerDialog(
             previewFrame,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(150)
+                dp(105)
             )
         )
 
         val info = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(6), dp(8), 0, dp(2))
+            setPadding(dp(4), dp(7), 0, dp(1))
         }
 
-        val textBox = LinearLayout(context).apply {
+        val titleBox = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
         }
 
-        val title = TextView(context).apply {
-            text = tab.title.replace("\n", " ")
-                .trim()
-                .ifBlank { "New Tab" }
-            textSize = 15f
-            setTextColor(Color.WHITE)
-            maxLines = 1
-        }
-
-        val url = TextView(context).apply {
-            text = tab.url.ifBlank { "New Tab" }
-            textSize = 10f
-            setTextColor(Color.rgb(145, 154, 168))
-            maxLines = 1
-            setPadding(0, dp(3), 0, 0)
-        }
-
-        textBox.addView(title)
-        textBox.addView(url)
-
-        info.addView(
-            textBox,
-            LinearLayout.LayoutParams(0, dp(50), 1f)
+        titleBox.addView(
+            text(
+                tab.title.replace("\n", " ")
+                    .trim()
+                    .ifBlank { "New Tab" },
+                13f,
+                Color.rgb(242, 245, 249)
+            ).apply {
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }
         )
 
-        val close = Button(context).apply {
+        titleBox.addView(
+            text(
+                tab.url.ifBlank { "about:blank" },
+                9.5f,
+                Color.rgb(133, 143, 158)
+            ).apply {
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setPadding(0, dp(2), 0, 0)
+            }
+        )
+
+        info.addView(
+            titleBox,
+            LinearLayout.LayoutParams(0, dp(42), 1f)
+        )
+
+        val close = TextView(context).apply {
             text = "×"
             textSize = 22f
-            setTextColor(Color.WHITE)
-            background = roundedBackground(Color.TRANSPARENT, 99)
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(214, 220, 229))
+            background = rounded(Color.TRANSPARENT, 99)
             setOnClickListener {
                 dismiss()
                 onCloseTab(index)
@@ -260,7 +252,7 @@ class TabManagerDialog(
 
         info.addView(
             close,
-            LinearLayout.LayoutParams(dp(48), dp(48))
+            LinearLayout.LayoutParams(dp(40), dp(40))
         )
 
         card.addView(
@@ -271,15 +263,15 @@ class TabManagerDialog(
             )
         )
 
-        root.addView(
-            card,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dp(12)
-            }
-        )
+        val params = GridLayout.LayoutParams().apply {
+            width = 0
+            height = dp(170)
+            columnSpec = GridLayout.spec(index % columnCount, 1f)
+            rowSpec = GridLayout.spec(index / columnCount)
+            setMargins(dp(5), dp(5), dp(5), dp(5))
+        }
+
+        grid.addView(card, params)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -287,13 +279,13 @@ class TabManagerDialog(
 
         window?.apply {
             setBackgroundDrawableResource(android.R.color.transparent)
-            setDimAmount(0.72f)
+            setDimAmount(0.78f)
         }
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            background = roundedBackground(Color.rgb(8, 11, 16), 0)
-            setPadding(dp(16), dp(16), dp(16), dp(12))
+            background = rounded(Color.rgb(9, 12, 17), 24, Color.rgb(37, 45, 58))
+            setPadding(dp(14), dp(14), dp(14), dp(12))
         }
 
         val header = LinearLayout(context).apply {
@@ -305,32 +297,31 @@ class TabManagerDialog(
             orientation = LinearLayout.VERTICAL
         }
 
-        val heading = TextView(context).apply {
-            text = "OLIKH Tabs"
-            textSize = 25f
-            setTextColor(Color.WHITE)
-        }
+        headingBox.addView(
+            text("Tabs", 25f, Color.WHITE)
+        )
 
-        val subtitle = TextView(context).apply {
-            text = "${browserTabs.size} tabs  •  swipe-free preview"
-            textSize = 11f
-            setTextColor(Color.rgb(135, 145, 160))
-            setPadding(0, dp(3), 0, 0)
-        }
-
-        headingBox.addView(heading)
-        headingBox.addView(subtitle)
+        headingBox.addView(
+            text(
+                "${browserTabs.size} open  •  tap to switch",
+                11f,
+                Color.rgb(132, 143, 158)
+            ).apply {
+                setPadding(0, dp(3), 0, 0)
+            }
+        )
 
         header.addView(
             headingBox,
-            LinearLayout.LayoutParams(0, dp(60), 1f)
+            LinearLayout.LayoutParams(0, dp(56), 1f)
         )
 
         val newTab = Button(context).apply {
             text = "+"
-            textSize = 25f
+            textSize = 23f
+            isAllCaps = false
             setTextColor(Color.WHITE)
-            background = roundedBackground(Color.rgb(78, 66, 175), 16)
+            background = rounded(Color.rgb(101, 88, 235), 16)
             setOnClickListener {
                 dismiss()
                 onNewTab()
@@ -339,62 +330,53 @@ class TabManagerDialog(
 
         header.addView(
             newTab,
-            LinearLayout.LayoutParams(dp(58), dp(52))
+            LinearLayout.LayoutParams(dp(54), dp(48))
         )
 
         root.addView(header)
 
-        val actionsScroll = HorizontalScrollView(context).apply {
-            isHorizontalScrollBarEnabled = false
-        }
-
         val actions = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(2), 0, dp(4))
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(4), 0, dp(8))
         }
 
-        fun actionButton(label: String, callback: () -> Unit): Button {
-            return Button(context).apply {
-                text = label
-                textSize = 10f
-                setTextColor(Color.rgb(224, 229, 237))
-                background = roundedBackground(
-                    Color.rgb(22, 27, 35),
-                    99,
-                    Color.rgb(45, 54, 67)
-                )
-                setOnClickListener {
-                    dismiss()
-                    callback()
-                }
-                actions.addView(
-                    this,
-                    LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        dp(42)
-                    ).apply {
-                        rightMargin = dp(7)
-                    }
-                )
+        val closeOthers = actionButton("Close others", onCloseOthers)
+        val closeAll = actionButton("Close all", onCloseAll)
+        val reopen = actionButton("Reopen", onReopenClosed)
+
+        actions.addView(
+            closeOthers,
+            LinearLayout.LayoutParams(0, dp(40), 1f).apply {
+                marginEnd = dp(4)
             }
-        }
+        )
+        actions.addView(
+            closeAll,
+            LinearLayout.LayoutParams(0, dp(40), 1f).apply {
+                marginStart = dp(4)
+                marginEnd = dp(4)
+            }
+        )
+        actions.addView(
+            reopen,
+            LinearLayout.LayoutParams(0, dp(40), 1f).apply {
+                marginStart = dp(4)
+            }
+        )
 
-        actionButton("Close others", onCloseOthers)
-        actionButton("Close all", onCloseAll)
-        actionButton("Reopen closed", onReopenClosed)
-
-        actionsScroll.addView(actions)
         root.addView(
-            actionsScroll,
+            actions,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(52)
+                dp(48)
             )
         )
 
-        val list = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, dp(2), 0, dp(20))
+        val grid = GridLayout(context).apply {
+            columnCount = 2
+            useDefaultMargins = false
+            alignmentMode = GridLayout.ALIGN_BOUNDS
         }
 
         val normalTabs = browserTabs.mapIndexed { index, tab ->
@@ -405,33 +387,16 @@ class TabManagerDialog(
             index to tab
         }.filter { it.second.incognito }
 
-        if (normalTabs.isNotEmpty()) {
-            addSectionTitle(
-                list,
-                "Normal tabs",
-                normalTabs.size
-            )
-            normalTabs.forEach { (index, tab) ->
-                addTabCard(list, index, tab)
-            }
-        }
+        val combined = normalTabs + privateTabs
 
-        if (privateTabs.isNotEmpty()) {
-            addSectionTitle(
-                list,
-                "Private / Incognito",
-                privateTabs.size,
-                true
-            )
-            privateTabs.forEach { (index, tab) ->
-                addTabCard(list, index, tab)
-            }
+        combined.forEach { (index, tab) ->
+            addTabCard(grid, index, tab, 2)
         }
 
         val scroll = ScrollView(context).apply {
             isFillViewport = true
             addView(
-                list,
+                grid,
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
@@ -449,13 +414,14 @@ class TabManagerDialog(
         )
 
         val done = Button(context).apply {
-            text = "DONE"
+            text = "Done"
             textSize = 13f
-            setTextColor(Color.WHITE)
-            background = roundedBackground(
-                Color.rgb(25, 30, 39),
-                16,
-                Color.rgb(46, 55, 68)
+            isAllCaps = false
+            setTextColor(Color.rgb(232, 236, 242))
+            background = rounded(
+                Color.rgb(19, 24, 32),
+                15,
+                Color.rgb(45, 54, 68)
             )
             setOnClickListener { dismiss() }
         }
@@ -464,8 +430,10 @@ class TabManagerDialog(
             done,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(50)
-            )
+                dp(48)
+            ).apply {
+                topMargin = dp(8)
+            }
         )
 
         setContentView(root)
@@ -486,15 +454,15 @@ class TabManagerDialog(
         super.show()
         window?.decorView?.apply {
             alpha = 0f
-            scaleX = 0.97f
-            scaleY = 0.97f
-            translationY = dp(24).toFloat()
+            scaleX = 0.98f
+            scaleY = 0.98f
+            translationY = dp(18).toFloat()
             animate()
                 .alpha(1f)
                 .scaleX(1f)
                 .scaleY(1f)
                 .translationY(0f)
-                .setDuration(220L)
+                .setDuration(180L)
                 .start()
         }
     }
@@ -506,8 +474,8 @@ class TabManagerDialog(
                     v.animate()
                         .scaleX(0.985f)
                         .scaleY(0.985f)
-                        .alpha(0.88f)
-                        .setDuration(70L)
+                        .alpha(0.9f)
+                        .setDuration(60L)
                         .start()
                 }
 
@@ -517,7 +485,7 @@ class TabManagerDialog(
                         .scaleX(1f)
                         .scaleY(1f)
                         .alpha(1f)
-                        .setDuration(120L)
+                        .setDuration(100L)
                         .start()
                 }
             }
