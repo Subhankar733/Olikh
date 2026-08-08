@@ -323,91 +323,90 @@ class MainActivity : AppCompatActivity() {
             .ifBlank { "<div class=\"blank\">Save pages to build your library.</div>" }
 
         val html = """
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<meta name="color-scheme" content="light">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;min-height:100%;background:#EEECE6;color:#151515;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{padding:0 20px 34px}.page{max-width:760px;margin:auto}
-.top{height:72px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #C8C5BD}
-.logo{font-size:19px;font-weight:900;letter-spacing:.14em}.edition{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#77736B}
-.menu{display:flex;gap:7px}.menu a{color:#151515;text-decoration:none;font-size:10px;text-transform:uppercase;letter-spacing:.08em;border:1px solid #B9B6AE;padding:7px 9px}
-.intro{padding:38px 0 28px}.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#77736B;margin-bottom:10px}
-h1{font-family:Georgia,serif;font-size:38px;line-height:1.02;font-weight:500;letter-spacing:-.03em;margin:0;max-width:540px}
-.search{margin-top:25px;height:58px;background:#151515;display:flex;align-items:center;padding:0 14px;border:0}
-.search span{color:#BDBAB1;font-size:19px}.search input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:#FFF;padding:0 12px;font-size:15px}.search input::placeholder{color:#A7A49D}
-.engine{font-size:9px;color:#D7D4CC;border-left:1px solid #4A4A46;padding-left:10px;text-transform:uppercase;letter-spacing:.08em}
-.command{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:1px;background:#BDB9B0;border:1px solid #BDB9B0;margin-top:22px}
-.command a{background:#EEECE6;color:#151515;text-decoration:none;padding:16px 13px;min-height:66px}
-.command b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.command small{display:block;color:#77736B;margin-top:5px;font-size:9px}
-.blocker{margin-top:30px;border-top:2px solid #151515;border-bottom:1px solid #BDB9B0;padding:15px 0;display:flex;justify-content:space-between;align-items:center;gap:16px}
-.blocker-left{display:flex;align-items:center;gap:10px}.dot{width:10px;height:10px;border-radius:50%;background:$blockerColor}.blocker strong{font-size:12px}.blocker small{display:block;color:#77736B;font-size:9px;margin-top:3px}.count{text-align:right}.count b{font-size:18px}.count small{display:block;color:#77736B;font-size:8px}
-.section{margin-top:32px}.section-head{display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid #151515;padding-bottom:8px}.section-head h2{font-family:Georgia,serif;font-size:21px;font-weight:500;margin:0}.section-head span{font-size:9px;color:#77736B;text-transform:uppercase;letter-spacing:.08em}
-.pins{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #BDB9B0}.pin{display:grid;grid-template-columns:28px 1fr 20px;align-items:center;min-height:55px;border-bottom:1px solid #C9C6BE;text-decoration:none;color:#151515;padding:0 4px}.pin:nth-child(odd){border-right:1px solid #C9C6BE}.pin:nth-last-child(-n+2){border-bottom:0}.pin-number{font-size:9px;color:#8A867E}.pin-name{font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pin-go{font-size:13px;text-align:right;color:#77736B}.blank{padding:18px 4px;color:#77736B;font-size:11px}
-.list{border-bottom:1px solid #BDB9B0}.list-row{display:flex;align-items:center;gap:10px;min-height:58px;border-bottom:1px solid #C9C6BE;text-decoration:none;color:#151515}.list-row:last-child{border-bottom:0}.list-mark{width:22px;color:#77736B;font-size:14px}.list-main{flex:1;min-width:0}.list-main strong{display:block;font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.list-main small{display:block;color:#77736B;font-size:9px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.list-arrow{font-size:15px;color:#77736B}
-.library{display:grid;grid-template-columns:1fr 1fr;gap:18px}.library .section{margin-top:0}
-.footer{padding-top:34px;font-size:9px;color:#8A867E;display:flex;justify-content:space-between;border-top:1px solid #BDB9B0;margin-top:34px}
-@media(max-width:430px){body{padding-left:16px;padding-right:16px}h1{font-size:33px}.command{grid-template-columns:1fr 1fr}.command a:first-child{grid-column:1/-1}.pins{grid-template-columns:1fr}.pin:nth-child(odd){border-right:0}.pin:nth-last-child(-n+2){border-bottom:1px solid #C9C6BE}.pin:last-child{border-bottom:0}.library{grid-template-columns:1fr;gap:30px}.menu a:nth-child(2){display:none}}
+:root{--bg:#f4f5f7;--ink:#101216;--muted:#737983;--line:#dfe2e7;--surface:#fff;--dark:#17191e}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{min-height:100vh}.shell{max-width:760px;margin:auto;padding:22px 18px 110px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+.brand{display:flex;align-items:center;gap:11px}.mark{width:38px;height:38px;border-radius:12px;background:#111318;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}
+.brand b{font-size:17px}.brand span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.clock{text-align:right;font-size:12px;color:var(--muted)}.clock strong{display:block;color:var(--ink);font-size:15px}
+.command{background:var(--dark);border-radius:24px;padding:20px;color:#fff;box-shadow:0 12px 32px rgba(0,0,0,.12)}
+.command small{color:#aeb3bd;font-size:11px}.command h1{font-size:28px;line-height:1.05;margin:7px 0 17px;letter-spacing:-.04em}
+.search{display:flex;align-items:center;background:#fff;border-radius:15px;padding:5px}.search input{min-width:0;flex:1;border:0;outline:0;background:transparent;padding:13px 12px;color:#111;font-size:15px}
+.go{width:42px;height:42px;border-radius:12px;background:#111318;color:#fff;font-weight:800}.suggest{display:none;background:#fff;color:#111;border-radius:14px;margin-top:7px;overflow:hidden}
+.suggest button{display:block;width:100%;padding:12px 14px;text-align:left;background:#fff;border-bottom:1px solid #eee;color:#222}.suggest button:last-child{border-bottom:0}
+.section{margin-top:25px}.labelrow{display:flex;justify-content:space-between;align-items:end;margin-bottom:10px}.labelrow b{font-size:13px}.labelrow span{font-size:11px;color:var(--muted)}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.action{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:17px;text-align:left;min-height:78px;color:var(--ink);text-decoration:none}
+.action strong{display:block;font-size:14px}.action span{display:block;color:var(--muted);font-size:11px;margin-top:5px}.action.dark{background:#111318;color:#fff;border-color:#111318}.action.dark span{color:#aeb3bd}
+.strip{display:flex;gap:9px;overflow:auto;padding-bottom:3px}.strip a{flex:0 0 auto;min-width:118px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:13px;color:var(--ink);text-decoration:none}
+.strip b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.strip span{display:block;color:var(--muted);font-size:10px;margin-top:5px}
+.status{display:flex;align-items:center;justify-content:space-between;background:#111318;color:#fff;border-radius:18px;padding:17px}.status .left{display:flex;align-items:center;gap:12px}
+.dot{width:10px;height:10px;border-radius:50%;background:#fff}.status b{font-size:14px}.status small{display:block;color:#aeb3bd;margin-top:3px;font-size:10px}
+.count{text-align:right;font-size:20px;font-weight:800}.count small{font-size:9px}
+.nav{position:fixed;left:14px;right:14px;bottom:14px;max-width:732px;margin:auto;background:#111318;color:#fff;border-radius:20px;padding:8px;display:flex;gap:7px;box-shadow:0 12px 35px rgba(0,0,0,.2)}
+.nav a{flex:1;text-decoration:none;color:#fff;text-align:center;border-radius:13px;padding:10px 4px;font-size:10px;background:#20232a}.nav a.main{background:#fff;color:#111;font-weight:800}
+@media(min-width:600px){.actions{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
-<div class="page">
+<div class="shell">
 <header class="top">
-  <div><div class="logo">OLIKH</div><div class="edition">PRIVATE WEB / 01</div></div>
-  <nav class="menu">
-    <a href="olikh://settings">Settings</a>
-    <a href="olikh://incognito">Private</a>
-  </nav>
+<div class="brand"><div class="mark">O</div><div><b>OLIKH</b><span>private browsing workspace</span></div></div>
+<div class="clock"><strong id="time">--:--</strong><span id="date">---</span></div>
 </header>
-
-<section class="intro">
-  <div class="eyebrow">Browser start page</div>
-  <h1>Go somewhere.<br>Leave less behind.</h1>
-  <form class="search" onsubmit="event.preventDefault();var q=document.getElementById('q').value.trim();if(q)location.href='olikh://search?q='+encodeURIComponent(q)">
-    <span>⌕</span>
-    <input id="q" autocomplete="off" placeholder="Search or enter a web address">
-    <span class="engine">$searchEngine</span>
-  </form>
-  <div class="command">
-    <a href="olikh://new-tab"><b>＋ New tab</b><small>Start a clean page</small></a>
-    <a href="olikh://history"><b>History</b><small>Return to a page</small></a>
-    <a href="olikh://bookmarks"><b>Library</b><small>Saved pages</small></a>
-    <a href="olikh://downloads"><b>Downloads</b><small>Files & documents</small></a>
-    <a href="olikh://toggle-blocker"><b>Protection</b><small>Privacy controls</small></a>
-  </div>
-</section>
-
-<div class="blocker">
-  <div class="blocker-left"><span class="dot"></span><div><strong>$blockerText</strong><small>Content protection · $blockerLabel</small></div></div>
-  <div class="count"><b>$blockedRequests</b><small>blocked · $blockedDomains domains</small></div>
-</div>
-
-<section class="section">
-  <div class="section-head"><h2>Pinned</h2><span>Quick destinations</span></div>
-  <div class="pins">$quickAccessHtml</div>
-</section>
-
-<div class="library">
-<section class="section">
-  <div class="section-head"><h2>History</h2><span>Recent</span></div>
-  <div class="list">$recentHtml</div>
+<section class="command">
+<small>COMMAND CENTER</small><h1>Where do you want to go?</h1>
+<form class="search" onsubmit="return runSearch()">
+<input id="q" autocomplete="off" autocapitalize="none" placeholder="Search, paste a URL, or type a command">
+<button class="go" type="submit">GO</button>
+</form>
+<div id="suggest" class="suggest"></div>
 </section>
 <section class="section">
-  <div class="section-head"><h2>Bookmarks</h2><span>Saved</span></div>
-  <div class="list">$bookmarkHtml</div>
-</section>
+<div class="labelrow"><b>WORKSPACE</b><span>your browser, your rules</span></div>
+<div class="actions">
+<a class="action dark" href="olikh://new-tab"><strong>New tab</strong><span>Start a fresh page</span></a>
+<a class="action" href="olikh://tabs"><strong>Open tabs</strong><span>Switch or manage tabs</span></a>
+<a class="action" href="olikh://history"><strong>History</strong><span>Continue where you left off</span></a>
+<a class="action" href="olikh://bookmarks"><strong>Saved</strong><span>Bookmarks and pages</span></a>
+<a class="action" href="olikh://downloads"><strong>Downloads</strong><span>Files and transfers</span></a>
+<a class="action" href="olikh://settings"><strong>Settings</strong><span>Configure OLIKH</span></a>
+<a class="action" href="olikh://incognito"><strong>Private mode</strong><span>Open a private tab</span></a>
+<a class="action" href="olikh://toggle-blocker"><strong>Protection</strong><span>Content blocking</span></a>
+</div></section>
+<section class="section"><div class="labelrow"><b>QUICK ACCESS</b><span>one tap</span></div><div class="strip">$quickAccessHtml</div></section>
+<section class="section"><div class="status">
+<div class="left"><div class="dot"></div><div><b>Protection $blockerStatus</b><small>Privacy shield is active for this browser</small></div></div>
+<div class="count">$blockedRequests<small>blocked · $blockedDomains domains</small></div>
+</div></section>
+<section class="section"><div class="labelrow"><b>RECENT</b><span>continue browsing</span></div><div class="strip">$recentHtml</div></section>
+<section class="section"><div class="labelrow"><b>SAVED</b><span>your bookmarks</span></div><div class="strip">$bookmarkHtml</div></section>
 </div>
-
-<footer class="footer"><span>OLIKH</span><span>FAST · PRIVATE · LOCAL</span></footer>
-</div>
+<nav class="nav"><a href="olikh://history">History</a><a href="olikh://bookmarks">Saved</a><a class="main" href="olikh://new-tab">New</a><a href="olikh://downloads">Files</a><a href="olikh://settings">More</a></nav>
+<script>
+const input=document.getElementById('q'),box=document.getElementById('suggest');
+const commands=[['History','olikh://history'],['Saved','olikh://bookmarks'],['Downloads','olikh://downloads'],['Settings','olikh://settings'],['Private mode','olikh://incognito'],['Open tabs','olikh://tabs']];
+function go(v){v=(v||'').trim();if(!v)return false;if(v.startsWith('olikh://')){location.href=v;return false}
+const url=/^(https?:\/\/|www\.|[^\s]+\.[^\s]+$)/i.test(v);location.href=url?(v.startsWith('http')?v:'https://'+v):'olikh://search?q='+encodeURIComponent(v);return false}
+function runSearch(){return go(input.value)}
+input.addEventListener('input',()=>{const q=input.value.trim().toLowerCase();if(!q){box.style.display='none';return}
+const hits=commands.filter(x=>x[0].toLowerCase().includes(q)).slice(0,4);if(!hits.length){box.style.display='none';return}
+box.innerHTML='';hits.forEach(x=>{const b=document.createElement('button');b.textContent=x[0];b.onclick=()=>location.href=x[1];box.appendChild(b)});box.style.display='block'});
+function tick(){const d=new Date();document.getElementById('time').textContent=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});document.getElementById('date').textContent=d.toLocaleDateString([], {weekday:'short',day:'numeric',month:'short'})}
+tick();setInterval(tick,30000);
+</script>
 </body>
 </html>
-        """.trimIndent()
+""".trimIndent()
 
-        addressBar.setText("OLIKH Start")
+        addressBar.setText("OLIKH")
+
         webView.loadDataWithBaseURL(
             "https://olikh.local/start",
             html,
