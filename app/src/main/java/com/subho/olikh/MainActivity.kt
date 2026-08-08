@@ -265,9 +265,9 @@ class MainActivity : AppCompatActivity() {
                 val safeUrl = escapeHtml(item.url)
                 val number = index + 1
                 """
-                <a class="pin" href="$safeUrl">
-                    <span class="pin-number">$number</span>
-                    <span class="pin-name">$safeName</span>
+                <a class="quick" href="$safeUrl">
+                    <span class="quick-icon">$number</span>
+                    <span class="quick-text">$safeName</span>
                     <span class="pin-go">↗</span>
                 </a>
                 """.trimIndent()
@@ -287,13 +287,13 @@ class MainActivity : AppCompatActivity() {
                     .getOrDefault("").removePrefix("www.")
                 val safeHost = escapeHtml(host.ifBlank { entry.url }.take(34))
                 """
-                <a class="list-row" href="$safeUrl">
-                    <span class="list-mark">•</span>
-                    <span class="list-main">
+                <a class="row" href="$safeUrl">
+                    <span class="row-icon">•</span>
+                    <span class="row-copy">
                         <strong>$safeTitle</strong>
                         <small>$safeHost</small>
                     </span>
-                    <span class="list-arrow">→</span>
+                    <span class="row-arrow">→</span>
                 </a>
                 """.trimIndent()
             }
@@ -310,13 +310,13 @@ class MainActivity : AppCompatActivity() {
                     .getOrDefault("").removePrefix("www.")
                 val safeHost = escapeHtml(host.ifBlank { entry.url }.take(34))
                 """
-                <a class="list-row" href="$safeUrl">
-                    <span class="list-mark">☆</span>
-                    <span class="list-main">
+                <a class="row" href="$safeUrl">
+                    <span class="row-icon">☆</span>
+                    <span class="row-copy">
                         <strong>$safeTitle</strong>
                         <small>$safeHost</small>
                     </span>
-                    <span class="list-arrow">→</span>
+                    <span class="row-arrow">→</span>
                 </a>
                 """.trimIndent()
             }
@@ -328,78 +328,69 @@ class MainActivity : AppCompatActivity() {
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>
-:root{--bg:#f4f5f7;--ink:#101216;--muted:#737983;--line:#dfe2e7;--surface:#fff;--dark:#17191e}
+:root{--bg:#f3f4f6;--ink:#111318;--muted:#747982;--line:#dfe1e5;--surface:#fff;--dark:#17181c;--soft:#eef0f3}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{min-height:100vh}.shell{max-width:760px;margin:auto;padding:22px 18px 110px}
-.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
-.brand{display:flex;align-items:center;gap:11px}.mark{width:38px;height:38px;border-radius:12px;background:#111318;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}
-.brand b{font-size:17px}.brand span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
-.clock{text-align:right;font-size:12px;color:var(--muted)}.clock strong{display:block;color:var(--ink);font-size:15px}
-.command{background:var(--dark);border-radius:24px;padding:20px;color:#fff;box-shadow:0 12px 32px rgba(0,0,0,.12)}
-.command small{color:#aeb3bd;font-size:11px}.command h1{font-size:28px;line-height:1.05;margin:7px 0 17px;letter-spacing:-.04em}
-.search{display:flex;align-items:center;background:#fff;border-radius:15px;padding:5px}.search input{min-width:0;flex:1;border:0;outline:0;background:transparent;padding:13px 12px;color:#111;font-size:15px}
-.go{width:42px;height:42px;border-radius:12px;background:#111318;color:#fff;font-weight:800}.suggest{display:none;background:#fff;color:#111;border-radius:14px;margin-top:7px;overflow:hidden}
-.suggest button{display:block;width:100%;padding:12px 14px;text-align:left;background:#fff;border-bottom:1px solid #eee;color:#222}.suggest button:last-child{border-bottom:0}
-.section{margin-top:25px}.labelrow{display:flex;justify-content:space-between;align-items:end;margin-bottom:10px}.labelrow b{font-size:13px}.labelrow span{font-size:11px;color:var(--muted)}
-.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.action{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:17px;text-align:left;min-height:78px;color:var(--ink);text-decoration:none}
-.action strong{display:block;font-size:14px}.action span{display:block;color:var(--muted);font-size:11px;margin-top:5px}.action.dark{background:#111318;color:#fff;border-color:#111318}.action.dark span{color:#aeb3bd}
-.strip{display:flex;gap:9px;overflow:auto;padding-bottom:3px}.strip a{flex:0 0 auto;min-width:118px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:13px;color:var(--ink);text-decoration:none}
-.strip b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.strip span{display:block;color:var(--muted);font-size:10px;margin-top:5px}
-.status{display:flex;align-items:center;justify-content:space-between;background:#111318;color:#fff;border-radius:18px;padding:17px}.status .left{display:flex;align-items:center;gap:12px}
-.dot{width:10px;height:10px;border-radius:50%;background:#fff}.status b{font-size:14px}.status small{display:block;color:#aeb3bd;margin-top:3px;font-size:10px}
-.count{text-align:right;font-size:20px;font-weight:800}.count small{font-size:9px}
-.nav{position:fixed;left:14px;right:14px;bottom:14px;max-width:732px;margin:auto;background:#111318;color:#fff;border-radius:20px;padding:8px;display:flex;gap:7px;box-shadow:0 12px 35px rgba(0,0,0,.2)}
-.nav a{flex:1;text-decoration:none;color:#fff;text-align:center;border-radius:13px;padding:10px 4px;font-size:10px;background:#20232a}.nav a.main{background:#fff;color:#111;font-weight:800}
-@media(min-width:600px){.actions{grid-template-columns:repeat(4,1fr)}}
+body{min-height:100vh}.page{max-width:760px;margin:0 auto;padding:18px 18px 112px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 20px}
+.identity{display:flex;align-items:center;gap:11px}.logo{width:40px;height:40px;border-radius:13px;background:#111318;color:#fff;display:grid;place-items:center;font-size:21px;font-weight:900}
+.identity b{display:block;font-size:17px}.identity span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.time{text-align:right;color:var(--muted);font-size:10px}.time b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+.command{background:var(--dark);color:#fff;border-radius:24px;padding:23px 18px 18px;box-shadow:0 10px 28px rgba(0,0,0,.12)}
+.command-label{font-size:10px;color:#a8adb7;letter-spacing:.08em;font-weight:700}.command h1{font-size:28px;line-height:1.05;margin:7px 0 18px;letter-spacing:-.05em}
+.search{display:flex;gap:7px;background:#fff;border-radius:15px;padding:6px}.search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#111;padding:12px 10px;font-size:15px}
+.go{width:48px;border:0;border-radius:12px;background:#15161a;color:#fff;font-weight:800}.suggestions{display:none;margin-top:7px;border-radius:13px;overflow:hidden;background:#fff;color:#111}
+.suggestions button{width:100%;border:0;border-bottom:1px solid #eee;background:#fff;padding:12px 14px;text-align:left;font-size:13px}
+.section{margin-top:25px}.section-head{display:flex;align-items:end;justify-content:space-between;margin:0 2px 11px}.section-head b{font-size:13px}.section-head span{font-size:10px;color:var(--muted)}
+.workspace{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{display:block;min-height:96px;border:1px solid var(--line);border-radius:18px;background:var(--surface);padding:17px;color:var(--ink);text-decoration:none}
+.card.dark{background:#111318;border-color:#111318;color:#fff}.card b{display:block;font-size:14px}.card span{display:block;color:var(--muted);font-size:11px;line-height:1.35;margin-top:6px}.card.dark span{color:#aeb3bd}
+.quick-strip{display:flex;gap:9px;overflow-x:auto;padding-bottom:3px}.quick{flex:0 0 112px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;color:var(--ink);text-decoration:none}
+.quick-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#17181c;color:#fff;font-size:14px;font-weight:800;margin-bottom:9px}.quick-text{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.protection{display:flex;align-items:center;justify-content:space-between;background:#111318;color:#fff;border-radius:19px;padding:17px}.protection-left{display:flex;align-items:center;gap:11px}.shield{width:10px;height:10px;border-radius:50%;background:#fff}
+.protection b{font-size:13px}.protection small{display:block;color:#aeb3bd;font-size:10px;margin-top:4px}.blocked{text-align:right;font-size:19px;font-weight:800}.blocked small{font-size:9px}
+.rows{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}.row{display:flex;align-items:center;gap:10px;padding:14px;text-decoration:none;color:var(--ink);border-bottom:1px solid #eceef1}.row:last-child{border-bottom:0}
+.row-icon{width:30px;height:30px;border-radius:9px;background:var(--soft);display:grid;place-items:center;font-size:14px}.row-copy{min-width:0;flex:1}.row-copy b,.row-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row-copy b{font-size:12px}.row-copy small{color:var(--muted);font-size:9px;margin-top:3px}.row-arrow{font-size:20px;color:#999}
+.empty{padding:20px 14px;color:var(--muted);font-size:11px}.dock{position:fixed;left:14px;right:14px;bottom:12px;max-width:732px;margin:auto;display:flex;gap:7px;padding:7px;border-radius:19px;background:#111318;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.dock a{flex:1;text-align:center;text-decoration:none;color:#fff;background:#20232a;border-radius:13px;padding:10px 3px;font-size:10px}.dock a.active{background:#fff;color:#111;font-weight:800}
 </style>
 </head>
 <body>
-<div class="shell">
+<main class="page">
 <header class="top">
-<div class="brand"><div class="mark">O</div><div><b>OLIKH</b><span>private browsing workspace</span></div></div>
-<div class="clock"><strong id="time">--:--</strong><span id="date">---</span></div>
+ <div class="identity"><div class="logo">O</div><div><b>OLIKH</b><span>private browsing workspace</span></div></div>
+ <div class="time"><b id="clock">--:--</b><span id="date">---</span></div>
 </header>
 <section class="command">
-<small>COMMAND CENTER</small><h1>Where do you want to go?</h1>
-<form class="search" onsubmit="return runSearch()">
-<input id="q" autocomplete="off" autocapitalize="none" placeholder="Search, paste a URL, or type a command">
-<button class="go" type="submit">GO</button>
-</form>
-<div id="suggest" class="suggest"></div>
+ <div class="command-label">COMMAND CENTER</div><h1>Where do you want to go?</h1>
+ <form class="search" onsubmit="return submitSearch()"><input id="query" autocomplete="off" autocapitalize="none" placeholder="Search, paste a URL, or type a command"><button class="go" type="submit">GO</button></form>
+ <div id="suggestions" class="suggestions"></div>
 </section>
-<section class="section">
-<div class="labelrow"><b>WORKSPACE</b><span>your browser, your rules</span></div>
-<div class="actions">
-<a class="action dark" href="olikh://new-tab"><strong>New tab</strong><span>Start a fresh page</span></a>
-<a class="action" href="olikh://tabs"><strong>Open tabs</strong><span>Switch or manage tabs</span></a>
-<a class="action" href="olikh://history"><strong>History</strong><span>Continue where you left off</span></a>
-<a class="action" href="olikh://bookmarks"><strong>Saved</strong><span>Bookmarks and pages</span></a>
-<a class="action" href="olikh://downloads"><strong>Downloads</strong><span>Files and transfers</span></a>
-<a class="action" href="olikh://settings"><strong>Settings</strong><span>Configure OLIKH</span></a>
-<a class="action" href="olikh://incognito"><strong>Private mode</strong><span>Open a private tab</span></a>
-<a class="action" href="olikh://toggle-blocker"><strong>Protection</strong><span>Content blocking</span></a>
-</div></section>
-<section class="section"><div class="labelrow"><b>QUICK ACCESS</b><span>one tap</span></div><div class="strip">$quickAccessHtml</div></section>
-<section class="section"><div class="status">
-<div class="left"><div class="dot"></div><div><b>Protection $blockerLabel</b><small>Privacy shield is active for this browser</small></div></div>
-<div class="count">$blockedRequests<small>blocked · $blockedDomains domains</small></div>
-</div></section>
-<section class="section"><div class="labelrow"><b>RECENT</b><span>continue browsing</span></div><div class="strip">$recentHtml</div></section>
-<section class="section"><div class="labelrow"><b>SAVED</b><span>your bookmarks</span></div><div class="strip">$bookmarkHtml</div></section>
-</div>
-<nav class="nav"><a href="olikh://history">History</a><a href="olikh://bookmarks">Saved</a><a class="main" href="olikh://new-tab">New</a><a href="olikh://downloads">Files</a><a href="olikh://settings">More</a></nav>
+<section class="section"><div class="section-head"><b>WORKSPACE</b><span>your browser, your rules</span></div>
+ <div class="workspace">
+  <a class="card dark" href="olikh://new-tab"><b>New tab</b><span>Start a fresh page</span></a>
+  <a class="card" href="olikh://tabs"><b>Open tabs</b><span>Switch or manage tabs</span></a>
+  <a class="card" href="olikh://history"><b>History</b><span>Continue where you left off</span></a>
+  <a class="card" href="olikh://bookmarks"><b>Saved</b><span>Bookmarks and pages</span></a>
+  <a class="card" href="olikh://downloads"><b>Downloads</b><span>Files and transfers</span></a>
+  <a class="card" href="olikh://settings"><b>Settings</b><span>Configure OLIKH</span></a>
+  <a class="card" href="olikh://incognito"><b>Private mode</b><span>Open a private tab</span></a>
+  <a class="card" href="olikh://toggle-blocker</b><span>Content blocking</span></a>
+ </div>
+</section>
+<section class="section"><div class="section-head"><b>QUICK ACCESS</b><span>one tap</span></div><div class="quick-strip">$quickAccessHtml</div></section>
+<section class="section"><div class="protection"><div class="protection-left"><div class="shield"></div><div><b>Protection $blockerLabel</b><small>Privacy shield is active for this browser</small></div></div><div class="blocked">$blockedRequests<small>blocked · $blockedDomains domains</small></div></div></section>
+<section class="section"><div class="section-head"><b>RECENT</b><span>continue browsing</span></div><div class="rows">$recentHtml</div></section>
+<section class="section"><div class="section-head"><b>SAVED</b><span>your bookmarks</span></div><div class="rows">$bookmarkHtml</div></section>
+</main>
+<nav class="dock">
+ <a href="olikh://history">History</a><a href="olikh://bookmarks">Saved</a><a class="active" href="olikh://new-tab">New</a><a href="olikh://downloads">Files</a><a href="olikh://settings">More</a>
+</nav>
 <script>
-const input=document.getElementById('q'),box=document.getElementById('suggest');
-const commands=[['History','olikh://history'],['Saved','olikh://bookmarks'],['Downloads','olikh://downloads'],['Settings','olikh://settings'],['Private mode','olikh://incognito'],['Open tabs','olikh://tabs']];
-function go(v){v=(v||'').trim();if(!v)return false;if(v.startsWith('olikh://')){location.href=v;return false}
-const url=/^(https?:\/\/|www\.|[^\s]+\.[^\s]+$)/i.test(v);location.href=url?(v.startsWith('http')?v:'https://'+v):'olikh://search?q='+encodeURIComponent(v);return false}
-function runSearch(){return go(input.value)}
-input.addEventListener('input',()=>{const q=input.value.trim().toLowerCase();if(!q){box.style.display='none';return}
-const hits=commands.filter(x=>x[0].toLowerCase().includes(q)).slice(0,4);if(!hits.length){box.style.display='none';return}
-box.innerHTML='';hits.forEach(x=>{const b=document.createElement('button');b.textContent=x[0];b.onclick=()=>location.href=x[1];box.appendChild(b)});box.style.display='block'});
-function tick(){const d=new Date();document.getElementById('time').textContent=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});document.getElementById('date').textContent=d.toLocaleDateString([], {weekday:'short',day:'numeric',month:'short'})}
-tick();setInterval(tick,30000);
+const input=document.getElementById("query"),box=document.getElementById("suggestions");
+const commands=["History","Saved","Downloads","Settings","Private mode","Open tabs"];
+function submitSearch(){const value=input.value.trim();if(!value)return false;const looksLikeUrl=/^(https?:\/\/|www\.)/i.test(value)||/^[^\s]+\.[^\s]+$/.test(value);location.href=looksLikeUrl?(value.startsWith("http")?value:"https://"+value):"https://www.google.com/search?q="+encodeURIComponent(value);return false}
+input.addEventListener("input",()=>{const q=input.value.trim().toLowerCase();if(!q){box.style.display="none";return}const hits=commands.filter(x=>x.toLowerCase().includes(q)).slice(0,4);if(!hits.length){box.style.display="none";return}box.innerHTML="";hits.forEach(x=>{const b=document.createElement("button");b.textContent=x;b.onclick=()=>{input.value=x;submitSearch()};box.appendChild(b)});box.style.display="block"});
+function tick(){const d=new Date();document.getElementById("clock").textContent=d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});document.getElementById("date").textContent=d.toLocaleDateString([], {weekday:"short",day:"numeric",month:"short"})}tick();setInterval(tick,30000);
 </script>
 </body>
 </html>
