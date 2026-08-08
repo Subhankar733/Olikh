@@ -382,7 +382,7 @@ body{min-height:100vh}.shell{max-width:760px;margin:auto;padding:22px 18px 110px
 </div></section>
 <section class="section"><div class="labelrow"><b>QUICK ACCESS</b><span>one tap</span></div><div class="strip">$quickAccessHtml</div></section>
 <section class="section"><div class="status">
-<div class="left"><div class="dot"></div><div><b>Protection $blockerStatus</b><small>Privacy shield is active for this browser</small></div></div>
+<div class="left"><div class="dot"></div><div><b>Protection $blockerLabel</b><small>Privacy shield is active for this browser</small></div></div>
 <div class="count">$blockedRequests<small>blocked · $blockedDomains domains</small></div>
 </div></section>
 <section class="section"><div class="labelrow"><b>RECENT</b><span>continue browsing</span></div><div class="strip">$recentHtml</div></section>
