@@ -1,21 +1,3 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme -->
-    <style name="Theme.Olikh" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Primary brand color -->
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorOnPrimary">@color/onPrimary</item>
-        <item name="colorPrimaryContainer">@color/primaryContainer</item>
-        <item name="colorOnPrimaryContainer">@color/onPrimaryContainer</item>
-
-        <!-- Secondary brand color -->
-        <item name="colorSecondary">@color/secondary</item>
-        <item name="colorOnSecondary">@color/onSecondary</item>
-        <item name="colorSecondaryContainer">@color/secondaryContainer</item>
-        <item name="colorOnSecondaryContainer">@color/onSecondaryContainer</item>
-
-        <!-- Customize your theme here -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
-    </style>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
 </resources>
