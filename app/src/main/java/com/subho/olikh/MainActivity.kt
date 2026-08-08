@@ -245,6 +245,7 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
+
     private fun showOlikhStartPage() {
         showingErrorPage = false
         failedUrl = null
@@ -252,198 +253,161 @@ class MainActivity : AppCompatActivity() {
         val blockerEnabled = olikhBlocker.isEnabled()
         val blockedRequests = olikhBlocker.blockedRequests()
         val blockedDomains = olikhBlocker.blockedHostCount()
+        val blockerLabel = if (blockerEnabled) "ON" else "OFF"
+        val blockerText = if (blockerEnabled) "Protection is active" else "Protection is paused"
+        val blockerColor = if (blockerEnabled) "#1E8E68" else "#B06B35"
+        val searchEngine = escapeHtml(currentSearchEngine())
 
-        val blockerStatus =
-            if (blockerEnabled) "Protection active"
-            else "Protection paused"
+        val quickAccessHtml = getQuickAccessItems()
+            .take(6)
+            .mapIndexed { index, item ->
+                val safeName = escapeHtml(item.name)
+                val safeUrl = escapeHtml(item.url)
+                val number = index + 1
+                """
+                <a class="pin" href="$safeUrl">
+                    <span class="pin-number">$number</span>
+                    <span class="pin-name">$safeName</span>
+                    <span class="pin-go">↗</span>
+                </a>
+                """.trimIndent()
+            }
+            .joinToString("\n")
+            .ifBlank { "<div class=\"blank\">No pinned destinations yet.</div>" }
 
-        val blockerIcon =
-            if (blockerEnabled) "&#10003;"
-            else "&#8212;"
+        val recentHtml = historyManager.getAll()
+            .asSequence()
+            .filter { it.url.startsWith("http://") || it.url.startsWith("https://") }
+            .distinctBy { it.url }
+            .take(4)
+            .map { entry ->
+                val safeTitle = escapeHtml(entry.title.trim().ifBlank { entry.url }.take(32))
+                val safeUrl = escapeHtml(entry.url)
+                val host = runCatching { Uri.parse(entry.url).host.orEmpty() }
+                    .getOrDefault("").removePrefix("www.")
+                val safeHost = escapeHtml(host.ifBlank { entry.url }.take(34))
+                """
+                <a class="list-row" href="$safeUrl">
+                    <span class="list-mark">•</span>
+                    <span class="list-main">
+                        <strong>$safeTitle</strong>
+                        <small>$safeHost</small>
+                    </span>
+                    <span class="list-arrow">→</span>
+                </a>
+                """.trimIndent()
+            }
+            .toList()
+            .joinToString("\n")
+            .ifBlank { "<div class=\"blank\">Your browsing history will appear here.</div>" }
 
-        val searchEngine =
-            escapeHtml(currentSearchEngine())
-
-        val quickAccessHtml =
-            getQuickAccessItems()
-                .take(8)
-                .joinToString("\n") { item ->
-                    val safeName = escapeHtml(item.name)
-                    val safeUrl = escapeHtml(item.url)
-
-                    val faviconUrl = runCatching {
-                        val uri = Uri.parse(item.url)
-                        val scheme = uri.scheme ?: "https"
-                        val host = uri.host.orEmpty()
-
-                        if (host.isBlank()) {
-                            ""
-                        } else {
-                            "$scheme://$host/favicon.ico"
-                        }
-                    }.getOrDefault("")
-
-                    val safeFavicon =
-                        escapeHtml(faviconUrl)
-
-                    val fallback =
-                        escapeHtml(quickAccessIcon(item.name))
-
-                    """
-                    <a class="site" href="$safeUrl">
-                        <div class="site-icon">
-                            <span class="fallback">$fallback</span>
-                            <img
-                                src="$safeFavicon"
-                                alt=""
-                                onload="this.style.display='block';this.previousElementSibling.style.display='none';"
-                                onerror="this.style.display='none';this.previousElementSibling.style.display='flex';">
-                        </div>
-                        <div class="site-name">$safeName</div>
-                    </a>
-                    """.trimIndent()
-                }
-
-        val recentHtml =
-            historyManager.getAll()
-                .asSequence()
-                .filter {
-                    it.url.startsWith("http://") ||
-                    it.url.startsWith("https://")
-                }
-                .distinctBy { it.url }
-                .take(2)
-                .map { entry ->
-                    val safeTitle =
-                        escapeHtml(
-                            entry.title
-                                .trim()
-                                .ifBlank { entry.url }
-                                .take(34)
-                        )
-
-                    val safeUrl =
-                        escapeHtml(entry.url)
-
-                    val host = runCatching {
-                        Uri.parse(entry.url).host.orEmpty()
-                    }.getOrDefault("")
-
-                    val safeHost =
-                        escapeHtml(
-                            host.removePrefix("www.")
-                                .ifBlank { entry.url }
-                                .take(36)
-                        )
-
-                    """
-                    <a class="row" href="$safeUrl">
-                        <div class="row-icon">&#8634;</div>
-                        <div class="row-text">
-                            <div class="row-title">$safeTitle</div>
-                            <div class="row-sub">$safeHost</div>
-                        </div>
-                        <div class="row-arrow">&#8250;</div>
-                    </a>
-                    """.trimIndent()
-                }
-                .toList()
-                .joinToString("\n")
-                .ifBlank {
-                    """
-                    <div class="empty">
-                        Sites you visit will appear here.
-                    </div>
-                    """.trimIndent()
-                }
-
-        val bookmarkHtml =
-            bookmarkManager.getAll()
-                .take(2)
-                .joinToString("\n") { entry ->
-                    val safeTitle =
-                        escapeHtml(
-                            entry.title
-                                .trim()
-                                .ifBlank { entry.url }
-                                .take(34)
-                        )
-
-                    val safeUrl =
-                        escapeHtml(entry.url)
-
-                    val host = runCatching {
-                        Uri.parse(entry.url).host.orEmpty()
-                    }.getOrDefault("")
-
-                    val safeHost =
-                        escapeHtml(
-                            host.removePrefix("www.")
-                                .ifBlank { entry.url }
-                                .take(36)
-                        )
-
-                    """
-                    <a class="row" href="$safeUrl">
-                        <div class="row-icon">&#9734;</div>
-                        <div class="row-text">
-                            <div class="row-title">$safeTitle</div>
-                            <div class="row-sub">$safeHost</div>
-                        </div>
-                        <div class="row-arrow">&#8250;</div>
-                    </a>
-                    """.trimIndent()
-                }
-                .ifBlank {
-                    """
-                    <div class="empty">
-                        Saved bookmarks will appear here.
-                    </div>
-                    """.trimIndent()
-                }
+        val bookmarkHtml = bookmarkManager.getAll()
+            .take(4)
+            .joinToString("\n") { entry ->
+                val safeTitle = escapeHtml(entry.title.trim().ifBlank { entry.url }.take(32))
+                val safeUrl = escapeHtml(entry.url)
+                val host = runCatching { Uri.parse(entry.url).host.orEmpty() }
+                    .getOrDefault("").removePrefix("www.")
+                val safeHost = escapeHtml(host.ifBlank { entry.url }.take(34))
+                """
+                <a class="list-row" href="$safeUrl">
+                    <span class="list-mark">☆</span>
+                    <span class="list-main">
+                        <strong>$safeTitle</strong>
+                        <small>$safeHost</small>
+                    </span>
+                    <span class="list-arrow">→</span>
+                </a>
+                """.trimIndent()
+            }
+            .ifBlank { "<div class=\"blank\">Save pages to build your library.</div>" }
 
         val html = """
-<!DOCTYPE html><html><head>
+<!DOCTYPE html>
+<html>
+<head>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light">
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent} :root{--bg:#090d14;--card:#141b26;--line:#263246;--text:#f7f9fc;--muted:#99a5b7;--a:#7c5cff;--b:#25c7d9}
-html,body{margin:0;min-height:100%;background:linear-gradient(180deg,#121a29,#090d14 42%,#070a0f);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
-body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex;align-items:center;justify-content:space-between;padding:6px 3px 22px}
-.brand{display:flex;align-items:center;gap:12px}.logo{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,var(--a),var(--b));display:grid;place-items:center;font-size:22px;font-weight:900;box-shadow:0 12px 30px #0008}
-.kicker{font-size:11px;color:var(--muted)}.name{font-size:23px;font-weight:850}.private{padding:9px 13px;border:1px solid var(--line);background:#121925;border-radius:999px;color:#d6dce6;font-size:12px;text-decoration:none}
-.search{height:60px;border-radius:22px;background:#f5f7fa;display:flex;align-items:center;padding:0 17px;box-shadow:0 16px 38px #0008;margin-bottom:24px}.search .glass{color:#596270;font-size:21px}
-.search input{flex:1;border:0;outline:0;background:transparent;padding:0 13px;font-size:16px;color:#151a22}.engine{font-size:10px;background:#e3e7ed;color:#4e5866;padding:7px 9px;border-radius:999px;font-weight:800}
-.section{margin-top:24px}.head{display:flex;justify-content:space-between;align-items:center;margin:0 3px 12px}.title{font-size:14px;font-weight:850}.hint{font-size:10px;color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.grid .site{min-width:0;text-decoration:none;color:var(--text);text-align:center}.grid .site-icon,.grid .siteicon{height:64px;border-radius:20px;background:linear-gradient(145deg,#1d2635,#111721);border:1px solid var(--line);display:grid;place-items:center;font-size:23px;box-shadow:0 8px 20px #0005}
-.grid .site-name,.grid .sitename{font-size:10px;color:#bac3d1;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.action{text-decoration:none;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 4px;text-align:center}.ico{font-size:20px;margin-bottom:6px}.label{font-size:10px;color:#b9c3d1}
-.shield{display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:var(--text);background:linear-gradient(135deg,#182130,#111721);border:1px solid var(--line);border-radius:22px;padding:17px}
-.shieldleft{display:flex;align-items:center;gap:12px}.badge{width:44px;height:44px;border-radius:15px;background:linear-gradient(135deg,var(--a),var(--b));display:grid;place-items:center;font-weight:900}.pt{font-size:14px;font-weight:850}.ps{font-size:10px;color:var(--muted);margin-top:3px}.stat{text-align:right}.stat strong{font-size:18px}.stat small{display:block;font-size:9px;color:var(--muted)}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}.footer{text-align:center;color:#505b6b;font-size:9px;letter-spacing:2px;margin-top:34px}
-@media(max-width:380px){body{padding-left:14px;padding-right:14px}.grid,.actions{gap:7px}.engine{display:none}}
-</style></head><body><div class="page">
-<div class="hero"><div class="brand"><div class="logo">O</div><div><div class="kicker">Your browser</div><div class="name">OLIKH</div></div></div><a class="private" href="olikh://incognito">Private</a></div>
-<form class="search" onsubmit="event.preventDefault();var q=document.getElementById('q').value.trim();if(q)location.href='olikh://search?q='+encodeURIComponent(q)"><span class="glass">&#8981;</span><input id="q" autocomplete="off" placeholder="Search or enter address"><span class="engine">$searchEngine</span></form>
-<div class="section"><div class="head"><div class="title">Speed Dial</div><div class="hint">Quick access</div></div><div class="grid">$quickAccessHtml</div></div>
-<div class="section"><div class="head"><div class="title">Browse</div><div class="hint">Firefox · Opera · Chrome inspired</div></div><div class="actions">
-<a class="action" href="olikh://new-tab"><div class="ico">＋</div><div class="label">New tab</div></a>
-<a class="action" href="olikh://incognito"><div class="ico">◉</div><div class="label">Private</div></a>
-<a class="action" href="olikh://history"><div class="ico">↶</div><div class="label">History</div></a>
-<a class="action" href="olikh://bookmarks"><div class="ico">☆</div><div class="label">Bookmarks</div></a>
-<a class="action" href="olikh://downloads"><div class="ico">⇩</div><div class="label">Downloads</div></a>
-<a class="action" href="olikh://settings"><div class="ico">⚙</div><div class="label">Settings</div></a>
-<a class="action" href="olikh://new-tab"><div class="ico">▣</div><div class="label">New page</div></a>
-<a class="action" href="olikh://toggle-blocker"><div class="ico">✓</div><div class="label">Protection</div></a>
-</div></div>
-<div class="section"><a class="shield" href="olikh://toggle-blocker"><div class="shieldleft"><div class="badge">$blockerIcon</div><div><div class="pt">Privacy Shield</div><div class="ps">$blockerStatus · tap to change</div></div></div><div class="stat"><strong>$blockedRequests</strong><small>blocked · $blockedDomains domains</small></div></a></div>
-<div class="section"><div class="head"><div class="title">Recent</div><div class="hint">Continue browsing</div></div><div class="panel">$recentHtml</div></div>
-<div class="section"><div class="head"><div class="title">Bookmarks</div><div class="hint">Saved pages</div></div><div class="panel">$bookmarkHtml</div></div>
-<div class="footer">OLIKH · PRIVATE · FAST</div></div></body></html>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:#EEECE6;color:#151515;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{padding:0 20px 34px}.page{max-width:760px;margin:auto}
+.top{height:72px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #C8C5BD}
+.logo{font-size:19px;font-weight:900;letter-spacing:.14em}.edition{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#77736B}
+.menu{display:flex;gap:7px}.menu a{color:#151515;text-decoration:none;font-size:10px;text-transform:uppercase;letter-spacing:.08em;border:1px solid #B9B6AE;padding:7px 9px}
+.intro{padding:38px 0 28px}.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#77736B;margin-bottom:10px}
+h1{font-family:Georgia,serif;font-size:38px;line-height:1.02;font-weight:500;letter-spacing:-.03em;margin:0;max-width:540px}
+.search{margin-top:25px;height:58px;background:#151515;display:flex;align-items:center;padding:0 14px;border:0}
+.search span{color:#BDBAB1;font-size:19px}.search input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:#FFF;padding:0 12px;font-size:15px}.search input::placeholder{color:#A7A49D}
+.engine{font-size:9px;color:#D7D4CC;border-left:1px solid #4A4A46;padding-left:10px;text-transform:uppercase;letter-spacing:.08em}
+.command{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:1px;background:#BDB9B0;border:1px solid #BDB9B0;margin-top:22px}
+.command a{background:#EEECE6;color:#151515;text-decoration:none;padding:16px 13px;min-height:66px}
+.command b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.command small{display:block;color:#77736B;margin-top:5px;font-size:9px}
+.blocker{margin-top:30px;border-top:2px solid #151515;border-bottom:1px solid #BDB9B0;padding:15px 0;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.blocker-left{display:flex;align-items:center;gap:10px}.dot{width:10px;height:10px;border-radius:50%;background:$blockerColor}.blocker strong{font-size:12px}.blocker small{display:block;color:#77736B;font-size:9px;margin-top:3px}.count{text-align:right}.count b{font-size:18px}.count small{display:block;color:#77736B;font-size:8px}
+.section{margin-top:32px}.section-head{display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid #151515;padding-bottom:8px}.section-head h2{font-family:Georgia,serif;font-size:21px;font-weight:500;margin:0}.section-head span{font-size:9px;color:#77736B;text-transform:uppercase;letter-spacing:.08em}
+.pins{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #BDB9B0}.pin{display:grid;grid-template-columns:28px 1fr 20px;align-items:center;min-height:55px;border-bottom:1px solid #C9C6BE;text-decoration:none;color:#151515;padding:0 4px}.pin:nth-child(odd){border-right:1px solid #C9C6BE}.pin:nth-last-child(-n+2){border-bottom:0}.pin-number{font-size:9px;color:#8A867E}.pin-name{font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pin-go{font-size:13px;text-align:right;color:#77736B}.blank{padding:18px 4px;color:#77736B;font-size:11px}
+.list{border-bottom:1px solid #BDB9B0}.list-row{display:flex;align-items:center;gap:10px;min-height:58px;border-bottom:1px solid #C9C6BE;text-decoration:none;color:#151515}.list-row:last-child{border-bottom:0}.list-mark{width:22px;color:#77736B;font-size:14px}.list-main{flex:1;min-width:0}.list-main strong{display:block;font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.list-main small{display:block;color:#77736B;font-size:9px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.list-arrow{font-size:15px;color:#77736B}
+.library{display:grid;grid-template-columns:1fr 1fr;gap:18px}.library .section{margin-top:0}
+.footer{padding-top:34px;font-size:9px;color:#8A867E;display:flex;justify-content:space-between;border-top:1px solid #BDB9B0;margin-top:34px}
+@media(max-width:430px){body{padding-left:16px;padding-right:16px}h1{font-size:33px}.command{grid-template-columns:1fr 1fr}.command a:first-child{grid-column:1/-1}.pins{grid-template-columns:1fr}.pin:nth-child(odd){border-right:0}.pin:nth-last-child(-n+2){border-bottom:1px solid #C9C6BE}.pin:last-child{border-bottom:0}.library{grid-template-columns:1fr;gap:30px}.menu a:nth-child(2){display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="top">
+  <div><div class="logo">OLIKH</div><div class="edition">PRIVATE WEB / 01</div></div>
+  <nav class="menu">
+    <a href="olikh://settings">Settings</a>
+    <a href="olikh://incognito">Private</a>
+  </nav>
+</header>
+
+<section class="intro">
+  <div class="eyebrow">Browser start page</div>
+  <h1>Go somewhere.<br>Leave less behind.</h1>
+  <form class="search" onsubmit="event.preventDefault();var q=document.getElementById('q').value.trim();if(q)location.href='olikh://search?q='+encodeURIComponent(q)">
+    <span>⌕</span>
+    <input id="q" autocomplete="off" placeholder="Search or enter a web address">
+    <span class="engine">$searchEngine</span>
+  </form>
+  <div class="command">
+    <a href="olikh://new-tab"><b>＋ New tab</b><small>Start a clean page</small></a>
+    <a href="olikh://history"><b>History</b><small>Return to a page</small></a>
+    <a href="olikh://bookmarks"><b>Library</b><small>Saved pages</small></a>
+    <a href="olikh://downloads"><b>Downloads</b><small>Files & documents</small></a>
+    <a href="olikh://toggle-blocker"><b>Protection</b><small>Privacy controls</small></a>
+  </div>
+</section>
+
+<div class="blocker">
+  <div class="blocker-left"><span class="dot"></span><div><strong>$blockerText</strong><small>Content protection · $blockerLabel</small></div></div>
+  <div class="count"><b>$blockedRequests</b><small>blocked · $blockedDomains domains</small></div>
+</div>
+
+<section class="section">
+  <div class="section-head"><h2>Pinned</h2><span>Quick destinations</span></div>
+  <div class="pins">$quickAccessHtml</div>
+</section>
+
+<div class="library">
+<section class="section">
+  <div class="section-head"><h2>History</h2><span>Recent</span></div>
+  <div class="list">$recentHtml</div>
+</section>
+<section class="section">
+  <div class="section-head"><h2>Bookmarks</h2><span>Saved</span></div>
+  <div class="list">$bookmarkHtml</div>
+</section>
+</div>
+
+<footer class="footer"><span>OLIKH</span><span>FAST · PRIVATE · LOCAL</span></footer>
+</div>
+</body>
+</html>
         """.trimIndent()
 
         addressBar.setText("OLIKH Start")
-
         webView.loadDataWithBaseURL(
             "https://olikh.local/start",
             html,
