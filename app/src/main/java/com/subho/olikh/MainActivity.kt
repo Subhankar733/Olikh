@@ -373,6 +373,7 @@ body{min-height:100vh}.page{max-width:760px;margin:0 auto;padding:18px 18px 112p
   <a class="card" href="olikh://bookmarks"><b>Saved</b><span>Bookmarks and pages</span></a>
   <a class="card" href="olikh://downloads"><b>Downloads</b><span>Files and transfers</span></a>
   <a class="card" href="olikh://settings"><b>Settings</b><span>Configure OLIKH</span></a>
+ <a class="card dark" href="olikh://advanced"><b>Power Center</b><span>Advanced browser controls</span></a>
   <a class="card" href="olikh://incognito"><b>Private mode</b><span>Open a private tab</span></a>
   <a class="card" href="olikh://toggle-blocker"><b>Protection</b><span>Content blocking</span></a>
  </div>
@@ -387,9 +388,9 @@ body{min-height:100vh}.page{max-width:760px;margin:0 auto;padding:18px 18px 112p
 </nav>
 <script>
 const input=document.getElementById("query"),box=document.getElementById("suggestions");
-const commands=["History","Saved","Downloads","Settings","Private mode","Open tabs"];
-function submitSearch(){const value=input.value.trim();if(!value)return false;const commands={"history":"olikh://history","saved":"olikh://bookmarks","bookmarks":"olikh://bookmarks","downloads":"olikh://downloads","settings":"olikh://settings","private":"olikh://incognito","private mode":"olikh://incognito","tabs":"olikh://tabs","open tabs":"olikh://tabs","protection":"olikh://toggle-blocker"};const key=value.toLowerCase();if(commands[key]){location.href=commands[key];return false}const looksLikeUrl=/^(https?:\/\/|www\.)/i.test(value)||/^[^\s]+\.[^\s]+$/.test(value);location.href=looksLikeUrl?(value.startsWith("http")?value:"https://"+value):"https://www.google.com/search?q="+encodeURIComponent(value);return false}
-const commandRoutes={"history":"olikh://history","saved":"olikh://bookmarks","downloads":"olikh://downloads","settings":"olikh://settings","private mode":"olikh://incognito","open tabs":"olikh://tabs"};input.addEventListener("input",()=>{const q=input.value.trim().toLowerCase();if(!q){box.style.display="none";return}const hits=commands.filter(x=>x.toLowerCase().includes(q)).slice(0,4);if(!hits.length){box.style.display="none";return}box.innerHTML="";hits.forEach(x=>{const b=document.createElement("button");b.textContent=x;b.onclick=()=>{box.style.display="none";location.href=commandRoutes[x.toLowerCase()]||"olikh://search?q="+encodeURIComponent(x)};box.appendChild(b)});box.style.display="block"});
+const commands=["History","Saved","Downloads","Settings","Power Center","Private mode","Open tabs"];
+function submitSearch(){const value=input.value.trim();if(!value)return false;const commands={"history":"olikh://history","saved":"olikh://bookmarks","bookmarks":"olikh://bookmarks","downloads":"olikh://downloads","settings":"olikh://settings","power center":"olikh://advanced","advanced":"olikh://advanced","private":"olikh://incognito","private mode":"olikh://incognito","tabs":"olikh://tabs","open tabs":"olikh://tabs","protection":"olikh://toggle-blocker"};const key=value.toLowerCase();if(commands[key]){location.href=commands[key];return false}const looksLikeUrl=/^(https?:\/\/|www\.)/i.test(value)||/^[^\s]+\.[^\s]+$/.test(value);location.href=looksLikeUrl?(value.startsWith("http")?value:"https://"+value):"https://www.google.com/search?q="+encodeURIComponent(value);return false}
+const commandRoutes={"history":"olikh://history","saved":"olikh://bookmarks","downloads":"olikh://downloads","settings":"olikh://settings","power center":"olikh://advanced","advanced":"olikh://advanced","private mode":"olikh://incognito","open tabs":"olikh://tabs"};input.addEventListener("input",()=>{const q=input.value.trim().toLowerCase();if(!q){box.style.display="none";return}const hits=commands.filter(x=>x.toLowerCase().includes(q)).slice(0,4);if(!hits.length){box.style.display="none";return}box.innerHTML="";hits.forEach(x=>{const b=document.createElement("button");b.textContent=x;b.onclick=()=>{box.style.display="none";location.href=commandRoutes[x.toLowerCase()]||"olikh://search?q="+encodeURIComponent(x)};box.appendChild(b)});box.style.display="block"});
 function tick(){const d=new Date();document.getElementById("clock").textContent=d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});document.getElementById("date").textContent=d.toLocaleDateString([], {weekday:"short",day:"numeric",month:"short"})}tick();setInterval(tick,30000);
 </script>
 </body>
@@ -709,6 +710,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             setAcceptThirdPartyCookies(webView, areCookiesEnabled() && areThirdPartyCookiesEnabled())
         }
 
+        applyAdvancedBrowserPreferences(webView.settings)
         installDownloadListener(webView)
         installLongPressActions(webView)
         BrowserGestureController(browserContainer, webView).attach()
@@ -717,6 +719,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             javaScriptEnabled = isJavaScriptEnabled()
             domStorageEnabled = isDomStorageEnabled()
             databaseEnabled = isDatabaseStorageEnabled()
+            applyAdvancedBrowserPreferences(webView.settings)
 
             loadsImagesAutomatically = areImagesEnabled()
             blockNetworkImage = !areImagesEnabled()
@@ -1574,6 +1577,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             javaScriptEnabled = isJavaScriptEnabled()
             domStorageEnabled = isDomStorageEnabled()
             databaseEnabled = isDatabaseStorageEnabled()
+            applyAdvancedBrowserPreferences(webView.settings)
 
             loadsImagesAutomatically = areImagesEnabled()
             blockNetworkImage = !areImagesEnabled()
@@ -1829,6 +1833,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                     javaScriptEnabled = isJavaScriptEnabled()
                     domStorageEnabled = isDomStorageEnabled()
                     databaseEnabled = isDatabaseStorageEnabled()
+                    applyAdvancedBrowserPreferences(webView.settings)
 
                     loadsImagesAutomatically = areImagesEnabled()
                     blockNetworkImage = !areImagesEnabled()
@@ -5945,6 +5950,10 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         }
 
         when (uri.host?.lowercase()) {
+            "advanced" -> {
+                startActivity(Intent(this, AdvancedBrowserHubActivity::class.java))
+            }
+
             "search" -> {
                 val query =
                     uri.getQueryParameter("q")
@@ -8521,6 +8530,41 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         ).show()
     }
 
+    private fun applyAdvancedBrowserPreferences(settings: WebSettings) {
+        val advanced = getSharedPreferences("olikh_advanced", MODE_PRIVATE)
+
+        settings.setSupportMultipleWindows(
+            !advanced.getBoolean("block_popups", true)
+        )
+
+        val desktop = advanced.getBoolean("desktop_viewport_enabled", false)
+        if (desktop) {
+            settings.userAgentString =
+                "Mozilla/5.0 (X11; Linux x86_64) " +
+                "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                "Chrome/138.0.0.0 Safari/537.36 OLIKH_DESKTOP"
+            settings.useWideViewPort = true
+            settings.loadWithOverviewMode = true
+        } else if (settings.userAgentString?.contains("OLIKH_DESKTOP") == true) {
+            settings.userAgentString = null
+            settings.useWideViewPort =
+                isDesktopViewportEnabled() || isWideViewportEnabled()
+            settings.loadWithOverviewMode =
+                isDesktopViewportEnabled() || isOverviewModeEnabled()
+        }
+
+        if (advanced.getBoolean("developer_tools", false)) {
+            WebView.setWebContentsDebuggingEnabled(true)
+        }
+
+        if (advanced.getBoolean("do_not_track", true)) {
+            settings.userAgentString =
+                (settings.userAgentString ?: "")
+                    .replace("; OLIKH_DNT", "")
+                    .plus("; OLIKH_DNT")
+        }
+    }
+
     private fun toggleDesktopSite() {
         val settings = webView.settings
         val currentUa = settings.userAgentString ?: ""
@@ -9122,6 +9166,7 @@ Blocker: ${olikhBlocker.isEnabled()}"""
                 javaScriptEnabled = isJavaScriptEnabled()
                 domStorageEnabled = isDomStorageEnabled()
                 databaseEnabled = isDatabaseStorageEnabled()
+                applyAdvancedBrowserPreferences(webView.settings)
 
                 loadsImagesAutomatically = areImagesEnabled()
                 blockNetworkImage = !areImagesEnabled()

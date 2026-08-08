@@ -108,7 +108,7 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
         content.addView(switchCard(
             "Desktop site mode",
             "Prefer desktop layouts when pages support them.",
-            "desktop_mode",
+            "desktop_viewport_enabled",
             false
         ))
 
