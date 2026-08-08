@@ -8649,7 +8649,7 @@ Blocker: ${olikhBlocker.isEnabled()}"""
             add("Bookmark", entry.title.ifBlank { entry.url }, entry.url)
         }
 
-        result.take(8)
+        return result.take(8)
     }
 
     private fun openInput(rawInput: String) {
