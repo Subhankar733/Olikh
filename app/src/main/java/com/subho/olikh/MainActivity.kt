@@ -710,6 +710,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         installDownloadListener(webView)
         installLongPressActions(webView)
+        BrowserGestureController(this, browserContainer, webView).attach()
 
         webView.settings.apply {
             javaScriptEnabled = isJavaScriptEnabled()
