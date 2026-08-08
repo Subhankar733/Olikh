@@ -1338,23 +1338,54 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         TabManagerDialog(
             browserTabs = tabs.toList(),
             activeIndex = activeTabIndex,
-
-            onSelectTab = { index ->
-                switchToTab(index)
-            },
-
-            onCloseTab = { index ->
-                closeTab(index)
-            },
-
-            onDuplicateTab = { index ->
-                duplicateTab(index)
-            },
-
-            onNewTab = {
-                createNewTab(initialUrl = "about:blank")
-            }
+            onSelectTab = { index -> switchToTab(index) },
+            onCloseTab = { index -> closeTab(index) },
+            onDuplicateTab = { index -> duplicateTab(index) },
+            onNewTab = { createNewTab(initialUrl = "about:blank") },
+            onCloseAll = { closeAllTabsFromManager() },
+            onCloseOthers = { closeOtherTabsFromManager() },
+            onReopenClosed = { reopenLastClosedTab() }
         ).show()
+    }
+
+    private fun closeAllTabsFromManager() {
+        if (tabs.isEmpty()) return
+
+        tabs.toList().forEach { tab ->
+            rememberClosedTab(tab)
+            (tab.webView.parent as? ViewGroup)?.removeView(tab.webView)
+            runCatching {
+                tab.webView.stopLoading()
+                tab.webView.webChromeClient = null
+                tab.webView.webViewClient = WebViewClient()
+                tab.webView.destroy()
+            }
+        }
+
+        tabs.clear()
+        activeTabIndex = 0
+        createNewTab(initialUrl = "about:blank")
+        persistTabSession()
+    }
+
+    private fun closeOtherTabsFromManager() {
+        val keep = activeTab ?: return
+        tabs.toList().forEach { tab ->
+            if (tab === keep) return@forEach
+            rememberClosedTab(tab)
+            (tab.webView.parent as? ViewGroup)?.removeView(tab.webView)
+            runCatching {
+                tab.webView.stopLoading()
+                tab.webView.webChromeClient = null
+                tab.webView.webViewClient = WebViewClient()
+                tab.webView.destroy()
+            }
+        }
+        tabs.clear()
+        tabs.add(keep)
+        activeTabIndex = 0
+        switchToTab(0)
+        persistTabSession()
     }
 
     private fun duplicateTab(index: Int) {
