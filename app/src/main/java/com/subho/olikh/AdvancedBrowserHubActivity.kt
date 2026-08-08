@@ -135,7 +135,7 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
 
         content.addView(switchCard(
             "Strict HTTPS preference",
-            "Prefer secure navigation when a secure version is available.",
+            "Upgrade HTTP navigations to HTTPS when this switch is enabled.",
             "strict_https",
             false
         ))
@@ -224,7 +224,7 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
 
         content.addView(switchCard(
             "Tab groups",
-            "Enable grouped-tab preference storage for the next tab-system pass.",
+            "Store the tab-group preference; grouping UI will use it in the tab-system pass.",
             "tab_groups",
             true
         ))
@@ -261,7 +261,7 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
 
         content.addView(switchCard(
             "Web-app / PWA support",
-            "Store installable-web-app preference for supported sites.",
+            "Store the web-app preference for the supported-site/PWA pass.",
             "pwa_enabled",
             true
         ))

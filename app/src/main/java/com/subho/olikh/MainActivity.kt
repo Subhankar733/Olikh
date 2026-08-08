@@ -802,6 +802,10 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
 
+                if (view != null) {
+                    applyDoNotTrack(view)
+                }
+
                 progressBar.visibility = View.GONE
 
                 if (!showingErrorPage) {
@@ -1788,6 +1792,20 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                     return true
                 }
 
+                powerCenterHttpsUrl(uri.toString())?.let {
+                    view?.loadUrl(it)
+                    return true
+                }
+
+                if (
+                    powerCenterBoolean("open_links_new_tab", false) &&
+                    (uri.scheme.equals("http", true) ||
+                        uri.scheme.equals("https", true))
+                ) {
+                    createNewTab(initialUrl = uri.toString())
+                    return true
+                }
+
                 return handleExternalUri(uri)
             }
 
@@ -1802,6 +1820,20 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                 val uri = Uri.parse(url)
 
                 if (handleOlikhUri(uri)) {
+                    return true
+                }
+
+                powerCenterHttpsUrl(uri.toString())?.let {
+                    webView.loadUrl(it)
+                    return true
+                }
+
+                if (
+                    powerCenterBoolean("open_links_new_tab", false) &&
+                    (uri.scheme.equals("http", true) ||
+                        uri.scheme.equals("https", true))
+                ) {
+                    createNewTab(initialUrl = uri.toString())
                     return true
                 }
 
@@ -6414,6 +6446,27 @@ Blocker: ${olikhBlocker.isEnabled()}"""
             }
     }
 
+
+    private fun powerCenterBoolean(
+        key: String,
+        default: Boolean
+    ): Boolean =
+        getSharedPreferences("olikh_advanced", MODE_PRIVATE)
+            .getBoolean(key, default)
+
+    private fun powerCenterHttpsUrl(url: String): String? {
+        if (!powerCenterBoolean("strict_https", false)) return null
+        if (!url.startsWith("http://", ignoreCase = true)) return null
+        return "https://" + url.substring(7)
+    }
+
+    private fun applyDoNotTrack(view: WebView) {
+        if (!powerCenterBoolean("do_not_track", true)) return
+        view.evaluateJavascript(
+            "(function(){try{Object.defineProperty(navigator,'doNotTrack',{get:function(){return '1';},configurable:true});}catch(e){}})();",
+            null
+        )
+    }
 
     private fun isSafeBrowsingEnabled(): Boolean =
         browserPrefs.getBoolean("safe_browsing_enabled", true)
