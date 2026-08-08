@@ -103,6 +103,10 @@ class MainActivity : AppCompatActivity() {
         getSharedPreferences("olikh_browser", MODE_PRIVATE)
     }
 
+    private val tabSessionStore by lazy {
+        TabSessionStore(this)
+    }
+
     private val sitePermissionManager by lazy {
         SitePermissionManager(this)
     }
@@ -977,7 +981,7 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
 
         updateBookmarkButton()
 
-        val restoredPersistentTabs = restoreTabs()
+        val restoredPersistentTabs = restoreTabsFromSessionStore() || restoreTabs()
 
         if (!restoredPersistentTabs) {
             if (savedInstanceState == null) {
@@ -1007,6 +1011,85 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
         }
 
         updateNavigationButtons()
+    }
+
+    private fun persistTabSession() {
+        runCatching {
+            tabSessionStore.save(tabs, activeTabIndex)
+
+            tabSessionStore.saveRecentlyClosed(
+                recentlyClosedTabs.map {
+                    ClosedTabSnapshot(
+                        title = it.title,
+                        url = it.url,
+                        incognito = false
+                    )
+                }
+            )
+        }
+    }
+
+    private fun restoreTabsFromSessionStore(): Boolean {
+        val session = tabSessionStore.restore()
+        val restored = session.first
+
+        if (restored.isEmpty()) {
+            recentlyClosedTabs.clear()
+            recentlyClosedTabs.addAll(
+                tabSessionStore.restoreRecentlyClosed().map {
+                    ClosedTabEntry(it.title, it.url)
+                }
+            )
+            return false
+        }
+
+        val oldTabs = tabs.toList()
+        tabs.clear()
+
+        oldTabs.forEach { tab ->
+            runCatching {
+                (tab.webView.parent as? android.view.ViewGroup)
+                    ?.removeView(tab.webView)
+
+                tab.webView.stopLoading()
+                tab.webView.webChromeClient = null
+                tab.webView.webViewClient = WebViewClient()
+                tab.webView.destroy()
+            }
+        }
+
+        restored.forEach { sessionTab ->
+            createNewTab(
+                incognito = false,
+                initialUrl = sessionTab.url
+            )
+        }
+
+        if (tabs.isNotEmpty()) {
+            val restoredActiveIndex =
+                session.second.coerceIn(0, tabs.lastIndex)
+
+            switchToTab(restoredActiveIndex)
+        }
+
+        recentlyClosedTabs.clear()
+        recentlyClosedTabs.addAll(
+            tabSessionStore.restoreRecentlyClosed().map {
+                ClosedTabEntry(it.title, it.url)
+            }
+        )
+
+        return tabs.isNotEmpty()
+    }
+
+    override fun onPause() {
+        persistTabSession()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        persistTabSession()
+        super.onDestroy()
     }
 
     private fun toggleCurrentBookmark() {
