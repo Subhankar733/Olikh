@@ -963,7 +963,14 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         updateBookmarkButton()
 
-        val restoredPersistentTabs = restoreTabsFromSessionStore() || restoreTabs()
+        val restoreSessionEnabled =
+            getSharedPreferences("olikh_advanced", MODE_PRIVATE)
+                .getBoolean("restore_session", true)
+
+        val restoredPersistentTabs =
+            restoreSessionEnabled &&
+                (restoreTabsFromSessionStore() || restoreTabs())
+
 
         if (!restoredPersistentTabs) {
             if (savedInstanceState == null) {
@@ -1062,6 +1069,23 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         )
 
         return tabs.isNotEmpty()
+    }
+
+    private fun clearPowerCenterDataOnExit() {
+        val advanced =
+            getSharedPreferences("olikh_advanced", MODE_PRIVATE)
+
+        if (!advanced.getBoolean("clear_on_exit", false)) {
+            return
+        }
+
+        runCatching {
+            CookieManager.getInstance().removeAllCookies(null)
+            CookieManager.getInstance().flush()
+            android.webkit.WebStorage.getInstance().deleteAllData()
+            webView.clearCache(true)
+            webView.clearFormData()
+        }
     }
 
     override fun onPause() {
@@ -6421,7 +6445,45 @@ Blocker: ${olikhBlocker.isEnabled()}"""
     private fun isMediaGestureRequired(): Boolean =
         browserPrefs.getBoolean("media_gesture_required", true)
 
+    private fun syncPowerCenterPreferences() {
+        val advanced =
+            getSharedPreferences("olikh_advanced", MODE_PRIVATE)
+
+        val editor = browserPrefs.edit()
+
+        if (advanced.contains("desktop_viewport_enabled")) {
+            editor.putBoolean(
+                "desktop_viewport_enabled",
+                advanced.getBoolean("desktop_viewport_enabled", false)
+            )
+        }
+
+        if (advanced.contains("block_popups")) {
+            val blocked =
+                advanced.getBoolean("block_popups", true)
+
+            editor.putBoolean(
+                "js_popups_enabled",
+                !blocked
+            )
+
+            editor.putBoolean(
+                "multiple_windows_enabled",
+                !blocked
+            )
+        }
+
+        if (advanced.contains("developer_tools")) {
+            WebView.setWebContentsDebuggingEnabled(
+                advanced.getBoolean("developer_tools", false)
+            )
+        }
+
+        editor.apply()
+    }
+
     private fun applyAdvancedSettings(target: WebView) {
+        syncPowerCenterPreferences()
         target.settings.apply {
             safeBrowsingEnabled = isSafeBrowsingEnabled()
 
@@ -9348,6 +9410,7 @@ Blocker: ${olikhBlocker.isEnabled()}"""
     }
 
     override fun onDestroy() {
+        clearPowerCenterDataOnExit()
         pendingClientCertRequest?.cancel()
         pendingClientCertRequest = null
 
