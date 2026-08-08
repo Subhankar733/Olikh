@@ -2085,7 +2085,11 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                     tab.url = it
                 }
 
+                favicon?.let {
+                    tab.favicon = it
+                }
 
+                tab.lastAccessed = System.currentTimeMillis()
 
                 if (activeTab === tab) {
                     progressBar.visibility = View.VISIBLE
@@ -2108,7 +2112,23 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                     tab.url = it
                 }
 
+                view?.favicon?.let {
+                    tab.favicon = it
+                }
+
+                view?.title
+                    ?.replace("
+", " ")
+                    ?.trim()
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let {
+                        tab.title = it
+                    }
+
+                tab.lastAccessed = System.currentTimeMillis()
+
                 recordHistory(tab, url)
+                persistTabSession()
 
                 if (activeTab === tab) {
                     progressBar.visibility = View.GONE
