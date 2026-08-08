@@ -2117,8 +2117,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                 }
 
                 view?.title
-                    ?.replace("
-", " ")
+                    ?.replace("\n", " ")
                     ?.trim()
                     ?.takeIf { it.isNotBlank() }
                     ?.let {
