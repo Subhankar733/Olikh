@@ -749,8 +749,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         applyReadingDisplaySettings(webView)
 
-        applyReadingDisplaySettings(webView)
-
         webView.webViewClient = object : WebViewClient() {
 
             override fun shouldInterceptRequest(
@@ -1577,7 +1575,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             javaScriptEnabled = isJavaScriptEnabled()
             domStorageEnabled = isDomStorageEnabled()
             databaseEnabled = isDatabaseStorageEnabled()
-            applyAdvancedBrowserPreferences(webView.settings)
+            applyAdvancedBrowserPreferences(newWebView.settings)
 
             loadsImagesAutomatically = areImagesEnabled()
             blockNetworkImage = !areImagesEnabled()
@@ -1833,7 +1831,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                     javaScriptEnabled = isJavaScriptEnabled()
                     domStorageEnabled = isDomStorageEnabled()
                     databaseEnabled = isDatabaseStorageEnabled()
-                    applyAdvancedBrowserPreferences(webView.settings)
+                    applyAdvancedBrowserPreferences(replacement.settings)
 
                     loadsImagesAutomatically = areImagesEnabled()
                     blockNetworkImage = !areImagesEnabled()

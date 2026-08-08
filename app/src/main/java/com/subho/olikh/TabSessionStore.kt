@@ -48,9 +48,26 @@ class TabSessionStore(context: Context) {
             )
         }
 
+        val activePosition =
+            activeIndex.coerceIn(
+                0,
+                (tabs.size - 1).coerceAtLeast(0)
+            )
+
+        val activeNormalIndex =
+            if (tabs.isEmpty()) {
+                0
+            } else {
+                val visibleNormalTabs =
+                    tabs.take(activePosition + 1)
+                        .count { !it.incognito }
+
+                (visibleNormalTabs - 1).coerceAtLeast(0)
+            }
+
         val safeActive =
             if (normal.length() == 0) 0
-            else activeIndex.coerceIn(0, normal.length() - 1)
+            else activeNormalIndex.coerceIn(0, normal.length() - 1)
 
         prefs.edit()
             .putString("tabs", normal.toString())
