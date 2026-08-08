@@ -659,6 +659,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        installAdvancedHubLauncher()
 
         webView = findViewById(R.id.webView)
         addressBar = findViewById(R.id.addressBar)
@@ -9326,4 +9327,47 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         super.onDestroy()
         super.onDestroy()
     }
+
+    private fun installAdvancedHubLauncher() {
+        if (!::browserContainer.isInitialized) return
+
+        val existing =
+            browserContainer.findViewWithTag<View>("olikh_advanced_hub_launcher")
+
+        if (existing != null) return
+
+        val button = Button(this).apply {
+            tag = "olikh_advanced_hub_launcher"
+            text = "⚡"
+            textSize = 18f
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.rgb(17, 19, 24))
+            contentDescription = "OLIKH Power Center"
+
+            setOnClickListener {
+                startActivity(
+                    Intent(
+                        this@MainActivity,
+                        AdvancedBrowserHubActivity::class.java
+                    )
+                )
+            }
+        }
+
+        browserContainer.addView(
+            button,
+            FrameLayout.LayoutParams(
+                52.dp(),
+                52.dp(),
+                Gravity.TOP or Gravity.END
+            ).apply {
+                topMargin = 82.dp()
+                marginEnd = 12.dp()
+            }
+        )
+    }
+
+    private fun Int.dp(): Int =
+        (this * resources.displayMetrics.density).toInt()
+
 }
