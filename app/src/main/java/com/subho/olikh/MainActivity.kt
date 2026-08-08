@@ -103,6 +103,8 @@ class MainActivity : AppCompatActivity() {
         getSharedPreferences("olikh_browser", MODE_PRIVATE)
     }
 
+    private var smartAddressBar: SmartAddressBar? = null
+
     private val tabSessionStore by lazy {
         TabSessionStore(this)
     }
@@ -645,6 +647,19 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
     ) {
         super.onActivityResult(requestCode, resultCode, data)
 
+        if (requestCode == 7421 && resultCode == RESULT_OK) {
+            val spoken = data?.getStringArrayListExtra(
+                android.speech.RecognizerIntent.EXTRA_RESULTS
+            )?.firstOrNull()?.trim().orEmpty()
+
+            if (spoken.isNotBlank()) {
+                addressBar.setText(spoken)
+                addressBar.clearFocus()
+                openInput(spoken)
+            }
+            return
+        }
+
         if (requestCode != fileChooserRequestCode) return
 
         val callback = fileUploadCallback ?: return
@@ -693,6 +708,22 @@ body{padding:22px 18px 42px}.page{max-width:720px;margin:auto}.hero{display:flex
 
         webView = findViewById(R.id.webView)
         addressBar = findViewById(R.id.addressBar)
+        smartAddressBar = SmartAddressBar(
+            context = this,
+            editText = addressBar,
+            suggestionsProvider = { query -> getSmartAddressSuggestions(query) },
+            onSuggestionSelected = { suggestion ->
+                addressBar.setText(suggestion.value)
+                addressBar.clearFocus()
+                openInput(suggestion.value)
+            }
+        ).also { it.attach() }
+
+        addressBar.setOnLongClickListener {
+            startVoiceSearch()
+            true
+        }
+
         progressBar = findViewById(R.id.progressBar)
         browserContainer = findViewById(R.id.browserContainer)
         btnTabs = findViewById(R.id.btnTabs)
@@ -8556,6 +8587,69 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         }
 
         webView.reload()
+    }
+
+    private fun startVoiceSearch() {
+        val intent = android.content.Intent(
+            android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+        ).apply {
+            putExtra(
+                android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(
+                android.speech.RecognizerIntent.EXTRA_PROMPT,
+                "Search with OLIKH"
+            )
+        }
+        runCatching {
+            startActivityForResult(intent, 7421)
+        }.onFailure {
+            Toast.makeText(
+                this,
+                "Voice search is not available on this device",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun getSmartAddressSuggestions(query: String): List<SmartAddressBar.Suggestion> {
+        val q = query.trim().lowercase()
+        if (q.isBlank()) return emptyList()
+
+        val result = mutableListOf<SmartAddressBar.Suggestion>()
+        val seen = mutableSetOf<String>()
+
+        fun add(kind: String, title: String, value: String) {
+            val clean = value.trim()
+            if (clean.isBlank() || !seen.add(clean.lowercase())) return
+            if (clean.lowercase().contains(q) || title.lowercase().contains(q)) {
+                result += SmartAddressBar.Suggestion(
+                    title.ifBlank { clean }, clean, kind
+                )
+            }
+        }
+
+        tabs.forEach { tab ->
+            val url = tab.webView.url?.trim().orEmpty().ifBlank { tab.url.trim() }
+            if (url.isNotBlank() && url != "about:blank") {
+                add("Tab", tab.title, url)
+            }
+        }
+
+        recentlyClosedTabs.forEach { entry ->
+            add("Closed", entry.title, entry.url)
+        }
+
+        historyManager.getAll().asSequence().take(80).forEach { entry ->
+            add("History", entry.title.ifBlank { entry.url }, entry.url)
+        }
+
+        bookmarkManager.getAll().asSequence().take(80).forEach { entry ->
+            add("Bookmark", entry.title.ifBlank { entry.url }, entry.url)
+        }
+
+        result.take(8)
     }
 
     private fun openInput(rawInput: String) {
