@@ -374,7 +374,7 @@ body{min-height:100vh}.page{max-width:760px;margin:0 auto;padding:18px 18px 112p
   <a class="card" href="olikh://downloads"><b>Downloads</b><span>Files and transfers</span></a>
   <a class="card" href="olikh://settings"><b>Settings</b><span>Configure OLIKH</span></a>
   <a class="card" href="olikh://incognito"><b>Private mode</b><span>Open a private tab</span></a>
-  <a class="card" href="olikh://toggle-blocker</b><span>Content blocking</span></a>
+  <a class="card" href="olikh://toggle-blocker"><b>Protection</b><span>Content blocking</span></a>
  </div>
 </section>
 <section class="section"><div class="section-head"><b>QUICK ACCESS</b><span>one tap</span></div><div class="quick-strip">$quickAccessHtml</div></section>
@@ -388,8 +388,8 @@ body{min-height:100vh}.page{max-width:760px;margin:0 auto;padding:18px 18px 112p
 <script>
 const input=document.getElementById("query"),box=document.getElementById("suggestions");
 const commands=["History","Saved","Downloads","Settings","Private mode","Open tabs"];
-function submitSearch(){const value=input.value.trim();if(!value)return false;const looksLikeUrl=/^(https?:\/\/|www\.)/i.test(value)||/^[^\s]+\.[^\s]+$/.test(value);location.href=looksLikeUrl?(value.startsWith("http")?value:"https://"+value):"https://www.google.com/search?q="+encodeURIComponent(value);return false}
-input.addEventListener("input",()=>{const q=input.value.trim().toLowerCase();if(!q){box.style.display="none";return}const hits=commands.filter(x=>x.toLowerCase().includes(q)).slice(0,4);if(!hits.length){box.style.display="none";return}box.innerHTML="";hits.forEach(x=>{const b=document.createElement("button");b.textContent=x;b.onclick=()=>{input.value=x;submitSearch()};box.appendChild(b)});box.style.display="block"});
+function submitSearch(){const value=input.value.trim();if(!value)return false;const looksLikeUrl=/^(https?:\/\/|www\.)/i.test(value)||/^[^\s]+\.[^\s]+$/.test(value);location.href=looksLikeUrl?(value.startsWith("http")?value:"https://"+value):"olikh://search?q="+encodeURIComponent(value);return false}
+const commandRoutes={"history":"olikh://history","saved":"olikh://bookmarks","downloads":"olikh://downloads","settings":"olikh://settings","private mode":"olikh://incognito","open tabs":"olikh://tabs"};input.addEventListener("input",()=>{const q=input.value.trim().toLowerCase();if(!q){box.style.display="none";return}const hits=commands.filter(x=>x.toLowerCase().includes(q)).slice(0,4);if(!hits.length){box.style.display="none";return}box.innerHTML="";hits.forEach(x=>{const b=document.createElement("button");b.textContent=x;b.onclick=()=>{box.style.display="none";location.href=commandRoutes[x.toLowerCase()]||"olikh://search?q="+encodeURIComponent(x)};box.appendChild(b)});box.style.display="block"});
 function tick(){const d=new Date();document.getElementById("clock").textContent=d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});document.getElementById("date").textContent=d.toLocaleDateString([], {weekday:"short",day:"numeric",month:"short"})}tick();setInterval(tick,30000);
 </script>
 </body>
@@ -839,10 +839,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         installSitePermissionChromeClient(webView)
 
-        addressBar.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) addressBar.post { addressBar.selectAll() }
-        }
-
         addressBar.setOnLongClickListener {
             val clipboard =
                 getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -858,6 +854,8 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             val currentText = addressBar.text.toString().trim()
             val actions = mutableListOf<String>()
 
+            actions += "Voice search"
+
             if (clipboardText.isNotBlank()) {
                 actions += "Paste"
                 actions += "Paste & Go"
@@ -868,15 +866,11 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                 actions += "Clear"
             }
 
-            if (actions.isEmpty()) {
-                Toast.makeText(this, "Nothing to paste or copy", Toast.LENGTH_SHORT).show()
-                return@setOnLongClickListener true
-            }
-
             androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Address bar")
                 .setItems(actions.toTypedArray()) { _, which ->
                     when (actions[which]) {
+                        "Voice search" -> startVoiceSearch()
                         "Paste" -> {
                             addressBar.setText(clipboardText)
                             addressBar.setSelection(addressBar.text.length)

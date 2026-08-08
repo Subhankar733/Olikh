@@ -53,8 +53,14 @@ class SmartAddressBar(
         })
 
         editText.setOnFocusChangeListener { _, focused ->
-            if (!focused) dismiss()
-            else editText.post { maybeShowClipboardSuggestion() }
+            if (!focused) {
+                dismiss()
+            } else {
+                editText.post {
+                    editText.selectAll()
+                    maybeShowClipboardSuggestion()
+                }
+            }
         }
     }
 
