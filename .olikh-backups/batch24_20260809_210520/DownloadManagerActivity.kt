@@ -24,7 +24,7 @@ class DownloadManagerActivity : AppCompatActivity() {
     private lateinit var summary: TextView
     private lateinit var downloadManager: DownloadManager
 
-    private val refreshIntervalMs = 1500L
+    private val refreshIntervalMs = 750L
     private val refreshRunnable = object : Runnable {
         override fun run() {
             refreshDownloads()
@@ -212,10 +212,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 } else 100
                 progress = if (max == 100) {
                     if (totalBytes > 0L) {
-                        ((bytes.coerceAtLeast(0L).toDouble() * 100.0) /
-                            totalBytes.toDouble())
-                            .coerceIn(0.0, 100.0)
-                            .toInt()
+                        ((bytes * 100L) / totalBytes).coerceIn(0L, 100L).toInt()
                     } else 0
                 } else {
                     bytes.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()

@@ -10,6 +10,7 @@ class MediaPipWebRtcController(
     private val activity: Activity
 ) {
     fun configureWebView(webView: WebView) {
+        webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
 
         val autoplay = activity.getSharedPreferences(
