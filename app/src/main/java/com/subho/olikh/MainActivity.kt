@@ -9610,7 +9610,16 @@ Blocker: ${olikhBlocker.isEnabled()}"""
                     Intent(
                         this@MainActivity,
                         AdvancedBrowserHubActivity::class.java
-                    )
+                    ).apply {
+                        putExtra(
+                            "current_url",
+                            webView.url.orEmpty()
+                        )
+                        putExtra(
+                            "current_title",
+                            webView.title.orEmpty()
+                        )
+                    }
                 )
             }
         }

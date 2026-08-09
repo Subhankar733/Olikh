@@ -340,6 +340,14 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
             true
         ))
 
+        content.addView(actionCard(
+            "Add current site to Home Screen",
+            "Create a native Android launcher shortcut for the current OLIKH page.",
+            "ADD"
+        ) {
+            addCurrentSiteToHomeScreen()
+        })
+
         content.addView(section("POWER USER"))
 
         content.addView(switchCard(
@@ -565,6 +573,47 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
         }
         outer.addView(view, LinearLayout.LayoutParams(-1, -2))
         return outer
+    }
+
+
+    private fun addCurrentSiteToHomeScreen() {
+        val url =
+            intent.getStringExtra("current_url")
+                ?.trim()
+                .takeUnless { it.isNullOrBlank() }
+                ?: browserPrefs.getString(
+                    "current_url",
+                    ""
+                ).orEmpty().trim()
+
+        if (
+            url.isBlank() ||
+            (!url.startsWith("http://", true) &&
+             !url.startsWith("https://", true))
+        ) {
+            toast("Open a normal website first")
+            return
+        }
+
+        val title =
+            intent.getStringExtra("current_title")
+                ?.trim()
+                .orEmpty()
+
+        val created =
+            PwaHomeScreenController(this)
+                .createHomeScreenShortcut(
+                    url,
+                    title
+                )
+
+        toast(
+            if (created) {
+                "Home-screen shortcut request sent"
+            } else {
+                "This launcher does not support pinned shortcuts"
+            }
+        )
     }
 
     private fun chooseSearchEngine() {
