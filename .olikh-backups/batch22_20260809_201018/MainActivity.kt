@@ -1602,7 +1602,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         closingTab.webView.stopLoading()
         closingTab.webView.webChromeClient = null
         closingTab.webView.webViewClient = WebViewClient()
-        closingTab.webView.removeAllViews()
         closingTab.webView.destroy()
 
         if (tabs.isEmpty()) {
@@ -1632,13 +1631,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         )
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            newWebView.setRendererPriorityPolicy(
-                WebView.RENDERER_PRIORITY_BOUND,
-                true
-            )
-        }
 
         newWebView.settings.apply {
             javaScriptEnabled = isJavaScriptEnabled()
@@ -1712,7 +1704,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         val tab = tabs.getOrNull(index) ?: return
 
         activeTabIndex = index
-        tab.touch()
         webView = tab.webView
 
         browserContainer.removeAllViews()
@@ -1929,13 +1920,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                         FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT
                     )
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    replacement.setRendererPriorityPolicy(
-                        WebView.RENDERER_PRIORITY_BOUND,
-                        true
-                    )
-                }
 
                 replacement.settings.apply {
                     javaScriptEnabled = isJavaScriptEnabled()

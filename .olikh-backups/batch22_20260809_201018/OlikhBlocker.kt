@@ -68,11 +68,9 @@ class OlikhBlocker(
             val count =
                 blockedCount.incrementAndGet()
 
-            if (count % 25L == 0L) {
-                prefs.edit()
-                    .putLong("blocked_count", count)
-                    .apply()
-            }
+            prefs.edit()
+                .putLong("blocked_count", count)
+                .apply()
 
             return true
         }
@@ -140,12 +138,6 @@ class OlikhBlocker(
 
         prefs.edit()
             .putLong("blocked_count", 0L)
-            .apply()
-    }
-
-    fun flushCounter() {
-        prefs.edit()
-            .putLong("blocked_count", blockedCount.get())
             .apply()
     }
 

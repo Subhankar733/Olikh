@@ -13,8 +13,4 @@ data class BrowserTab(
     var incognito: Boolean = false,
     var favicon: Bitmap? = null,
     var lastAccessed: Long = System.currentTimeMillis()
-) {
-    fun touch() {
-        lastAccessed = System.currentTimeMillis()
-    }
-}
+)
