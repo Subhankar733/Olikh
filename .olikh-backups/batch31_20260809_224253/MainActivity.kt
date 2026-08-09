@@ -941,11 +941,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                     event.action == KeyEvent.ACTION_DOWN
 
             if (actionId == EditorInfo.IME_ACTION_GO || enterPressed) {
-                val input = addressBar.text
-                    ?.toString()
-                    ?.trim()
-                    ?.take(8192)
-                    .orEmpty()
+                val input = addressBar.text?.toString()?.trim().orEmpty()
 
                 if (input.isNotEmpty()) {
                     openInput(input)

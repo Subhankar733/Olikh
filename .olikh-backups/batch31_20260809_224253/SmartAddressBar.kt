@@ -5,8 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.os.Handler
-import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
@@ -32,8 +30,6 @@ class SmartAddressBar(
 
     private var popup: PopupWindow? = null
     private var internalChange = false
-    private val suggestionHandler = Handler(Looper.getMainLooper())
-    private var suggestionRunnable: Runnable? = null
 
     fun attach() {
         editText.addTextChangedListener(object : TextWatcher {
@@ -46,26 +42,10 @@ class SmartAddressBar(
             ) {
                 if (internalChange || !editText.hasFocus()) return
                 val query = s?.toString()?.trim().orEmpty()
-                suggestionRunnable?.let { suggestionHandler.removeCallbacks(it) }
-
                 if (query.isBlank()) {
                     dismiss()
                 } else {
-                    val task = Runnable {
-                        if (!editText.hasFocus()) return@Runnable
-
-                        val suggestions = suggestionsProvider(query)
-                            .asSequence()
-                            .filter { it.value.isNotBlank() }
-                            .distinctBy { it.value.trim().lowercase() }
-                            .take(8)
-                            .toList()
-
-                        showSuggestions(suggestions)
-                    }
-
-                    suggestionRunnable = task
-                    suggestionHandler.postDelayed(task, 90L)
+                    showSuggestions(suggestionsProvider(query))
                 }
             }
 
@@ -85,8 +65,6 @@ class SmartAddressBar(
     }
 
     fun dismiss() {
-        suggestionRunnable?.let { suggestionHandler.removeCallbacks(it) }
-        suggestionRunnable = null
         popup?.dismiss()
         popup = null
     }
@@ -107,9 +85,9 @@ class SmartAddressBar(
             text.startsWith("https://", true) ||
             (!text.contains(" ") && text.contains("."))
 
-        if (useful && text.length <= 2048) {
+        if (useful) {
             showSuggestions(
-                listOf(Suggestion("Clipboard", text.take(2048), "Paste & go"))
+                listOf(Suggestion("Clipboard", text, "Paste & go"))
             )
         }
     }
@@ -126,11 +104,7 @@ class SmartAddressBar(
             background = rounded(Color.rgb(24, 29, 37), 18)
         }
 
-        items.asSequence()
-            .filter { it.value.isNotBlank() }
-            .distinctBy { it.value.trim().lowercase() }
-            .take(8)
-            .forEach { item ->
+        items.take(8).forEach { item ->
             val row = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER_VERTICAL
@@ -142,14 +116,14 @@ class SmartAddressBar(
             }
 
             row.addView(TextView(context).apply {
-                text = "${item.kind}  •  ${item.title}".take(160)
+                text = "${item.kind}  •  ${item.title}"
                 textSize = 12f
                 setTextColor(Color.rgb(174, 184, 198))
                 maxLines = 1
             })
 
             row.addView(TextView(context).apply {
-                text = item.value.take(2048)
+                text = item.value
                 textSize = 14f
                 setTextColor(Color.WHITE)
                 maxLines = 1
@@ -169,8 +143,7 @@ class SmartAddressBar(
 
         popup = PopupWindow(
             root,
-            editText.width.takeIf { it > 0 }
-                ?: ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             true
         ).apply {
