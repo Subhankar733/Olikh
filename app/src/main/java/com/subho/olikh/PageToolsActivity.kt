@@ -148,6 +148,33 @@ class PageToolsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             shareCurrentPage()
         }
 
+
+        addAction(content, "Scroll to top",
+            "Jump the current webpage to the top.") {
+            scrollPageToTop()
+        }
+
+        addAction(content, "Scroll to bottom",
+            "Jump the current webpage to the bottom.") {
+            scrollPageToBottom()
+        }
+
+        addAction(content, "Stop loading",
+            "Stop the current page load without closing the page.") {
+            webView.stopLoading()
+            toast("Page loading stopped")
+        }
+
+        addAction(content, "Copy page URL",
+            "Copy the current page URL to the Android clipboard.") {
+            copyCurrentUrl()
+        }
+
+        addAction(content, "Open externally",
+            "Open the current page in another Android browser or compatible app.") {
+            openCurrentPageExternally()
+        }
+
         content.addView(TextView(this).apply {
             text = "OLIKH • Page Tools • Android-native utilities"
             textSize = 10f
@@ -377,6 +404,57 @@ class PageToolsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             putExtra(Intent.EXTRA_TEXT, url)
         }
         startActivity(Intent.createChooser(shareIntent, "Share page"))
+    }
+
+
+    private fun scrollPageToTop() {
+        webView.post {
+            webView.scrollTo(0, 0)
+            toast("At top of page")
+        }
+    }
+
+    private fun scrollPageToBottom() {
+        webView.post {
+            val contentHeightPx = (webView.contentHeight * webView.scale).toInt()
+            val targetY = (contentHeightPx - webView.height).coerceAtLeast(0)
+            webView.scrollTo(0, targetY)
+            toast("At bottom of page")
+        }
+    }
+
+    private fun copyCurrentUrl() {
+        val url = webView.url
+        if (url.isNullOrBlank()) {
+            toast("No page URL available")
+            return
+        }
+
+        val clipboard =
+            getSystemService(android.content.ClipboardManager::class.java)
+        clipboard.setPrimaryClip(
+            android.content.ClipData.newPlainText("OLIKH page URL", url)
+        )
+        toast("Page URL copied")
+    }
+
+    private fun openCurrentPageExternally() {
+        val url = webView.url
+        if (url.isNullOrBlank()) {
+            toast("No page URL available")
+            return
+        }
+
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            android.net.Uri.parse(url)
+        )
+
+        runCatching {
+            startActivity(intent)
+        }.onFailure {
+            toast("No compatible browser found")
+        }
     }
 
     override fun onInit(status: Int) {
