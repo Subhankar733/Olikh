@@ -348,6 +348,81 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
             addCurrentSiteToHomeScreen()
         })
 
+        content.addView(section("ADVANCED ENGINE SETTINGS"))
+
+        content.addView(browserSwitchCard(
+            "WebView cache",
+            "Use the normal WebView cache for faster repeat visits.",
+            "cache_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "File access",
+            "Allow WebView pages to access file:// resources when supported.",
+            "file_access_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "JavaScript pop-ups",
+            "Allow JavaScript to request additional windows/pop-up navigation.",
+            "js_popups_enabled",
+            false
+        ))
+
+        content.addView(browserSwitchCard(
+            "Multiple WebView windows",
+            "Allow pages to request multiple browser windows where supported.",
+            "multiple_windows_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Location access",
+            "Allow websites to request Android location permission.",
+            "location_permission_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Camera permission",
+            "Allow websites to request camera access for supported web apps.",
+            "camera_permission_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Microphone permission",
+            "Allow websites to request microphone access for supported web apps.",
+            "microphone_permission_enabled",
+            true
+        ))
+
+        content.addView(actionCard(
+            "Text zoom",
+            "Choose the default reading scale used by supported browser pages.",
+            "CHANGE"
+        ) {
+            val values = intArrayOf(80, 90, 100, 110, 120, 130, 150)
+            val labels = values.map { "$it%" }.toTypedArray()
+            val current = browserPrefs.getInt("text_zoom", 100)
+            val checked =
+                values.indexOf(current).takeIf { it >= 0 } ?: 2
+
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Text zoom")
+                .setSingleChoiceItems(labels, checked) { dialog, which ->
+                    browserPrefs.edit()
+                        .putInt("text_zoom", values[which])
+                        .apply()
+                    dialog.dismiss()
+                    toast("Text zoom set to ${values[which]}%")
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        })
+
         content.addView(section("POWER USER"))
 
         content.addView(switchCard(
