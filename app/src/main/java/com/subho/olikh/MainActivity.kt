@@ -59,6 +59,11 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ProgressBar
 import android.widget.PopupMenu
+import android.widget.PopupWindow
+import android.widget.TextView
+import android.widget.ScrollView
+import android.widget.LinearLayout
+import android.graphics.drawable.GradientDrawable
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.net.URLEncoder
@@ -2684,186 +2689,205 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
     }
 
     private fun showBrowserMenu(anchor: View) {
-        val popup = PopupMenu(this, anchor)
-        val menu = popup.menu
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
 
-        // BROWSER
-        val browser = menu.addSubMenu("Browser")
-        browser.add("New incognito tab").setOnMenuItemClickListener {
-            createNewTab(incognito = true)
-            Toast.makeText(this, "Incognito tab opened", Toast.LENGTH_SHORT).show()
-            true
-        }
-        browser.add("Reopen last closed tab").setOnMenuItemClickListener {
-            reopenLastClosedTab()
-            true
-        }
-        browser.add("Recently closed").setOnMenuItemClickListener {
-            showRecentlyClosedTabs()
-            true
-        }
-        browser.add("Duplicate tab").setOnMenuItemClickListener {
-            duplicateCurrentTab()
-            true
-        }
-        browser.add("Close current tab").setOnMenuItemClickListener {
-            closeCurrentTab()
-            true
+        fun panelBackground() = GradientDrawable().apply {
+            setColor(Color.rgb(21, 23, 29))
+            setStroke(dp(1), Color.rgb(48, 52, 62))
+            cornerRadius = dp(22).toFloat()
         }
 
-        // PAGE
-        val page = menu.addSubMenu("Page")
-        page.add("Find in page").setOnMenuItemClickListener {
-            showFindInPage()
-            true
-        }
-        page.add("Share page").setOnMenuItemClickListener {
-            shareCurrentPage()
-            true
-        }
-        page.add("Copy URL").setOnMenuItemClickListener {
-            copyCurrentUrl()
-            true
-        }
-        page.add("Page tools").setOnMenuItemClickListener {
-            showPageToolsMenu()
-            true
-        }
-        page.add("Back to top").setOnMenuItemClickListener {
-            webView.evaluateJavascript("window.scrollTo(0,0);", null)
-            true
-        }
-        page.add("Scroll to bottom").setOnMenuItemClickListener {
-            webView.evaluateJavascript(
-                "window.scrollTo(0,document.documentElement.scrollHeight);",
-                null
-            )
-            true
-        }
-
-        // LIBRARY
-        val library = menu.addSubMenu("Library")
-        library.add("Downloads").setOnMenuItemClickListener {
-            showDownloads()
-            true
-        }
-        library.add("Quick access").setOnMenuItemClickListener {
-            showQuickAccessManager()
-            true
-        }
-        library.add("Library & sessions").setOnMenuItemClickListener {
-            showLibrarySessionsV15()
-            true
-        }
-        library.add("Bookmarks & history").setOnMenuItemClickListener {
-            showBookmarksHistoryV25()
-            true
-        }
-
-        // PRIVACY & SECURITY
-        val privacy = menu.addSubMenu("Privacy & security")
-        privacy.add("Security center").setOnMenuItemClickListener {
-            showSecurityCenterV17()
-            true
-        }
-        privacy.add("Privacy dashboard").setOnMenuItemClickListener {
-            showPrivacyDashboardV20()
-            true
-        }
-        privacy.add("Clear browsing data").setOnMenuItemClickListener {
-            confirmClearBrowsingData()
-            true
-        }
-
-        // TOOLS
-        val tools = menu.addSubMenu("Tools")
-        tools.add("Productivity tools").setOnMenuItemClickListener {
-            showProductivityToolsV12()
-            true
-        }
-        tools.add("Research tools").setOnMenuItemClickListener {
-            showResearchToolsV13()
-            true
-        }
-        tools.add("Power controls").setOnMenuItemClickListener {
-            showPowerControlsV14()
-            true
-        }
-        tools.add("Web app & media").setOnMenuItemClickListener {
-            showWebAppMediaV21()
-            true
-        }
-        tools.add("Command center").setOnMenuItemClickListener {
-            showCommandCenterV22()
-            true
-        }
-
-        // ADVANCED
-        val advanced = menu.addSubMenu("Advanced")
-        advanced.add("Navigation & tabs").setOnMenuItemClickListener {
-            showNavigationTabsV23()
-            true
-        }
-        advanced.add("Session controls").setOnMenuItemClickListener {
-            showSessionControlsV24()
-            true
-        }
-        advanced.add("Search & address").setOnMenuItemClickListener {
-            showSearchAddressV26()
-            true
-        }
-        advanced.add("Browser systems").setOnMenuItemClickListener {
-            showBrowserSystemsV11()
-            true
-        }
-        advanced.add("Developer").setOnMenuItemClickListener {
-            showDeveloperHubV27()
-            true
-        }
-
-        // COMMON ACTIONS
-        menu.add("Open start page").setOnMenuItemClickListener {
-            showOlikhStartPage()
-            true
-        }
-        menu.add("Paste and go").setOnMenuItemClickListener {
-            pasteAndGo()
-            true
-        }
-        menu.add(
-            if (webView.settings.userAgentString
-                    ?.contains("OLIKH_DESKTOP") == true
-            ) {
-                "Mobile site"
-            } else {
-                "Desktop site"
+        fun label(text: String, size: Float = 15f, muted: Boolean = false) =
+            TextView(this).apply {
+                this.text = text
+                textSize = size
+                setTextColor(if (muted) Color.rgb(164, 170, 182) else Color.rgb(244, 246, 250))
+                gravity = Gravity.CENTER_VERTICAL
+                includeFontPadding = false
             }
-        ).setOnMenuItemClickListener {
-            toggleDesktopSite()
-            true
-        }
-        menu.add("Settings").setOnMenuItemClickListener {
-            showSettings()
-            true
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+            background = panelBackground()
         }
 
-        popup.setOnDismissListener {
-            anchor.animate()
-                .scaleX(1f)
-                .scaleY(1f)
-                .alpha(1f)
-                .setDuration(140L)
-                .start()
+        root.addView(label("OLIKH", 12f, true).apply {
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            letterSpacing = 0.12f
+            setPadding(dp(16), dp(8), dp(16), dp(6))
+            minHeight = dp(30)
+        })
+
+        var mainPopup: PopupWindow? = null
+
+        fun openSubmenu(title: String, items: List<Pair<String, () -> Unit>>, source: View) {
+            val panel = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(8), dp(8), dp(8), dp(8))
+                background = panelBackground()
+            }
+
+            panel.addView(label(title.uppercase(), 12f, true).apply {
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                letterSpacing = 0.1f
+                setPadding(dp(16), dp(8), dp(16), dp(8))
+                minHeight = dp(34)
+            })
+
+            lateinit var subPopup: PopupWindow
+            items.forEach { (text, action) ->
+                panel.addView(label(text).apply {
+                    setPadding(dp(16), 0, dp(12), 0)
+                    minHeight = dp(50)
+                    isClickable = true
+                    setOnClickListener {
+                        action()
+                        subPopup.dismiss()
+                        mainPopup?.dismiss()
+                    }
+                })
+            }
+
+            val maxHeight = (resources.displayMetrics.heightPixels * 0.72f).toInt()
+            subPopup = PopupWindow(panel, dp(300), maxHeight, true).apply {
+                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                elevation = dp(18).toFloat()
+                isOutsideTouchable = true
+                isClippingEnabled = true
+            }
+
+            val loc = IntArray(2)
+            source.getLocationOnScreen(loc)
+            val x = (resources.displayMetrics.widthPixels - dp(312)).coerceAtLeast(dp(8))
+            val y = loc[1].coerceAtLeast(dp(8))
+            subPopup.showAtLocation(window.decorView, Gravity.TOP or Gravity.START, x, y)
+        }
+
+        fun addCategory(title: String, subtitle: String, items: List<Pair<String, () -> Unit>>) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(12), 0, dp(8), 0)
+                minHeight = dp(62)
+                isClickable = true
+                background = GradientDrawable().apply {
+                    setColor(Color.TRANSPARENT)
+                    cornerRadius = dp(16).toFloat()
+                }
+            }
+
+            val copy = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            copy.addView(label(title, 16f).apply { setTypeface(typeface, android.graphics.Typeface.BOLD) })
+            copy.addView(label(subtitle, 12f, true).apply { minHeight = dp(20) })
+            row.addView(copy)
+            row.addView(label("›", 27f, true).apply {
+                gravity = Gravity.CENTER
+                minWidth = dp(30)
+            })
+
+            row.setOnClickListener {
+                openSubmenu(title, items, row)
+                mainPopup?.dismiss()
+            }
+            root.addView(row)
+        }
+
+        addCategory("Browser", "Tabs & sessions", listOf(
+            "New incognito tab" to {
+                createNewTab(incognito = true)
+                Toast.makeText(this, "Incognito tab opened", Toast.LENGTH_SHORT).show()
+            },
+            "Reopen last closed tab" to { reopenLastClosedTab() },
+            "Recently closed" to { showRecentlyClosedTabs() },
+            "Duplicate tab" to { duplicateCurrentTab() },
+            "Close current tab" to { closeCurrentTab() }
+        ))
+        addCategory("Page", "Find, share & page tools", listOf(
+            "Find in page" to { showFindInPage() },
+            "Share page" to { shareCurrentPage() },
+            "Copy URL" to { copyCurrentUrl() },
+            "Page tools" to { showPageToolsMenu() },
+            "Back to top" to { webView.evaluateJavascript("window.scrollTo(0,0);", null) },
+            "Scroll to bottom" to { webView.evaluateJavascript("window.scrollTo(0,document.documentElement.scrollHeight);", null) }
+        ))
+        addCategory("Library", "Downloads, saved & history", listOf(
+            "Downloads" to { showDownloads() },
+            "Quick access" to { showQuickAccessManager() },
+            "Library & sessions" to { showLibrarySessionsV15() },
+            "Bookmarks & history" to { showBookmarksHistoryV25() }
+        ))
+        addCategory("Privacy & security", "Protection & cleanup", listOf(
+            "Security center" to { showSecurityCenterV17() },
+            "Privacy dashboard" to { showPrivacyDashboardV20() },
+            "Clear browsing data" to { confirmClearBrowsingData() }
+        ))
+        addCategory("Tools", "Productivity & browser tools", listOf(
+            "Productivity tools" to { showProductivityToolsV12() },
+            "Research tools" to { showResearchToolsV13() },
+            "Power controls" to { showPowerControlsV14() },
+            "Web app & media" to { showWebAppMediaV21() },
+            "Command center" to { showCommandCenterV22() }
+        ))
+        addCategory("Advanced", "Navigation & developer", listOf(
+            "Navigation & tabs" to { showNavigationTabsV23() },
+            "Session controls" to { showSessionControlsV24() },
+            "Search & address" to { showSearchAddressV26() },
+            "Browser systems" to { showBrowserSystemsV11() },
+            "Developer" to { showDeveloperHubV27() }
+        ))
+
+        root.addView(View(this).apply {
+            setBackgroundColor(Color.rgb(45, 49, 59))
+            layoutParams = LinearLayout.LayoutParams(-1, dp(1)).apply {
+                setMargins(dp(16), dp(4), dp(16), dp(4))
+            }
+        })
+
+        fun addAction(text: String, action: () -> Unit) {
+            root.addView(label(text).apply {
+                setPadding(dp(16), 0, dp(12), 0)
+                minHeight = dp(50)
+                isClickable = true
+                setOnClickListener { action(); mainPopup?.dismiss() }
+            })
+        }
+
+        addAction("Open start page") { showOlikhStartPage() }
+        addAction("Paste and go") { pasteAndGo() }
+        addAction(
+            if (webView.settings.userAgentString?.contains("OLIKH_DESKTOP") == true) "Mobile site" else "Desktop site"
+        ) { toggleDesktopSite() }
+        addAction("Settings") { showSettings() }
+
+        val scroll = ScrollView(this).apply {
+            isVerticalScrollBarEnabled = false
+            addView(root)
+        }
+
+        val maxHeight = (resources.displayMetrics.heightPixels * 0.82f).toInt()
+        mainPopup = PopupWindow(scroll, dp(330), maxHeight, true).apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            elevation = dp(18).toFloat()
+            isOutsideTouchable = true
+            isClippingEnabled = true
+            animationStyle = android.R.style.Animation_Dialog
+            setOnDismissListener {
+                anchor.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(120L).start()
+            }
         }
 
         anchor.animate().cancel()
-        anchor.scaleX = 1f
-        anchor.scaleY = 1f
-        anchor.alpha = 1f
-
-        popup.show()
+        anchor.scaleX = 0.96f
+        anchor.scaleY = 0.96f
+        anchor.alpha = 0.9f
+        mainPopup?.showAsDropDown(anchor, 0, dp(8))
     }
-
     private fun showDeveloperHubV27() {
         val options = arrayOf(
             "Page information",
