@@ -30,6 +30,10 @@
             android:name=".AdvancedBrowserHubActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".BrowserDiagnosticsActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

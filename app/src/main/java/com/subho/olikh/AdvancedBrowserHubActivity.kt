@@ -369,6 +369,16 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
             }
         })
 
+        content.addView(section("BROWSER DIAGNOSTICS"))
+
+        content.addView(actionCard(
+            "Browser diagnostics",
+            "Inspect WebView runtime, privacy protection and engine state.",
+            "OPEN"
+        ) {
+            startActivity(Intent(this, BrowserDiagnosticsActivity::class.java))
+        })
+
         content.addView(actionCard(
             "Share advanced configuration",
             "Share the current OLIKH power-center settings.",
@@ -390,7 +400,7 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
         content.addView(Space(this), LinearLayout.LayoutParams(1, dp(18)))
 
         content.addView(TextView(this).apply {
-            text = "OLIKH • Advanced Browser Batch 2 • " +
+            text = "OLIKH • Advanced Browser Batch 3 • " +
                 SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
             textSize = 10f
             setTextColor(muted)
