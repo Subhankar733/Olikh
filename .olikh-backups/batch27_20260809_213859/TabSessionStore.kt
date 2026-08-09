@@ -27,30 +27,23 @@ class TabSessionStore(context: Context) {
     private fun cleanUrl(url: String): String =
         url.trim().takeIf {
             it.isNotBlank() &&
-            it.length <= 8192 &&
             it != "about:blank" &&
             !it.startsWith("data:", ignoreCase = true)
         }.orEmpty()
-
-    private fun cleanTitle(title: String): String =
-        title.trim()
-            .take(300)
-            .ifBlank { "Tab" }
 
     fun save(
         tabs: List<BrowserTab>,
         activeIndex: Int
     ) {
         val normal = JSONArray()
-        val seenUrls = HashSet<String>()
 
         tabs.filter { !it.incognito }.forEach { tab ->
             val url = cleanUrl(tab.webView.url ?: tab.url)
-            if (url.isBlank() || !seenUrls.add(url)) return@forEach
+            if (url.isBlank()) return@forEach
 
             normal.put(
                 JSONObject()
-                    .put("title", cleanTitle(tab.title))
+                    .put("title", tab.title.ifBlank { "Tab" })
                     .put("url", url)
             )
         }
@@ -120,18 +113,17 @@ class TabSessionStore(context: Context) {
         entries: List<ClosedTabSnapshot>
     ) {
         val array = JSONArray()
-        val seenUrls = HashSet<String>()
 
         entries
             .filter { !it.incognito }
             .take(20)
             .forEach {
                 val url = cleanUrl(it.url)
-                if (url.isBlank() || !seenUrls.add(url)) return@forEach
+                if (url.isBlank()) return@forEach
 
                 array.put(
                     JSONObject()
-                        .put("title", cleanTitle(it.title))
+                        .put("title", it.title.ifBlank { "Tab" })
                         .put("url", url)
                 )
             }
@@ -155,7 +147,7 @@ class TabSessionStore(context: Context) {
 
                     add(
                         ClosedTabSnapshot(
-                            title = cleanTitle(item.optString("title")),
+                            title = item.optString("title").ifBlank { "Tab" },
                             url = url,
                             incognito = false
                         )
