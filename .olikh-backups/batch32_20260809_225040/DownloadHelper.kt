@@ -110,9 +110,6 @@ class DownloadHelper(
             .trim()
             .trim('.')
 
-        return clean
-            .take(180)
-            .takeIf { it.isNotBlank() }
-            ?: "download"
+        return clean.takeIf { it.isNotBlank() } ?: "download"
     }
 }

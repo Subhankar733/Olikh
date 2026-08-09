@@ -125,14 +125,6 @@ class DownloadManagerActivity : AppCompatActivity() {
             val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
             val bytesIndex = it.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
             val totalBytesIndex = it.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
-
-            if (idIndex < 0 || titleIndex < 0 || statusIndex < 0 ||
-                bytesIndex < 0 || totalBytesIndex < 0) {
-                summary.text = "Downloads unavailable"
-                addEmpty(list, "Download information is unavailable.")
-                return
-            }
-
             val dateIndex = it.getColumnIndex(DownloadManager.COLUMN_LAST_MODIFIED_TIMESTAMP)
             val uriIndex = it.getColumnIndex(DownloadManager.COLUMN_URI)
             val localUriIndex = it.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
@@ -215,14 +207,18 @@ class DownloadManagerActivity : AppCompatActivity() {
             val progress = ProgressBar(
                 this, null, android.R.attr.progressBarStyleHorizontal
             ).apply {
-                max = 1000
-                progress = if (totalBytes > 0L) {
-                    ((bytes.coerceAtLeast(0L).toDouble() * max.toDouble()) /
-                        totalBytes.toDouble())
-                        .coerceIn(0.0, max.toDouble())
-                        .toInt()
+                max = if (totalBytes > 0L && totalBytes <= Int.MAX_VALUE) {
+                    totalBytes.toInt()
+                } else 100
+                progress = if (max == 100) {
+                    if (totalBytes > 0L) {
+                        ((bytes.coerceAtLeast(0L).toDouble() * 100.0) /
+                            totalBytes.toDouble())
+                            .coerceIn(0.0, 100.0)
+                            .toInt()
+                    } else 0
                 } else {
-                    0
+                    bytes.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
                 }
             }
             card.addView(progress, LinearLayout.LayoutParams(-1, dp(5)))
@@ -284,13 +280,6 @@ class DownloadManagerActivity : AppCompatActivity() {
         cursor.use {
             val idIndex = it.getColumnIndex(DownloadManager.COLUMN_ID)
             val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
-
-            if (idIndex < 0 || statusIndex < 0) {
-                refreshDownloads()
-                toast("Download information is unavailable")
-                return
-            }
-
             while (it.moveToNext()) {
                 if (it.getInt(statusIndex) == DownloadManager.STATUS_SUCCESSFUL) {
                     if (downloadManager.remove(it.getLong(idIndex)) > 0) removed++
