@@ -2685,246 +2685,166 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
     private fun showBrowserMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
+        val menu = popup.menu
 
-        popup.menu.add("New incognito tab")
-        popup.menu.add("Reopen last closed tab")
-        popup.menu.add("Recently closed")
-        popup.menu.add("Find in page")
-        popup.menu.add("Share page")
-        popup.menu.add("Copy URL")
-        popup.menu.add("Downloads")
-        popup.menu.add("Page tools")
-        popup.menu.add("Quick access")
-        popup.menu.add("Open start page")
-        popup.menu.add("Paste and go")
-        popup.menu.add("Duplicate tab")
-        popup.menu.add("Back to top")
-        popup.menu.add("Scroll to bottom")
-        popup.menu.add("Close current tab")
-        popup.menu.add("Productivity tools")
-        popup.menu.add("Research tools")
-        popup.menu.add("Power controls")
-        popup.menu.add("Library & sessions")
-        popup.menu.add("Smart browser V16")
-        popup.menu.add("Security center V17")
-        popup.menu.add("Page utility V18")
-        popup.menu.add("Download & permissions V19")
-        popup.menu.add("Privacy dashboard V20")
-        popup.menu.add("Web app & media V21")
-        popup.menu.add("Command center V22")
-        popup.menu.add("Navigation & tabs V23")
-        popup.menu.add("Session controls V24")
-        popup.menu.add("Bookmarks & history V25")
-        popup.menu.add("Search & address V26")
-        popup.menu.add("Developer Hub V27")
-        popup.menu.add("Browser systems")
-        popup.menu.add("Settings")
+        // BROWSER
+        val browser = menu.addSubMenu("Browser")
+        browser.add("New incognito tab").setOnMenuItemClickListener {
+            createNewTab(incognito = true)
+            Toast.makeText(this, "Incognito tab opened", Toast.LENGTH_SHORT).show()
+            true
+        }
+        browser.add("Reopen last closed tab").setOnMenuItemClickListener {
+            reopenLastClosedTab()
+            true
+        }
+        browser.add("Recently closed").setOnMenuItemClickListener {
+            showRecentlyClosedTabs()
+            true
+        }
+        browser.add("Duplicate tab").setOnMenuItemClickListener {
+            duplicateCurrentTab()
+            true
+        }
+        browser.add("Close current tab").setOnMenuItemClickListener {
+            closeCurrentTab()
+            true
+        }
 
-        popup.menu.add(
-            if (
-                webView.settings.userAgentString
+        // PAGE
+        val page = menu.addSubMenu("Page")
+        page.add("Find in page").setOnMenuItemClickListener {
+            showFindInPage()
+            true
+        }
+        page.add("Share page").setOnMenuItemClickListener {
+            shareCurrentPage()
+            true
+        }
+        page.add("Copy URL").setOnMenuItemClickListener {
+            copyCurrentUrl()
+            true
+        }
+        page.add("Page tools").setOnMenuItemClickListener {
+            showPageToolsMenu()
+            true
+        }
+        page.add("Back to top").setOnMenuItemClickListener {
+            webView.evaluateJavascript("window.scrollTo(0,0);", null)
+            true
+        }
+        page.add("Scroll to bottom").setOnMenuItemClickListener {
+            webView.evaluateJavascript(
+                "window.scrollTo(0,document.documentElement.scrollHeight);",
+                null
+            )
+            true
+        }
+
+        // LIBRARY
+        val library = menu.addSubMenu("Library")
+        library.add("Downloads").setOnMenuItemClickListener {
+            showDownloads()
+            true
+        }
+        library.add("Quick access").setOnMenuItemClickListener {
+            showQuickAccessManager()
+            true
+        }
+        library.add("Library & sessions").setOnMenuItemClickListener {
+            showLibrarySessionsV15()
+            true
+        }
+        library.add("Bookmarks & history").setOnMenuItemClickListener {
+            showBookmarksHistoryV25()
+            true
+        }
+
+        // PRIVACY & SECURITY
+        val privacy = menu.addSubMenu("Privacy & security")
+        privacy.add("Security center").setOnMenuItemClickListener {
+            showSecurityCenterV17()
+            true
+        }
+        privacy.add("Privacy dashboard").setOnMenuItemClickListener {
+            showPrivacyDashboardV20()
+            true
+        }
+        privacy.add("Clear browsing data").setOnMenuItemClickListener {
+            confirmClearBrowsingData()
+            true
+        }
+
+        // TOOLS
+        val tools = menu.addSubMenu("Tools")
+        tools.add("Productivity tools").setOnMenuItemClickListener {
+            showProductivityToolsV12()
+            true
+        }
+        tools.add("Research tools").setOnMenuItemClickListener {
+            showResearchToolsV13()
+            true
+        }
+        tools.add("Power controls").setOnMenuItemClickListener {
+            showPowerControlsV14()
+            true
+        }
+        tools.add("Web app & media").setOnMenuItemClickListener {
+            showWebAppMediaV21()
+            true
+        }
+        tools.add("Command center").setOnMenuItemClickListener {
+            showCommandCenterV22()
+            true
+        }
+
+        // ADVANCED
+        val advanced = menu.addSubMenu("Advanced")
+        advanced.add("Navigation & tabs").setOnMenuItemClickListener {
+            showNavigationTabsV23()
+            true
+        }
+        advanced.add("Session controls").setOnMenuItemClickListener {
+            showSessionControlsV24()
+            true
+        }
+        advanced.add("Search & address").setOnMenuItemClickListener {
+            showSearchAddressV26()
+            true
+        }
+        advanced.add("Browser systems").setOnMenuItemClickListener {
+            showBrowserSystemsV11()
+            true
+        }
+        advanced.add("Developer").setOnMenuItemClickListener {
+            showDeveloperHubV27()
+            true
+        }
+
+        // COMMON ACTIONS
+        menu.add("Open start page").setOnMenuItemClickListener {
+            showOlikhStartPage()
+            true
+        }
+        menu.add("Paste and go").setOnMenuItemClickListener {
+            pasteAndGo()
+            true
+        }
+        menu.add(
+            if (webView.settings.userAgentString
                     ?.contains("OLIKH_DESKTOP") == true
             ) {
                 "Mobile site"
             } else {
                 "Desktop site"
             }
-        )
-
-        popup.menu.add("Clear browsing data")
-
-        popup.setOnMenuItemClickListener { item ->
-            when (item.title.toString()) {
-                "New incognito tab" -> {
-                    createNewTab(incognito = true)
-
-                    Toast.makeText(
-                        this,
-                        "Incognito tab opened",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    true
-                }
-
-                "Reopen last closed tab" -> {
-                reopenLastClosedTab()
-                true
-            }
-
-            "Recently closed" -> {
-                showRecentlyClosedTabs()
-                true
-            }
-
-            "Find in page" -> {
-                    showFindInPage()
-                    true
-                }
-
-                "Share page" -> {
-                    shareCurrentPage()
-                    true
-                }
-
-                "Copy URL" -> {
-                    copyCurrentUrl()
-                    true
-                }
-
-                "Downloads" -> {
-                showDownloads()
-                true
-            }
-
-            "Page tools" -> {
-                    showPageToolsMenu()
-                    true
-                }
-
-                "Quick access" -> {
-                    showQuickAccessManager()
-                    true
-                }
-
-                "Open start page" -> {
-                    showOlikhStartPage()
-                    true
-                }
-
-                "Paste and go" -> {
-                    pasteAndGo()
-                    true
-                }
-
-                "Duplicate tab" -> {
-                    duplicateCurrentTab()
-                    true
-                }
-
-                "Back to top" -> {
-                    webView.evaluateJavascript("window.scrollTo(0,0);", null)
-                    true
-                }
-
-                "Scroll to bottom" -> {
-                    webView.evaluateJavascript("window.scrollTo(0,document.documentElement.scrollHeight);", null)
-                    true
-                }
-
-                "Close current tab" -> {
-                    closeCurrentTab()
-                    true
-                }
-
-                "Productivity tools" -> {
-                    showProductivityToolsV12()
-                    true
-                }
-
-                "Research tools" -> {
-                    showResearchToolsV13()
-                    true
-                }
-
-                "Power controls" -> {
-                    showPowerControlsV14()
-                    true
-                }
-
-                "Library & sessions" -> {
-                    showLibrarySessionsV15()
-                    true
-                }
-
-                "Smart browser V16" -> {
-                    showSmartBrowserV16()
-                    true
-                }
-
-                "Security center V17" -> {
-                    showSecurityCenterV17()
-                    true
-                }
-
-                "Page utility V18" -> {
-                    showPageUtilityV18()
-                    true
-                }
-
-                "Download & permissions V19" -> {
-                    showDownloadPermissionsV19()
-                    true
-                }
-
-                "Privacy dashboard V20" -> {
-                    showPrivacyDashboardV20()
-                    true
-                }
-
-                "Web app & media V21" -> {
-                    showWebAppMediaV21()
-                    true
-                }
-
-                "Media / PiP / WebRTC V12" -> {
-                    mediaPipWebRtcDiagnosticsV12()
-                    true
-                }
-
-                "Command center V22" -> {
-                    showCommandCenterV22()
-                    true
-                }
-
-                "Navigation & tabs V23" -> {
-                    showNavigationTabsV23()
-                    true
-                }
-
-                "Session controls V24" -> {
-                    showSessionControlsV24()
-                    true
-                }
-
-                "Bookmarks & history V25" -> {
-                    showBookmarksHistoryV25()
-                    true
-                }
-
-                "Search & address V26" -> {
-                    showSearchAddressV26()
-                    true
-                }
-
-                "Developer Hub V27" -> {
-                    showDeveloperHubV27()
-                    true
-                }
-
-                "Browser systems" -> {
-                    showBrowserSystemsV11()
-                    true
-                }
-
-                "Settings" -> {
-                    showSettings()
-                    true
-                }
-
-                "Desktop site",
-                "Mobile site" -> {
-                    toggleDesktopSite()
-                    true
-                }
-
-                "Clear browsing data" -> {
-                    confirmClearBrowsingData()
-                    true
-                }
-
-                else -> false
-            }
+        ).setOnMenuItemClickListener {
+            toggleDesktopSite()
+            true
+        }
+        menu.add("Settings").setOnMenuItemClickListener {
+            showSettings()
+            true
         }
 
         popup.setOnDismissListener {
@@ -2943,8 +2863,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         popup.show()
     }
-
-
 
     private fun showDeveloperHubV27() {
         val options = arrayOf(
