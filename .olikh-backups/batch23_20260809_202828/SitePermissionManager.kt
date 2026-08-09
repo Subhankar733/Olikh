@@ -22,11 +22,6 @@ class SitePermissionManager(context: Context) {
             val uri = Uri.parse(origin)
             val scheme = uri.scheme?.lowercase()?.trim()
                 ?: return@runCatching null
-
-            if (scheme != "http" && scheme != "https") {
-                return@runCatching null
-            }
-
             val host = uri.host?.lowercase()?.trim()
                 ?.takeIf { it.isNotEmpty() }
                 ?: return@runCatching null

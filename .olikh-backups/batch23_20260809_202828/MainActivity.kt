@@ -762,15 +762,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             allowContentAccess = isContentAccessEnabled()
             allowFileAccess = isFileAccessEnabled()
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                allowFileAccessFromFileURLs = false
-                allowUniversalAccessFromFileURLs = false
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            }
-
             javaScriptCanOpenWindowsAutomatically = areJsPopupsEnabled()
             setSupportMultipleWindows(areMultipleWindowsEnabled())
         }
@@ -1873,8 +1864,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
                 if (url.isNullOrBlank()) return false
 
-                val uri = runCatching { Uri.parse(url) }.getOrNull()
-                    ?: return false
+                val uri = Uri.parse(url)
 
                 if (handleOlikhUri(uri)) {
                     return true
@@ -1987,16 +1977,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
                     allowFileAccess =
                         isFileAccessEnabled()
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        allowFileAccessFromFileURLs = false
-                        allowUniversalAccessFromFileURLs = false
-                    }
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        mixedContentMode =
-                            WebSettings.MIXED_CONTENT_NEVER_ALLOW
-                    }
 
                     javaScriptCanOpenWindowsAutomatically =
                         areJsPopupsEnabled()
