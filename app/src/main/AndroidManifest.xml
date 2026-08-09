@@ -43,6 +43,10 @@
             android:name=".DownloadManagerActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".SavedPagesActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

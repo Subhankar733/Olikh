@@ -143,6 +143,11 @@ class PageToolsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             printCurrentPage()
         }
 
+        addAction(content, "Saved Pages library",
+            "Browse saved pages, open them offline, or delete saved copies.") {
+            startActivity(Intent(this, SavedPagesActivity::class.java))
+        }
+
         addAction(content, "Share page",
             "Share the current page URL through Android's share sheet.") {
             shareCurrentPage()

@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.webkit.WebView
 
 data class BrowserTab(
+    val id: String = java.util.UUID.randomUUID().toString(),
     var webView: WebView,
     var title: String = "New Tab",
     var url: String = "",
