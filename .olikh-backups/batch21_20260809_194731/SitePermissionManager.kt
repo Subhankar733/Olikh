@@ -17,29 +17,12 @@ class SitePermissionManager(context: Context) {
             Context.MODE_PRIVATE
         )
 
-    private fun normalizeOrigin(origin: String): String? {
+    private fun normalizeHost(origin: String): String? {
         return runCatching {
-            val uri = Uri.parse(origin)
-            val scheme = uri.scheme?.lowercase()?.trim()
-                ?: return@runCatching null
-            val host = uri.host?.lowercase()?.trim()
+            Uri.parse(origin).host
+                ?.lowercase()
+                ?.trim()
                 ?.takeIf { it.isNotEmpty() }
-                ?: return@runCatching null
-
-            val port = uri.port
-            val defaultPort =
-                (scheme == "http" && port == 80) ||
-                (scheme == "https" && port == 443)
-
-            buildString {
-                append(scheme)
-                append("://")
-                append(host)
-                if (port > 0 && !defaultPort) {
-                    append(":")
-                    append(port)
-                }
-            }
         }.getOrNull()
     }
 
@@ -47,8 +30,8 @@ class SitePermissionManager(context: Context) {
         origin: String,
         permission: String
     ): String? {
-        val normalized = normalizeOrigin(origin) ?: return null
-        return "$normalized:$permission"
+        val host = normalizeHost(origin) ?: return null
+        return "$host:$permission"
     }
 
     fun getDecision(
@@ -71,12 +54,18 @@ class SitePermissionManager(context: Context) {
         decision: Decision
     ) {
         val key = key(origin, permission) ?: return
+
         val editor = prefs.edit()
 
         when (decision) {
-            Decision.ALLOW -> editor.putString(key, "allow")
-            Decision.BLOCK -> editor.putString(key, "block")
-            Decision.ASK -> editor.remove(key)
+            Decision.ALLOW ->
+                editor.putString(key, "allow")
+
+            Decision.BLOCK ->
+                editor.putString(key, "block")
+
+            Decision.ASK ->
+                editor.remove(key)
         }
 
         editor.apply()
@@ -88,11 +77,12 @@ class SitePermissionManager(context: Context) {
 
         prefs.all.forEach { (key, value) ->
             val separator = key.lastIndexOf(':')
+
             if (separator <= 0 || separator >= key.lastIndex) {
                 return@forEach
             }
 
-            val origin = key.substring(0, separator)
+            val host = key.substring(0, separator)
             val permission = key.substring(separator + 1)
 
             val decision = when (value as? String) {
@@ -102,22 +92,24 @@ class SitePermissionManager(context: Context) {
             }
 
             result
-                .getOrPut(origin) { linkedMapOf() }[permission] = decision
+                .getOrPut(host) { linkedMapOf() }[permission] =
+                decision
         }
 
         return result
     }
 
     fun clearSite(origin: String) {
-        val normalized = normalizeOrigin(origin) ?: return
-        val prefix = "$normalized:"
+        val host = normalizeHost(origin) ?: return
+        val prefix = "$host:"
 
-        prefs.edit().also { editor ->
-            prefs.all.keys
-                .filter { it.startsWith(prefix) }
-                .forEach(editor::remove)
-            editor.apply()
-        }
+        val editor = prefs.edit()
+
+        prefs.all.keys
+            .filter { it.startsWith(prefix) }
+            .forEach(editor::remove)
+
+        editor.apply()
     }
 
     fun clearAll() {

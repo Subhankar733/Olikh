@@ -69,7 +69,7 @@ class SavedPagesActivity : AppCompatActivity() {
 
         if (pages.isEmpty()) {
             list.addView(TextView(this).apply {
-                text = "No saved pages yet.\nUse Page Tools → Save complete page."
+                text = "No saved pages yet.\\nUse Page Tools → Save complete page."
                 textSize = 13f
                 setTextColor(Color.GRAY)
                 setPadding(dp(20), dp(60), dp(20), dp(60))
@@ -102,9 +102,7 @@ class SavedPagesActivity : AppCompatActivity() {
             actions.addView(Button(this).apply {
                 text = "OPEN OFFLINE"
                 textSize = 9f
-                setOnClickListener {
-                    openOffline(page.file, page.title, page.url)
-                }
+                setOnClickListener { openOffline(page.file, page.title, page.url) }
             })
 
             actions.addView(Button(this).apply {
@@ -124,17 +122,10 @@ class SavedPagesActivity : AppCompatActivity() {
         }
     }
 
-    private fun openOffline(
-        filePath: String,
-        title: String,
-        baseUrl: String
-    ) {
+    private fun openOffline(filePath: String, title: String, baseUrl: String) {
         val file = File(filePath)
-
         if (!file.exists()) {
             toast("Saved file is missing")
-            removeRecordByFile(filePath)
-            renderList()
             return
         }
 
@@ -143,8 +134,6 @@ class SavedPagesActivity : AppCompatActivity() {
             settings.domStorageEnabled = false
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            settings.loadsImagesAutomatically = true
-
             loadDataWithBaseURL(
                 baseUrl,
                 file.readText(Charsets.UTF_8),
@@ -157,33 +146,17 @@ class SavedPagesActivity : AppCompatActivity() {
         val dialog = android.app.Dialog(this)
         dialog.setTitle(title)
         dialog.setContentView(web)
-        dialog.setOnDismissListener {
-            web.stopLoading()
-            web.destroy()
-        }
         dialog.show()
         dialog.window?.setLayout(-1, -1)
     }
 
     private fun removeRecord(id: String) {
         val prefs = getSharedPreferences("olikh_batch5", MODE_PRIVATE)
-        val updated = prefs.getStringSet("saved_pages", emptySet())
-            .orEmpty()
+        val updated = prefs.getStringSet("saved_pages", emptySet()).orEmpty()
             .filterNot { it.startsWith("$id|") }
             .toSet()
         prefs.edit().putStringSet("saved_pages", updated).apply()
         toast("Saved page deleted")
-    }
-
-    private fun removeRecordByFile(filePath: String) {
-        val prefs = getSharedPreferences("olikh_batch5", MODE_PRIVATE)
-        val updated = prefs.getStringSet("saved_pages", emptySet())
-            .orEmpty()
-            .filterNot { record ->
-                record.split("|", limit = 5).getOrNull(3) == filePath
-            }
-            .toSet()
-        prefs.edit().putStringSet("saved_pages", updated).apply()
     }
 
     private fun toast(message: String) =
