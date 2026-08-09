@@ -246,15 +246,11 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
         })
 
         content.addView(actionCard(
-            "Clear cookies & site storage",
-            "Remove WebView cookies and stored web data.",
-            "CLEAR DATA"
+            "Clear browsing data",
+            "Choose cookies, storage, cache, history, bookmarks and saved site decisions.",
+            "OPEN"
         ) {
-            CookieManager.getInstance().removeAllCookies {
-                CookieManager.getInstance().flush()
-                WebStorage.getInstance().deleteAllData()
-                toast("Site data cleared")
-            }
+            startActivity(Intent(this, PrivacyDataActivity::class.java))
         })
 
         content.addView(actionCard(
@@ -267,12 +263,11 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
         })
 
         content.addView(actionCard(
-            "Clear saved site permissions",
-            "Remove saved camera, microphone and location decisions.",
-            "CLEAR"
+            "Permission Manager",
+            "Review saved website Allow/Block decisions and reset them per site.",
+            "OPEN"
         ) {
-            permissions.clearAll()
-            toast("Site permissions cleared")
+            startActivity(Intent(this, PrivacyDataActivity::class.java))
         })
 
         content.addView(section("SEARCH & ADDRESS"))
