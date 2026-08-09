@@ -39,6 +39,10 @@
             android:name=".PageToolsActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".DownloadManagerActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

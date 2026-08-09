@@ -359,14 +359,10 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
 
         content.addView(actionCard(
             "Downloads",
-            "Open Android's system download manager.",
+            "Open OLIKH's download manager with progress, cancel, open, share and cleanup controls.",
             "OPEN"
         ) {
-            runCatching {
-                startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS))
-            }.onFailure {
-                toast("Downloads screen is unavailable")
-            }
+            startActivity(Intent(this, DownloadManagerActivity::class.java))
         })
 
         content.addView(section("PAGE TOOLS"))
