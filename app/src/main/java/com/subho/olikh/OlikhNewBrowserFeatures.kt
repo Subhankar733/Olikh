@@ -62,43 +62,45 @@ object OlikhNewBrowserFeatures {
         webView: WebView,
         search: (String) -> Unit
     ) {
-        webView.setCustomSelectionActionModeCallback(object : ActionMode.Callback {
-            override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-                menu.add("Search").setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
-                menu.add("Share").setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
-                menu.add("Copy").setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
-                return true
-            }
+        // Use stable View long-click handling instead of the unsupported
+        // WebView custom-selection ActionMode member from the failed build.
+        webView.setOnLongClickListener {
+            webView.evaluateJavascript(
+                "(function(){return window.getSelection().toString();})()"
+            ) { raw ->
+                val text = raw
+                    .removePrefix("\"")
+                    .removeSuffix("\"")
+                    .replace("\\n", "\n")
+                    .replace("\\\"", "\"")
+                    .trim()
 
-            override fun onPrepareActionMode(mode: ActionMode, menu: Menu) = false
+                if (text.isBlank()) {
+                    return@evaluateJavascript
+                }
 
-            override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-                webView.evaluateJavascript(
-                    "(function(){return window.getSelection().toString();})()"
-                ) { raw ->
-                    val text = raw
-                        .removePrefix("\"")
-                        .removeSuffix("\"")
-                        .replace("\\n", "\n")
-                        .replace("\\\"", "\"")
-                        .trim()
-
-                    when (item.title.toString()) {
-                        "Search" -> if (text.isNotEmpty()) search(text)
-                        "Share" -> shareText(activity, text)
-                        "Copy" -> {
-                            val cm = activity.getSystemService(android.content.ClipboardManager::class.java)
-                            cm.setPrimaryClip(ClipData.newPlainText("OLIKH selection", text))
-                            toast(activity, "Copied")
+                AlertDialog.Builder(activity)
+                    .setTitle("Selected text")
+                    .setItems(arrayOf("Search", "Share", "Copy")) { _, which ->
+                        when (which) {
+                            0 -> search(text)
+                            1 -> shareText(activity, text)
+                            2 -> {
+                                val cm = activity.getSystemService(
+                                    android.content.ClipboardManager::class.java
+                                )
+                                cm.setPrimaryClip(
+                                    ClipData.newPlainText("OLIKH selection", text)
+                                )
+                                toast(activity, "Copied")
+                            }
                         }
                     }
-                }
-                mode.finish()
-                return true
+                    .show()
             }
 
-            override fun onDestroyActionMode(mode: ActionMode) = Unit
-        })
+            false
+        }
     }
 
     fun openLinkTools(activity: Activity, url: String) {
