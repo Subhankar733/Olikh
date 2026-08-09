@@ -2688,13 +2688,14 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             .show()
     }
 
+
     private fun showBrowserMenu(anchor: View) {
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
 
-        fun panelBackground() = GradientDrawable().apply {
-            setColor(Color.rgb(21, 23, 29))
-            setStroke(dp(1), Color.rgb(48, 52, 62))
+        fun panel() = GradientDrawable().apply {
+            setColor(Color.rgb(18, 20, 26))
+            setStroke(dp(1), Color.rgb(45, 49, 59))
             cornerRadius = dp(22).toFloat()
         }
 
@@ -2702,103 +2703,116 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             TextView(this).apply {
                 this.text = text
                 textSize = size
-                setTextColor(if (muted) Color.rgb(164, 170, 182) else Color.rgb(244, 246, 250))
+                setTextColor(
+                    if (muted) Color.rgb(156, 164, 178)
+                    else Color.rgb(242, 245, 249)
+                )
                 gravity = Gravity.CENTER_VERTICAL
                 includeFontPadding = false
             }
 
+        fun addItem(parent: LinearLayout, text: String, action: () -> Unit) {
+            parent.addView(label(text).apply {
+                setPadding(dp(16), 0, dp(14), 0)
+                minimumHeight = dp(50)
+                isClickable = true
+                setOnClickListener { action() }
+            })
+        }
+
+        var popup: PopupWindow? = null
+        var submenu: PopupWindow? = null
+
+        fun openSubmenu(title: String, items: List<Pair<String, () -> Unit>>, source: View) {
+            val body = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(8), dp(8), dp(8), dp(8))
+                background = panel()
+            }
+
+            body.addView(label(title.uppercase(), 11f, true).apply {
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                letterSpacing = 0.12f
+                setPadding(dp(16), dp(8), dp(16), dp(8))
+                minimumHeight = dp(36)
+            })
+
+            items.forEach { (name, action) ->
+                addItem(body, name) {
+                    action()
+                    submenu?.dismiss()
+                    popup?.dismiss()
+                }
+            }
+
+            val scroll = ScrollView(this).apply {
+                isVerticalScrollBarEnabled = false
+                addView(body)
+            }
+
+            submenu = PopupWindow(
+                scroll,
+                dp(310),
+                (resources.displayMetrics.heightPixels * 0.70f).toInt(),
+                true
+            ).apply {
+                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                elevation = dp(20).toFloat()
+                isOutsideTouchable = true
+            }
+
+            val pos = IntArray(2)
+            source.getLocationOnScreen(pos)
+            val x = (resources.displayMetrics.widthPixels - dp(318)).coerceAtLeast(dp(8))
+            submenu?.showAtLocation(window.decorView, Gravity.TOP or Gravity.START, x, pos[1])
+        }
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(8), dp(8), dp(8), dp(8))
-            background = panelBackground()
+            background = panel()
         }
 
-        root.addView(label("OLIKH", 12f, true).apply {
+        root.addView(label("OLIKH", 11f, true).apply {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            letterSpacing = 0.12f
-            setPadding(dp(16), dp(8), dp(16), dp(6))
-            minHeight = dp(30)
+            letterSpacing = 0.16f
+            setPadding(dp(16), dp(7), dp(16), dp(5))
+            minimumHeight = dp(28)
         })
 
-        var mainPopup: PopupWindow? = null
-
-        fun openSubmenu(title: String, items: List<Pair<String, () -> Unit>>, source: View) {
-            val panel = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(8), dp(8), dp(8), dp(8))
-                background = panelBackground()
-            }
-
-            panel.addView(label(title.uppercase(), 12f, true).apply {
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                letterSpacing = 0.1f
-                setPadding(dp(16), dp(8), dp(16), dp(8))
-                minHeight = dp(34)
-            })
-
-            lateinit var subPopup: PopupWindow
-            items.forEach { (text, action) ->
-                panel.addView(label(text).apply {
-                    setPadding(dp(16), 0, dp(12), 0)
-                    minHeight = dp(50)
-                    isClickable = true
-                    setOnClickListener {
-                        action()
-                        subPopup.dismiss()
-                        mainPopup?.dismiss()
-                    }
-                })
-            }
-
-            val maxHeight = (resources.displayMetrics.heightPixels * 0.72f).toInt()
-            subPopup = PopupWindow(panel, dp(300), maxHeight, true).apply {
-                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                elevation = dp(18).toFloat()
-                isOutsideTouchable = true
-                isClippingEnabled = true
-            }
-
-            val loc = IntArray(2)
-            source.getLocationOnScreen(loc)
-            val x = (resources.displayMetrics.widthPixels - dp(312)).coerceAtLeast(dp(8))
-            val y = loc[1].coerceAtLeast(dp(8))
-            subPopup.showAtLocation(window.decorView, Gravity.TOP or Gravity.START, x, y)
-        }
-
-        fun addCategory(title: String, subtitle: String, items: List<Pair<String, () -> Unit>>) {
+        fun category(title: String, subtitle: String, items: List<Pair<String, () -> Unit>>) {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(12), 0, dp(8), 0)
-                minHeight = dp(62)
+                setPadding(dp(14), 0, dp(8), 0)
+                minimumHeight = dp(58)
                 isClickable = true
-                background = GradientDrawable().apply {
-                    setColor(Color.TRANSPARENT)
-                    cornerRadius = dp(16).toFloat()
-                }
             }
 
             val copy = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER_VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
             }
-            copy.addView(label(title, 16f).apply { setTypeface(typeface, android.graphics.Typeface.BOLD) })
-            copy.addView(label(subtitle, 12f, true).apply { minHeight = dp(20) })
-            row.addView(copy)
-            row.addView(label("›", 27f, true).apply {
-                gravity = Gravity.CENTER
-                minWidth = dp(30)
+
+            copy.addView(label(title, 15f).apply {
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            copy.addView(label(subtitle, 11f, true).apply {
+                minimumHeight = dp(18)
             })
 
-            row.setOnClickListener {
-                openSubmenu(title, items, row)
-                mainPopup?.dismiss()
-            }
+            row.addView(copy)
+            row.addView(label("›", 25f, true).apply {
+                gravity = Gravity.CENTER
+                minimumWidth = dp(28)
+            })
+
+            row.setOnClickListener { openSubmenu(title, items, row) }
             root.addView(row)
         }
 
-        addCategory("Browser", "Tabs & sessions", listOf(
+        category("Browser", "Tabs & sessions", listOf(
             "New incognito tab" to {
                 createNewTab(incognito = true)
                 Toast.makeText(this, "Incognito tab opened", Toast.LENGTH_SHORT).show()
@@ -2808,33 +2822,40 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             "Duplicate tab" to { duplicateCurrentTab() },
             "Close current tab" to { closeCurrentTab() }
         ))
-        addCategory("Page", "Find, share & page tools", listOf(
+
+        category("Page", "Find, share & page tools", listOf(
             "Find in page" to { showFindInPage() },
             "Share page" to { shareCurrentPage() },
             "Copy URL" to { copyCurrentUrl() },
             "Page tools" to { showPageToolsMenu() },
             "Back to top" to { webView.evaluateJavascript("window.scrollTo(0,0);", null) },
-            "Scroll to bottom" to { webView.evaluateJavascript("window.scrollTo(0,document.documentElement.scrollHeight);", null) }
+            "Scroll to bottom" to {
+                webView.evaluateJavascript("window.scrollTo(0,document.documentElement.scrollHeight);", null)
+            }
         ))
-        addCategory("Library", "Downloads, saved & history", listOf(
+
+        category("Library", "Downloads, saved & history", listOf(
             "Downloads" to { showDownloads() },
             "Quick access" to { showQuickAccessManager() },
             "Library & sessions" to { showLibrarySessionsV15() },
             "Bookmarks & history" to { showBookmarksHistoryV25() }
         ))
-        addCategory("Privacy & security", "Protection & cleanup", listOf(
+
+        category("Privacy & security", "Protection & cleanup", listOf(
             "Security center" to { showSecurityCenterV17() },
             "Privacy dashboard" to { showPrivacyDashboardV20() },
             "Clear browsing data" to { confirmClearBrowsingData() }
         ))
-        addCategory("Tools", "Productivity & browser tools", listOf(
+
+        category("Tools", "Productivity & browser tools", listOf(
             "Productivity tools" to { showProductivityToolsV12() },
             "Research tools" to { showResearchToolsV13() },
             "Power controls" to { showPowerControlsV14() },
             "Web app & media" to { showWebAppMediaV21() },
             "Command center" to { showCommandCenterV22() }
         ))
-        addCategory("Advanced", "Navigation & developer", listOf(
+
+        category("Advanced", "Navigation & developer", listOf(
             "Navigation & tabs" to { showNavigationTabsV23() },
             "Session controls" to { showSessionControlsV24() },
             "Search & address" to { showSearchAddressV26() },
@@ -2843,50 +2864,45 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         ))
 
         root.addView(View(this).apply {
-            setBackgroundColor(Color.rgb(45, 49, 59))
+            setBackgroundColor(Color.rgb(43, 47, 57))
             layoutParams = LinearLayout.LayoutParams(-1, dp(1)).apply {
                 setMargins(dp(16), dp(4), dp(16), dp(4))
             }
         })
 
-        fun addAction(text: String, action: () -> Unit) {
-            root.addView(label(text).apply {
-                setPadding(dp(16), 0, dp(12), 0)
-                minHeight = dp(50)
-                isClickable = true
-                setOnClickListener { action(); mainPopup?.dismiss() }
-            })
-        }
-
-        addAction("Open start page") { showOlikhStartPage() }
-        addAction("Paste and go") { pasteAndGo() }
-        addAction(
-            if (webView.settings.userAgentString?.contains("OLIKH_DESKTOP") == true) "Mobile site" else "Desktop site"
-        ) { toggleDesktopSite() }
-        addAction("Settings") { showSettings() }
+        addItem(root, "Open start page") { showOlikhStartPage(); popup?.dismiss() }
+        addItem(root, "Paste and go") { pasteAndGo(); popup?.dismiss() }
+        addItem(
+            root,
+            if (webView.settings.userAgentString?.contains("OLIKH_DESKTOP") == true)
+                "Mobile site" else "Desktop site"
+        ) { toggleDesktopSite(); popup?.dismiss() }
+        addItem(root, "Settings") { showSettings(); popup?.dismiss() }
 
         val scroll = ScrollView(this).apply {
             isVerticalScrollBarEnabled = false
             addView(root)
         }
 
-        val maxHeight = (resources.displayMetrics.heightPixels * 0.82f).toInt()
-        mainPopup = PopupWindow(scroll, dp(330), maxHeight, true).apply {
+        popup = PopupWindow(
+            scroll,
+            dp(332),
+            (resources.displayMetrics.heightPixels * 0.82f).toInt(),
+            true
+        ).apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            elevation = dp(18).toFloat()
+            elevation = dp(20).toFloat()
             isOutsideTouchable = true
-            isClippingEnabled = true
-            animationStyle = android.R.style.Animation_Dialog
             setOnDismissListener {
                 anchor.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(120L).start()
             }
         }
 
         anchor.animate().cancel()
-        anchor.scaleX = 0.96f
-        anchor.scaleY = 0.96f
-        anchor.alpha = 0.9f
-        mainPopup?.showAsDropDown(anchor, 0, dp(8))
+        anchor.scaleX = 0.97f
+        anchor.scaleY = 0.97f
+        anchor.alpha = 0.92f
+        popup?.showAsDropDown(anchor, 0, dp(8))
     }
     private fun showDeveloperHubV27() {
         val options = arrayOf(
