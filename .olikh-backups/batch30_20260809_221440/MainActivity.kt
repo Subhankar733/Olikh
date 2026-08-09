@@ -1727,17 +1727,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         activeTabIndex = index
         tab.touch()
-
-        tab.webView.url
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?.let { tab.url = it }
-
-        tab.webView.title
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?.let { tab.title = it.take(300) }
-
         webView = tab.webView
 
         browserContainer.removeAllViews()

@@ -60,13 +60,11 @@ class TabManagerDialog(
         }
 
     private fun preview(tab: BrowserTab): Bitmap? = runCatching {
-        tab.favicon?.let { favicon ->
-            Bitmap.createScaledBitmap(
-                favicon,
-                dp(48),
-                dp(48),
-                true
-            )
+        Bitmap.createBitmap(dp(154), dp(96), Bitmap.Config.ARGB_8888).also { bitmap ->
+            Canvas(bitmap).apply {
+                drawColor(Color.rgb(10, 13, 18))
+                tab.webView.draw(this)
+            }
         }
     }.getOrNull()
 
@@ -90,7 +88,7 @@ class TabManagerDialog(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(96)
             )
-            scaleType = ImageView.ScaleType.CENTER
+            scaleType = ImageView.ScaleType.CENTER_CROP
             setImageBitmap(preview(tab))
             background = panel(Color.rgb(10, 13, 18), 14)
         }
@@ -111,18 +109,11 @@ class TabManagerDialog(
             14f,
             Color.WHITE
         ))
-        val currentUrl = tab.webView.url
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?: tab.url
-
-        info.addView(
-            text(
-                currentUrl.ifBlank { "about:blank" }.take(42),
-                10f,
-                Color.rgb(145, 153, 168)
-            )
-        )
+        info.addView(text(
+            tab.url.ifBlank { "about:blank" }.take(42),
+            10f,
+            Color.rgb(145, 153, 168)
+        ))
 
         row.addView(info)
 
