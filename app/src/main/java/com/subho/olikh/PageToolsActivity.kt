@@ -1,6 +1,10 @@
 package com.subho.olikh
 
 import android.graphics.Bitmap
+import android.widget.EditText
+import android.print.PrintManager
+import android.print.PrintAttributes
+import android.content.Intent
 import android.graphics.Canvas
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -16,9 +20,15 @@ import java.io.FileOutputStream
 import java.util.Locale
 
 class PageToolsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+    private companion object {
+        const val DESKTOP_USER_AGENT =
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
+            "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    }
     private lateinit var webView: WebView
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+    private var MOBILE_USER_AGENT: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +61,7 @@ class PageToolsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         webView = WebView(this)
+        MOBILE_USER_AGENT = webView.settings.userAgentString
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
 
@@ -104,6 +115,37 @@ class PageToolsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             "Clear WebView cache and reload the current page.") {
             webView.clearCache(true)
             webView.reload()
+        }
+
+        addAction(content, "Find in page",
+            "Search text inside the current webpage and highlight matches.") {
+            findInPage()
+        }
+
+        addAction(content, "Clear page search",
+            "Remove all active in-page search highlights.") {
+            webView.clearMatches()
+            toast("Page search cleared")
+        }
+
+        addAction(content, "Desktop site",
+            "Switch the current WebView between mobile and desktop user-agent mode.") {
+            setDesktopSite()
+        }
+
+        addAction(content, "Save complete page",
+            "Save the current page as an offline Web Archive in OLIKH internal storage.") {
+            saveCompletePage()
+        }
+
+        addAction(content, "Print page",
+            "Open Android's system print preview for the current webpage.") {
+            printCurrentPage()
+        }
+
+        addAction(content, "Share page",
+            "Share the current page URL through Android's share sheet.") {
+            shareCurrentPage()
         }
 
         content.addView(TextView(this).apply {
@@ -236,6 +278,105 @@ class PageToolsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         parent.addView(row, LinearLayout.LayoutParams(-1, -2).apply {
             setMargins(0, dp(3), 0, dp(3))
         })
+    }
+
+
+    private fun findInPage() {
+        val input = EditText(this).apply {
+            hint = "Find text on this page"
+            setSingleLine(true)
+        }
+
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setTitle("Find in page")
+            .setView(input)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Find", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val query = input.text.toString().trim()
+                if (query.isBlank()) {
+                    toast("Enter text to search")
+                    return@setOnClickListener
+                }
+
+                webView.clearMatches()
+                webView.setFindListener { activeMatchOrdinal, numberOfMatches, _ ->
+                    toast(
+                        if (numberOfMatches == 0) {
+                            "No matches"
+                        } else {
+                            "${activeMatchOrdinal + 1}/$numberOfMatches matches"
+                        }
+                    )
+                }
+                webView.findAllAsync(query)
+                dialog.dismiss()
+            }
+        }
+        dialog.show()
+    }
+
+    private fun setDesktopSite() {
+        val settings = webView.settings
+        val desktop = settings.userAgentString != DESKTOP_USER_AGENT
+        settings.userAgentString = if (desktop) DESKTOP_USER_AGENT else MOBILE_USER_AGENT
+        webView.reload()
+        toast(if (desktop) "Desktop site enabled" else "Mobile site enabled")
+    }
+
+    private fun saveCompletePage() {
+        val currentUrl = webView.url
+        if (currentUrl.isNullOrBlank()) {
+            toast("No page loaded")
+            return
+        }
+
+        val dir = File(filesDir, "olikh_saved_pages").apply { mkdirs() }
+        val safeName = currentUrl
+            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+            .takeLast(80)
+        val file = File(dir, "page_${System.currentTimeMillis()}_$safeName")
+
+        runCatching {
+            webView.saveWebArchive(file.absolutePath)
+            toast("Page saved for offline use")
+        }.onFailure {
+            toast("Could not save page")
+        }
+    }
+
+    private fun printCurrentPage() {
+        if (webView.url.isNullOrBlank()) {
+            toast("No page loaded")
+            return
+        }
+
+        val printManager = getSystemService(PrintManager::class.java)
+        val adapter = webView.createPrintDocumentAdapter("OLIKH-page")
+        printManager?.print(
+            "OLIKH webpage",
+            adapter,
+            PrintAttributes.Builder().build()
+        )
+    }
+
+    private fun shareCurrentPage() {
+        val url = webView.url
+        if (url.isNullOrBlank()) {
+            toast("No page loaded")
+            return
+        }
+
+        val title = webView.title?.takeIf { it.isNotBlank() } ?: "OLIKH page"
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, title)
+            putExtra(Intent.EXTRA_TEXT, url)
+        }
+        startActivity(Intent.createChooser(shareIntent, "Share page"))
     }
 
     override fun onInit(status: Int) {
