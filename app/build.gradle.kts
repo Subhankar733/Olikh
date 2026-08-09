@@ -8,6 +8,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     namespace = "com.subho.olikh"
     compileSdk = 35
 
@@ -19,10 +20,27 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("OLIKH_KEYSTORE_PATH")
+            val keystorePassword = System.getenv("OLIKH_KEYSTORE_PASSWORD")
+            val keyAlias = System.getenv("OLIKH_KEY_ALIAS")
+            val keyPassword = System.getenv("OLIKH_KEY_PASSWORD")
+
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            }
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
             isShrinkResources = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
