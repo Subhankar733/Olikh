@@ -123,8 +123,8 @@ class BookmarkManager(context: Context) {
         val clean = url.trim()
 
         if (
-            !clean.startsWith("https://", true) &&
-            !clean.startsWith("http://", true)
+            !clean.startsWith("https://", ignoreCase = true) &&
+            !clean.startsWith("http://", ignoreCase = true)
         ) {
             return false
         }

@@ -111,22 +111,7 @@ class SavedPagesActivity : AppCompatActivity() {
                 text = "DELETE"
                 textSize = 9f
                 setOnClickListener {
-                    val target = runCatching {
-                        File(page.file).canonicalFile
-                    }.getOrNull()
-                    val root = runCatching {
-                        File(filesDir, "olikh_saved_pages").canonicalFile
-                    }.getOrNull()
-
-                    if (
-                        target != null &&
-                        root != null &&
-                        target.path.startsWith(root.path + File.separator) &&
-                        target.isFile
-                    ) {
-                        target.delete()
-                    }
-
+                    File(page.file).delete()
                     removeRecord(page.id)
                     renderList()
                 }
@@ -145,18 +130,9 @@ class SavedPagesActivity : AppCompatActivity() {
         baseUrl: String
     ) {
         val file = File(filePath)
-        val savedDir = File(filesDir, "olikh_saved_pages")
 
-        val canonicalFile = runCatching { file.canonicalFile }.getOrNull()
-        val canonicalDir = runCatching { savedDir.canonicalFile }.getOrNull()
-
-        if (
-            canonicalFile == null ||
-            canonicalDir == null ||
-            !canonicalFile.path.startsWith(canonicalDir.path + File.separator) ||
-            !canonicalFile.isFile
-        ) {
-            toast("Saved file is invalid")
+        if (!file.exists()) {
+            toast("Saved file is missing")
             removeRecordByFile(filePath)
             renderList()
             return
@@ -171,7 +147,7 @@ class SavedPagesActivity : AppCompatActivity() {
 
             loadDataWithBaseURL(
                 baseUrl,
-                canonicalFile.readText(Charsets.UTF_8),
+                file.readText(Charsets.UTF_8),
                 "text/html",
                 "UTF-8",
                 null
