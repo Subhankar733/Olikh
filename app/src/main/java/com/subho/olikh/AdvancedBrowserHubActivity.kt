@@ -369,6 +369,19 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
             }
         })
 
+        content.addView(section("PAGE TOOLS"))
+
+        content.addView(actionCard(
+            "Page tools",
+            "Read aloud, copy page text, inspect page info, zoom, cache and capture.",
+            "OPEN"
+        ) {
+            val intent = Intent(this, PageToolsActivity::class.java)
+            val currentUrl = browserPrefs.getString("current_url", "")
+            if (currentUrl.isNotBlank()) intent.putExtra("url", currentUrl)
+            startActivity(intent)
+        })
+
         content.addView(section("BROWSER DIAGNOSTICS"))
 
         content.addView(actionCard(
