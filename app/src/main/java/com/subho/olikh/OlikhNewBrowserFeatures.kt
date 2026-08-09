@@ -62,7 +62,7 @@ object OlikhNewBrowserFeatures {
         webView: WebView,
         search: (String) -> Unit
     ) {
-        webView.customSelectionActionModeCallback = object : ActionMode.Callback {
+        webView.setCustomSelectionActionModeCallback(object : ActionMode.Callback {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
                 menu.add("Search").setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
                 menu.add("Share").setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
@@ -98,7 +98,7 @@ object OlikhNewBrowserFeatures {
             }
 
             override fun onDestroyActionMode(mode: ActionMode) = Unit
-        }
+        })
     }
 
     fun openLinkTools(activity: Activity, url: String) {
