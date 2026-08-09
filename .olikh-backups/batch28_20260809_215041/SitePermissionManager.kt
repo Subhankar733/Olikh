@@ -114,9 +114,7 @@ class SitePermissionManager(context: Context) {
     }
 
     fun clearSite(origin: String) {
-        val normalized = normalizeOrigin(origin)
-            ?: normalizeOrigin("https://$origin")
-            ?: return
+        val normalized = normalizeOrigin(origin) ?: return
         val prefix = "$normalized:"
 
         prefs.edit().also { editor ->

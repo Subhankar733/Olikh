@@ -270,7 +270,7 @@ class PrivacyDataActivity : AppCompatActivity() {
                 text = "RESET THIS SITE"
                 textSize = 9f
                 setOnClickListener {
-                    permissions.clearSite(host)
+                    permissions.clearSite("https://$host")
                     renderPermissions()
                     toast("$host reset to Ask")
                 }
