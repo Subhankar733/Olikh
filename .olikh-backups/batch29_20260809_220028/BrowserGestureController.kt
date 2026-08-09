@@ -13,10 +13,6 @@ class BrowserGestureController(
     private var downY = 0f
 
     fun attach() {
-        val density = surface.resources.displayMetrics.density
-        val swipeThreshold = 96f * density
-        val horizontalRatio = 1.35f
-
         webView.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -29,10 +25,7 @@ class BrowserGestureController(
                     val dx = event.x - downX
                     val dy = event.y - downY
 
-                    if (
-                        abs(dx) > swipeThreshold &&
-                        abs(dx) > abs(dy) * horizontalRatio
-                    ) {
+                    if (abs(dx) > 120f && abs(dx) > abs(dy) * 1.35f) {
                         if (dx > 0f && webView.canGoBack()) {
                             webView.goBack()
                             true
