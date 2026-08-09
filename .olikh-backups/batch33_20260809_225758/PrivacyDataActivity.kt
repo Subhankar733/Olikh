@@ -207,19 +207,15 @@ class PrivacyDataActivity : AppCompatActivity() {
         }
 
         if (clearCookies) {
-            CookieManager.getInstance().removeAllCookies {
-                CookieManager.getInstance().flush()
-            }
+            CookieManager.getInstance().removeAllCookies(null)
+            CookieManager.getInstance().flush()
         }
         if (clearStorage) WebStorage.getInstance().deleteAllData()
 
         if (clearCache) {
-            runCatching {
-                WebView(this).apply {
-                    clearCache(true)
-                    clearHistory()
-                    destroy()
-                }
+            WebView(this).apply {
+                clearCache(true)
+                destroy()
             }
         }
 
@@ -231,8 +227,6 @@ class PrivacyDataActivity : AppCompatActivity() {
             renderPermissions()
         }
 
-        renderPermissions()
-        updateSelectionSummary()
         toast("Selected browsing data cleared")
     }
 

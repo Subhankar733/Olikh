@@ -114,10 +114,9 @@ class SitePermissionManager(context: Context) {
     }
 
     fun clearSite(origin: String) {
-        // The privacy dashboard displays the complete origin. Do not silently
-        // assume HTTPS here: HTTP and HTTPS permissions are intentionally
-        // stored separately.
-        val normalized = normalizeOrigin(origin) ?: return
+        val normalized = normalizeOrigin(origin)
+            ?: normalizeOrigin("https://$origin")
+            ?: return
         val prefix = "$normalized:"
 
         prefs.edit().also { editor ->
