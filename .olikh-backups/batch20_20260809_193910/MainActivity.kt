@@ -1664,9 +1664,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             setSupportMultipleWindows(areMultipleWindowsEnabled())
         }
 
-        applyReadingDisplaySettings(newWebView)
-        applyAdvancedSettings(newWebView)
-
         mediaPipWebRtcController.configureWebView(newWebView)
 
         CookieManager.getInstance().apply {
@@ -2290,12 +2287,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                 if (activeTab === tab) {
                     failedUrl = tab.failedUrl
                     showingErrorPage = true
-
-                    showNetworkError(
-                        tab.failedUrl.orEmpty(),
-                        error?.description?.toString()
-                            ?: "The page could not be loaded."
-                    )
                 }
             }
         }
@@ -9349,7 +9340,7 @@ Blocker: ${olikhBlocker.isEnabled()}"""
                 javaScriptEnabled = isJavaScriptEnabled()
                 domStorageEnabled = isDomStorageEnabled()
                 databaseEnabled = isDatabaseStorageEnabled()
-                applyAdvancedBrowserPreferences(restoredWebView.settings)
+                applyAdvancedBrowserPreferences(webView.settings)
 
                 loadsImagesAutomatically = areImagesEnabled()
                 blockNetworkImage = !areImagesEnabled()
@@ -9534,7 +9525,6 @@ Blocker: ${olikhBlocker.isEnabled()}"""
 
     override fun onDestroy() {
         clearPowerCenterDataOnExit()
-
         pendingClientCertRequest?.cancel()
         pendingClientCertRequest = null
 
@@ -9549,22 +9539,12 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         pendingLocationOrigin = null
         pendingLocationCallback = null
 
+        webView.stopLoading()
+        webView.webChromeClient = null
+        webView.webViewClient = WebViewClient()
+        webView.destroy()
         persistTabSession()
-
-        tabs.toList().forEach { tab ->
-            runCatching {
-                cleanupIncognitoWebView(tab)
-                (tab.webView.parent as? ViewGroup)?.removeView(tab.webView)
-                tab.webView.stopLoading()
-                tab.webView.webChromeClient = null
-                tab.webView.webViewClient = WebViewClient()
-                tab.webView.removeAllViews()
-                tab.webView.destroy()
-            }
-        }
-
-        tabs.clear()
-
+        super.onDestroy()
         super.onDestroy()
     }
 
