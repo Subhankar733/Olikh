@@ -667,6 +667,9 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        webView = findViewById(R.id.webView)
+        addressBar = findViewById(R.id.addressBar)
+
         OlikhNewBrowserFeatures.installSelectionTools(
             this,
             webView
@@ -675,9 +678,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         }
 
         installAdvancedHubLauncher()
-
-        webView = findViewById(R.id.webView)
-        addressBar = findViewById(R.id.addressBar)
         smartAddressBar = SmartAddressBar(
             context = this,
             editText = addressBar,
