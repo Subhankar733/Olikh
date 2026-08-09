@@ -87,6 +87,11 @@ class MainActivity : AppCompatActivity() {
 
     private val webPermissionRequestCode = 7001
 
+    private val mediaPipWebRtcController by lazy {
+        MediaPipWebRtcController(this)
+    }
+
+
 
     private lateinit var webView: WebView
     private lateinit var addressBar: EditText
@@ -757,6 +762,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         }
 
         applyReadingDisplaySettings(webView)
+        mediaPipWebRtcController.configureWebView(webView)
 
         webView.webViewClient = object : WebViewClient() {
 
@@ -1653,6 +1659,8 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             setSupportMultipleWindows(areMultipleWindowsEnabled())
         }
 
+        mediaPipWebRtcController.configureWebView(newWebView)
+
         CookieManager.getInstance().apply {
             setAcceptCookie(areCookiesEnabled())
             setAcceptThirdPartyCookies(newWebView, areCookiesEnabled() && areThirdPartyCookiesEnabled())
@@ -1953,6 +1961,8 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                         areMultipleWindowsEnabled()
                     )
                 }
+
+                mediaPipWebRtcController.configureWebView(replacement)
 
                 applyReadingDisplaySettings(replacement)
                 applyAdvancedSettings(replacement)
@@ -2857,6 +2867,11 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                     true
                 }
 
+                "Media / PiP / WebRTC V12" -> {
+                    mediaPipWebRtcDiagnosticsV12()
+                    true
+                }
+
                 "Command center V22" -> {
                     showCommandCenterV22()
                     true
@@ -3560,9 +3575,74 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         mediaJsV21("document.querySelectorAll('video,audio').forEach(e=>e.playbackRate=$rate)","Playback ${rate}x")
     }
 
-    private fun pipV21(){
-        val js="(async function(){let v=document.querySelector('video');if(!v)return 'No video';if(!document.pictureInPictureEnabled)return 'PiP unavailable';try{await v.requestPictureInPicture();return 'PiP requested'}catch(e){return 'PiP failed'}})()"
-        webView.evaluateJavascript(js){r->toastV21(r.trim('"'))}
+    private fun pipV21() {
+        if (!mediaPipWebRtcController.isPipSupported()) {
+            toastV21("Native PiP requires Android 8.0+")
+            return
+        }
+
+        webView.evaluateJavascript(
+            mediaPipWebRtcController.mediaStateJavascript()
+        ) { raw ->
+            val state = runCatching {
+                org.json.JSONTokener(raw).nextValue() as String
+            }.getOrDefault(raw)
+
+            val hasPlayingMedia =
+                runCatching {
+                    org.json.JSONObject(state).optInt("playing", 0) > 0
+                }.getOrDefault(false)
+
+            if (!hasPlayingMedia) {
+                toastV21("No actively playing media")
+                return@evaluateJavascript
+            }
+
+            val entered = mediaPipWebRtcController.enterPip()
+
+            toastV21(
+                if (entered) {
+                    "Native Picture-in-Picture requested"
+                } else {
+                    "Picture-in-Picture request failed"
+                }
+            )
+        }
+    }
+
+    private fun mediaPipWebRtcDiagnosticsV12() {
+        webView.evaluateJavascript(
+            mediaPipWebRtcController.mediaStateJavascript()
+        ) { mediaRaw ->
+            webView.evaluateJavascript(
+                mediaPipWebRtcController.webRtcStateJavascript()
+            ) { rtcRaw ->
+                webView.evaluateJavascript(
+                    mediaPipWebRtcController.capabilitiesJavascript()
+                ) { capabilityRaw ->
+                    val text =
+                        "MEDIA\n" + mediaRaw + "\n\n" +
+                        "WEBRTC\n" + rtcRaw + "\n\n" +
+                        "CAPABILITIES\n" + capabilityRaw + "\n\n" +
+                        "Native PiP: " + mediaPipWebRtcController.isPipSupported() +
+                        "\nAndroid: " + Build.VERSION.RELEASE +
+                        "\nSDK: " + Build.VERSION.SDK_INT
+
+                    androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("Media / PiP / WebRTC V12")
+                        .setMessage(text)
+                        .setPositiveButton("Copy") { _, _ ->
+                            megaCopy(
+                                "OLIKH Media/PiP/WebRTC V12",
+                                text,
+                                "Media report copied"
+                            )
+                        }
+                        .setNegativeButton("Close", null)
+                        .show()
+                }
+            }
+        }
     }
 
     private fun mediaReportV21(){
