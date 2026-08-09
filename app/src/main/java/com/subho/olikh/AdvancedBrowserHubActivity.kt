@@ -380,6 +380,36 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
             if (currentUrl.isNotBlank()) intent.putExtra("url", currentUrl)
             startActivity(intent)
         })
+        content.addView(actionCard(
+            "Reader Mode",
+            "Extract the main article, remove common clutter and control reading text size.",
+            "READ"
+        ) {
+            val currentUrl =
+                intent.getStringExtra("current_url")
+                    ?.trim()
+                    .takeUnless { it.isNullOrBlank() }
+                    ?: browserPrefs.getString(
+                        "current_url",
+                        ""
+                    ).orEmpty().trim()
+
+            if (
+                currentUrl.isBlank() ||
+                (!currentUrl.startsWith("http://", true) &&
+                 !currentUrl.startsWith("https://", true))
+            ) {
+                toast("Open a normal webpage first")
+            } else {
+                startActivity(
+                    Intent(
+                        this,
+                        ReaderModeActivity::class.java
+                    ).putExtra("url", currentUrl)
+                )
+            }
+        })
+
 
         content.addView(section("BROWSER DIAGNOSTICS"))
 
