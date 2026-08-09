@@ -152,7 +152,7 @@ class SavedPagesActivity : AppCompatActivity() {
 
     private fun removeRecord(id: String) {
         val prefs = getSharedPreferences("olikh_batch5", MODE_PRIVATE)
-        val updated = prefs.getStringSet("saved_pages", emptySet())!!
+        val updated = prefs.getStringSet("saved_pages", emptySet()).orEmpty()
             .filterNot { it.startsWith("$id|") }
             .toSet()
         prefs.edit().putStringSet("saved_pages", updated).apply()

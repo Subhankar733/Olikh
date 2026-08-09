@@ -168,7 +168,7 @@ object OlikhNewBrowserFeatures {
         val id = "group_${System.currentTimeMillis()}"
         val clean = name.trim().ifEmpty { "Tab Group" }
         val record = "$id|$clean|${tabIds.joinToString(",")}"
-        val old = prefs.getStringSet(GROUPS, emptySet())!!.toMutableSet()
+        val old = prefs.getStringSet(GROUPS, emptySet()).orEmpty().toMutableSet()
         old.add(record)
         prefs.edit().putStringSet(GROUPS, old).apply()
         toast(activity, "Group created")
@@ -176,7 +176,8 @@ object OlikhNewBrowserFeatures {
 
     fun deleteGroup(activity: Activity, id: String) {
         val prefs = activity.getSharedPreferences(PREFS, Activity.MODE_PRIVATE)
-        val updated = prefs.getStringSet(GROUPS, emptySet())!!
+        val updated = prefs.getStringSet(GROUPS, emptySet())
+            .orEmpty()
             .filterNot { it.startsWith("$id|") }
             .toSet()
         prefs.edit().putStringSet(GROUPS, updated).apply()
@@ -185,7 +186,7 @@ object OlikhNewBrowserFeatures {
 
     fun renameGroup(activity: Activity, id: String, newName: String) {
         val prefs = activity.getSharedPreferences(PREFS, Activity.MODE_PRIVATE)
-        val updated = prefs.getStringSet(GROUPS, emptySet())!!.map {
+        val updated = prefs.getStringSet(GROUPS, emptySet()).orEmpty().map {
             if (it.startsWith("$id|")) {
                 val parts = it.split("|", limit = 3)
                 "$id|${newName.trim().ifEmpty { parts.getOrElse(1) { "Tab Group" } }}|${parts.getOrElse(2) { "" }}"
@@ -197,7 +198,7 @@ object OlikhNewBrowserFeatures {
 
     fun listGroups(activity: Activity): List<TabGroup> {
         val prefs = activity.getSharedPreferences(PREFS, Activity.MODE_PRIVATE)
-        return prefs.getStringSet(GROUPS, emptySet())!!.mapNotNull {
+        return prefs.getStringSet(GROUPS, emptySet()).orEmpty().mapNotNull {
             val p = it.split("|", limit = 3)
             if (p.size < 2) null else TabGroup(
                 p[0], p[1],
@@ -262,7 +263,7 @@ object OlikhNewBrowserFeatures {
                 file.writeText(html, Charsets.UTF_8)
                 val prefs = activity.getSharedPreferences(PREFS, Activity.MODE_PRIVATE)
                 val record = listOf(id, title.replace("|", " "), url, file.absolutePath, System.currentTimeMillis()).joinToString("|")
-                val set = prefs.getStringSet(SAVED, emptySet())!!.toMutableSet()
+                val set = prefs.getStringSet(SAVED, emptySet()).orEmpty().toMutableSet()
                 set.add(record)
                 prefs.edit().putStringSet(SAVED, set).apply()
                 toast(activity, "Page saved offline")
@@ -274,7 +275,7 @@ object OlikhNewBrowserFeatures {
 
     fun savedPages(activity: Activity): List<SavedPage> {
         val prefs = activity.getSharedPreferences(PREFS, Activity.MODE_PRIVATE)
-        return prefs.getStringSet(SAVED, emptySet())!!.mapNotNull {
+        return prefs.getStringSet(SAVED, emptySet()).orEmpty().mapNotNull {
             val p = it.split("|", limit = 5)
             if (p.size < 5) null else SavedPage(p[0], p[1], p[2], p[3], p[4].toLongOrNull() ?: 0L)
         }.sortedByDescending { it.savedAt }

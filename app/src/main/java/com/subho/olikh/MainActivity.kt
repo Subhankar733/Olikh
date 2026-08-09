@@ -5219,7 +5219,8 @@ Blocker: ${olikhBlocker.isEnabled()}"""
     private fun openCurrentScheme(scheme: String) {
         val uri = runCatching { Uri.parse(webView.url.orEmpty()) }.getOrNull()
         if (uri?.host.isNullOrBlank()) return
-        webView.loadUrl(uri!!.buildUpon().scheme(scheme).build().toString())
+        val safeUri = uri ?: return
+        webView.loadUrl(safeUri.buildUpon().scheme(scheme).build().toString())
     }
 
     private fun searchCurrentPageTitle() {
