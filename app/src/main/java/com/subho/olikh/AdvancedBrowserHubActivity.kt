@@ -140,6 +140,85 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
             false
         ))
 
+        content.addView(section("WEBVIEW ENGINE"))
+
+        content.addView(browserSwitchCard(
+            "JavaScript",
+            "Allow websites to run JavaScript. Turn off for maximum restriction.",
+            "javascript_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Cookies",
+            "Allow websites to store login and session cookies.",
+            "cookies_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Third-party cookies",
+            "Allow cross-site cookies used by embedded services.",
+            "third_party_cookies_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Images",
+            "Load page images. Disable to reduce bandwidth and page weight.",
+            "images_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "DOM storage",
+            "Enable localStorage/sessionStorage used by modern web apps.",
+            "dom_storage_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Database storage",
+            "Allow web databases used by some offline-capable sites.",
+            "database_storage_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Media autoplay",
+            "Allow pages to start media without an explicit tap.",
+            "autoplay_enabled",
+            false
+        ))
+
+        content.addView(browserSwitchCard(
+            "Zoom gestures",
+            "Allow pinch-to-zoom and browser zoom gestures.",
+            "zoom_gestures_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Wide viewport",
+            "Let responsive pages use a desktop-like viewport width when supported.",
+            "wide_viewport_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Overview mode",
+            "Allow WebView overview/layout behavior for pages that request it.",
+            "overview_mode_enabled",
+            true
+        ))
+
+        content.addView(browserSwitchCard(
+            "Content access",
+            "Allow WebView access to content:// resources where supported.",
+            "content_access_enabled",
+            true
+        ))
+
         content.addView(section("PRIVACY & SECURITY"))
 
         content.addView(switchCard(
@@ -311,7 +390,7 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
         content.addView(Space(this), LinearLayout.LayoutParams(1, dp(18)))
 
         content.addView(TextView(this).apply {
-            text = "OLIKH • Advanced Browser Batch 1 • " +
+            text = "OLIKH • Advanced Browser Batch 2 • " +
                 SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
             textSize = 10f
             setTextColor(muted)
@@ -371,6 +450,51 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
             setOnCheckedChangeListener { _, value ->
                 prefs.edit().putBoolean(key, value).apply()
                 onChanged?.invoke(value)
+            }
+        }
+
+        box.addView(sw, LinearLayout.LayoutParams(-2, -2))
+
+        return wrap(box)
+    }
+
+    private fun browserSwitchCard(
+        title: String,
+        summary: String,
+        key: String,
+        default: Boolean
+    ): View {
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(16), dp(14), dp(10), dp(14))
+            setBackgroundColor(surface)
+        }
+
+        val copy = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        copy.addView(TextView(this).apply {
+            text = title
+            textSize = 14f
+            setTextColor(ink)
+        })
+
+        copy.addView(TextView(this).apply {
+            text = summary
+            textSize = 10f
+            setTextColor(muted)
+            setPadding(0, dp(4), 0, 0)
+        })
+
+        box.addView(copy, LinearLayout.LayoutParams(0, -2, 1f))
+
+        val sw = Switch(this).apply {
+            isChecked = browserPrefs.getBoolean(key, default)
+            setOnCheckedChangeListener { _, value ->
+                browserPrefs.edit().putBoolean(key, value).apply()
+                toast("$title ${if (value) "enabled" else "disabled"}")
             }
         }
 
