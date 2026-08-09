@@ -377,7 +377,7 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
             "OPEN"
         ) {
             val intent = Intent(this, PageToolsActivity::class.java)
-            val currentUrl = browserPrefs.getString("current_url", "")
+            val currentUrl = browserPrefs.getString("current_url", "") ?: ""
             if (currentUrl.isNotBlank()) intent.putExtra("url", currentUrl)
             startActivity(intent)
         })
