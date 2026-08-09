@@ -1,5 +1,7 @@
 package com.subho.olikh
 
+import com.subho.olikh.OlikhNewBrowserFeatures
+
 import android.app.DownloadManager
 
 import android.annotation.SuppressLint
@@ -660,6 +662,13 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        OlikhNewBrowserFeatures.installSelectionTools(
+            this,
+            webView
+        ) { selected ->
+            openInput(selected)
+        }
+
         installAdvancedHubLauncher()
 
         webView = findViewById(R.id.webView)
