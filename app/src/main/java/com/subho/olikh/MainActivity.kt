@@ -1363,9 +1363,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         tabs.toList().forEach { tab ->
             rememberClosedTab(tab)
-            if (tab.incognito) {
-                hardenIncognitoWebView(tab.webView)
-            }
             (tab.webView.parent as? ViewGroup)?.removeView(tab.webView)
             runCatching {
                 tab.webView.stopLoading()
@@ -1386,9 +1383,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         tabs.toList().forEach { tab ->
             if (tab === keep) return@forEach
             rememberClosedTab(tab)
-            if (tab.incognito) {
-                hardenIncognitoWebView(tab.webView)
-            }
             (tab.webView.parent as? ViewGroup)?.removeView(tab.webView)
             runCatching {
                 tab.webView.stopLoading()
@@ -1423,61 +1417,14 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
     private val recentlyClosedTabs =
         ArrayDeque<ClosedTabEntry>()
 
-    private fun hardenIncognitoWebView(target: WebView) {
+    private fun cleanupIncognitoWebView(tab: BrowserTab) {
+        if (!tab.incognito) return
         runCatching {
-            target.clearHistory()
-            target.clearFormData()
-            target.clearMatches()
-            target.clearSslPreferences()
-            target.clearCache(true)
-        }
-    }
-
-    private fun detectAndRegisterWebAppShortcut(
-        view: WebView,
-        tab: BrowserTab,
-        url: String?
-    ) {
-        if (tab.incognito || url.isNullOrBlank()) return
-        if (!url.startsWith("http://") && !url.startsWith("https://")) return
-
-        view.evaluateJavascript(
-            "(function(){var m=document.querySelector('link[rel~="manifest"]');return m?m.href:'';})();",
-        ) { raw ->
-            val manifestUrl = raw
-                .removePrefix(""").removeSuffix(""")
-                .replace("\\/", "/")
-                .replace("\"", """)
-                .trim()
-
-            if (manifestUrl.isBlank()) return@evaluateJavascript
-
-            val host = Uri.parse(url).host.orEmpty()
-            if (host.isBlank() || android.os.Build.VERSION.SDK_INT < 25) return@evaluateJavascript
-
-            val title = view.title?.trim().orEmpty()
-                .ifBlank { host }
-                .take(32)
-
-            val id = "pwa_" + host
-                .replace(Regex("[^A-Za-z0-9_-]"), "_")
-                .take(50)
-
-            runCatching {
-                val shortcut = android.content.pm.ShortcutInfo.Builder(this, id)
-                    .setShortLabel(title)
-                    .setLongLabel("Open $title")
-                    .setIntent(
-                        Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                            setClass(this@MainActivity, MainActivity::class.java)
-                        }
-                    )
-                    .build()
-
-                getSystemService(
-                    android.content.pm.ShortcutManager::class.java
-                )?.setDynamicShortcuts(listOf(shortcut))
-            }
+            tab.webView.stopLoading()
+            tab.webView.clearHistory()
+            tab.webView.clearFormData()
+            tab.webView.clearSslPreferences()
+            tab.webView.clearCache(true)
         }
     }
 
@@ -1587,9 +1534,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         val wasActive = index == activeTabIndex
 
         rememberClosedTab(closingTab)
-        if (closingTab.incognito) {
-            hardenIncognitoWebView(closingTab.webView)
-        }
+        cleanupIncognitoWebView(closingTab)
         tabs.removeAt(index)
 
         (closingTab.webView.parent as? android.view.ViewGroup)
@@ -1626,9 +1571,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         val closingTab = tabs[closingIndex]
 
         rememberClosedTab(closingTab)
-        if (closingTab.incognito) {
-            hardenIncognitoWebView(closingTab.webView)
-        }
+        cleanupIncognitoWebView(closingTab)
         tabs.removeAt(closingIndex)
 
         if (closingTab.webView.parent != null) {
@@ -2257,9 +2200,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                 tab.lastAccessed = System.currentTimeMillis()
 
                 recordHistory(tab, url)
-                if (view != null) {
-                    detectAndRegisterWebAppShortcut(view, tab, url)
-                }
                 persistTabSession()
 
                 if (activeTab === tab) {
@@ -3420,9 +3360,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         closingTabs.forEach { tab ->
             rememberClosedTab(tab)
-            if (tab.incognito) {
-                hardenIncognitoWebView(tab.webView)
-            }
             (tab.webView.parent as? ViewGroup)?.removeView(tab.webView)
             tab.webView.stopLoading()
             tab.webView.webChromeClient = null
