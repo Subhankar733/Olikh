@@ -51,7 +51,7 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(243, 244, 246))
+            setBackgroundColor(Color.rgb(247, 248, 250))
         }
 
         val header = LinearLayout(this).apply {
@@ -59,6 +59,7 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(18), dp(16), dp(18), dp(12))
             setBackgroundColor(dark)
+            elevation = dp(4).toFloat()
         }
 
         val back = Button(this).apply {
@@ -534,9 +535,17 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
     private fun section(text: String): TextView =
         TextView(this).apply {
             this.text = text
-            textSize = 10f
+            textSize = 11f
             setTextColor(muted)
-            setPadding(dp(5), dp(17), dp(5), dp(8))
+            setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            letterSpacing = 0.08f
+            setPadding(dp(7), dp(18), dp(7), dp(9))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(4)
+            }
         }
 
     private fun switchCard(
