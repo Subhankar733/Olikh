@@ -347,189 +347,126 @@ class MainActivity : AppCompatActivity() {
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>
 :root{
-  --bg:#090b0f;--panel:#11141a;--panel2:#171b22;--panel3:#1d222b;
-  --text:#f4f6fa;--muted:#8e96a5;--line:#282e38;--accent:#7d8cff;
-  --good:#63dfb0;--shadow:0 16px 40px rgba(0,0,0,.28)
+ --bg:#0b0d11;--surface:#12151b;--surface2:#191d25;--text:#f5f7fb;
+ --muted:#929aa9;--line:#292f39;--accent:#7181ff;--good:#5ed9aa
 }
 @media(prefers-color-scheme:light){
-  :root{--bg:#f4f5f7;--panel:#fff;--panel2:#f0f2f5;--panel3:#e7eaf0;
-  --text:#15181e;--muted:#747c89;--line:#dfe3e9;--accent:#536dfe;
-  --good:#168b65;--shadow:0 14px 34px rgba(20,24,32,.10)}
+ :root{--bg:#f6f7f9;--surface:#fff;--surface2:#eef1f5;--text:#15181e;
+ --muted:#737b88;--line:#dfe3e9;--accent:#536dfe;--good:#168b65}
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
 font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 body{min-height:100vh}
 a,button,input{font:inherit}
-.page{max-width:820px;margin:auto;padding:18px 16px 112px}
-.top{display:flex;align-items:center;justify-content:space-between;padding:1px 2px 18px}
-.identity{display:flex;align-items:center;gap:11px}
-.logo{width:42px;height:42px;border-radius:13px;background:var(--panel3);
-border:1px solid var(--line);display:grid;place-items:center;font-weight:900;font-size:19px}
-.identity b{display:block;font-size:16px;letter-spacing:-.03em}
-.identity span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
-.time{text-align:right;color:var(--muted);font-size:9px;line-height:1.25}
-.time b{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
-.hero{position:relative;background:linear-gradient(145deg,var(--panel2),var(--panel));
-border:1px solid var(--line);border-radius:22px;padding:21px;overflow:hidden;box-shadow:var(--shadow)}
-.hero:after{content:"";position:absolute;width:170px;height:170px;border-radius:50%;
-right:-80px;top:-85px;background:var(--accent);opacity:.10;pointer-events:none}
-.eyebrow{font-size:9px;color:var(--muted);font-weight:850;letter-spacing:.16em}
-.hero h1{margin:7px 0 17px;font-size:29px;line-height:1.03;letter-spacing:-.055em}
-.search{display:flex;gap:7px;padding:5px;border:1px solid var(--line);border-radius:15px;background:var(--bg)}
+.page{max-width:760px;margin:auto;padding:28px 20px 115px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:54px}
+.brand{display:flex;align-items:center;gap:11px}
+.logo{width:38px;height:38px;border-radius:12px;background:var(--surface2);
+border:1px solid var(--line);display:grid;place-items:center;font-size:17px;font-weight:900}
+.brand b{font-size:16px;letter-spacing:-.03em}.brand small{display:block;color:var(--muted);
+font-size:9px;margin-top:2px}
+.private{border:1px solid var(--line);background:var(--surface);color:var(--muted);
+border-radius:12px;padding:8px 10px;font-size:9px;text-decoration:none}
+.center{text-align:center}
+.eyebrow{font-size:9px;letter-spacing:.18em;font-weight:850;color:var(--muted)}
+h1{font-size:34px;line-height:1.04;letter-spacing:-.06em;margin:9px 0 24px}
+.search{max-width:620px;margin:auto;display:flex;gap:7px;padding:5px;
+background:var(--surface);border:1px solid var(--line);border-radius:17px;
+box-shadow:0 10px 28px rgba(0,0,0,.16)}
 .search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);
-padding:12px 10px;font-size:14px}
+padding:12px 11px;font-size:14px}
 .search input::placeholder{color:var(--muted)}
-.go{width:51px;border:0;border-radius:11px;background:var(--accent);color:#fff;font-weight:850;font-size:12px}
-.suggestions{display:none;margin-top:7px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
-.suggestions button{width:100%;border:0;border-bottom:1px solid var(--line);background:var(--panel);
-color:var(--text);padding:11px 13px;text-align:left;font-size:12px}
-.section{margin-top:25px}
-.section-head{display:flex;align-items:end;justify-content:space-between;margin:0 2px 10px}
-.section-head b{font-size:10px;letter-spacing:.13em}
-.section-head span{font-size:9px;color:var(--muted)}
-.workspace{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.card{display:block;min-height:98px;padding:16px;border:1px solid var(--line);border-radius:17px;
-background:var(--panel);color:var(--text);text-decoration:none;box-shadow:0 5px 17px rgba(0,0,0,.07)}
-.card:active{transform:scale(.985)}
-.card.feature{background:linear-gradient(145deg,#1b1f27,#101218);border-color:#2c333f;color:#fff}
-.card b{display:block;font-size:13px;letter-spacing:-.02em}
-.card span{display:block;margin-top:6px;color:var(--muted);font-size:10px;line-height:1.4}
-.card.feature span{color:#a7afbd}
-.quick-strip{display:flex;gap:9px;overflow-x:auto;padding:1px 1px 3px;scrollbar-width:none}
-.quick-strip::-webkit-scrollbar{display:none}
-.quick{flex:0 0 116px;padding:12px;border:1px solid var(--line);border-radius:15px;
-background:var(--panel);color:var(--text);text-decoration:none}
-.quick-icon{width:31px;height:31px;border-radius:9px;display:grid;place-items:center;
-background:var(--panel3);border:1px solid var(--line);font-size:11px;font-weight:850;margin-bottom:9px}
-.quick-text{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
-.pin-go{display:block;margin-top:5px;color:var(--muted);font-size:12px}
-.protection{display:flex;align-items:center;justify-content:space-between;padding:16px;
-border:1px solid #292f39;border-radius:17px;background:linear-gradient(145deg,#161a20,#101217);color:#fff}
-.protection-left{display:flex;align-items:center;gap:11px;min-width:0}
-.shield{width:10px;height:10px;flex:0 0 auto;border-radius:50%;background:var(--good);
-box-shadow:0 0 0 5px rgba(99,223,176,.10)}
-.protection b{font-size:12px}.protection small{display:block;color:#9ca5b4;font-size:9px;margin-top:3px}
-.blocked{text-align:right;font-size:18px;font-weight:900}.blocked small{font-size:8px}
-.rows{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.row{display:flex;align-items:center;gap:10px;padding:13px;color:var(--text);
-text-decoration:none;border-bottom:1px solid var(--line)}
-.row:last-child{border-bottom:0}.row:active{background:var(--panel2)}
-.row-icon{width:31px;height:31px;flex:0 0 auto;border-radius:10px;background:var(--panel2);
-border:1px solid var(--line);display:grid;place-items:center;font-size:13px}
-.row-copy{min-width:0;flex:1}.row-copy strong,.row-copy small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row-copy strong{font-size:11px}.row-copy small{font-size:9px;color:var(--muted);margin-top:3px}
-.row-arrow{font-size:16px;color:var(--muted)}.blank{padding:18px 13px;color:var(--muted);font-size:10px}
-.dock{position:fixed;left:12px;right:12px;bottom:10px;max-width:796px;margin:auto;z-index:20;
-display:flex;gap:6px;padding:6px;border:1px solid #2a303b;border-radius:19px;
-background:rgba(18,21,27,.95);box-shadow:0 12px 34px rgba(0,0,0,.32);
-backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
-.dock a{flex:1;text-align:center;text-decoration:none;color:#bec5d1;background:#20242c;
-border-radius:12px;padding:10px 3px;font-size:9px}
-.dock a.active{background:#fff;color:#111;font-weight:850}
-@media(min-width:600px){.page{padding-left:22px;padding-right:22px}.workspace{gap:11px}}
+.go{width:50px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:850}
+.suggestions{display:none;max-width:620px;margin:7px auto 0;text-align:left;
+border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.suggestions button{width:100%;border:0;border-bottom:1px solid var(--line);
+background:var(--surface);color:var(--text);padding:11px 13px;text-align:left;font-size:12px}
+.section{max-width:620px;margin:43px auto 0}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-head b{font-size:10px;letter-spacing:.13em}.section-head span{font-size:9px;color:var(--muted)}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.site{min-width:0;text-decoration:none;color:var(--text);background:var(--surface);
+border:1px solid var(--line);border-radius:15px;padding:14px 10px;text-align:center}
+.site:active{transform:scale(.98)}
+.icon{width:38px;height:38px;margin:0 auto 9px;border-radius:11px;background:var(--surface2);
+border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:850}
+.name{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.add{border-style:dashed;color:var(--muted)}
+.add .icon{font-size:18px}
+.status{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:30px;
+color:var(--muted);font-size:9px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.tip{max-width:620px;margin:38px auto 0;padding:12px 14px;border:1px solid var(--line);
+border-radius:13px;background:var(--surface);color:var(--muted);font-size:9px;text-align:center}
+@media(max-width:430px){
+ .page{padding:24px 18px 115px}.header{margin-bottom:48px}
+ h1{font-size:31px}.quick{grid-template-columns:repeat(4,1fr);gap:8px}
+ .site{padding:12px 5px}.icon{width:34px;height:34px}
+}
 </style>
 </head>
 <body>
 <main class="page">
-<header class="top">
-  <div class="identity"><div class="logo">O</div><div><b>OLIKH</b><span>private browsing workspace</span></div></div>
-  <div class="time"><b id="clock">--:--</b><span id="date">---</span></div>
+<header class="header">
+ <div class="brand"><div class="logo">O</div><div><b>OLIKH</b><small>Private browser</small></div></div>
+ <a class="private" href="olikh://incognito">Private mode</a>
 </header>
 
-<section class="hero">
-  <div class="eyebrow">OLIKH SEARCH</div>
-  <h1>Search the web</h1>
-  <form class="search" onsubmit="return submitSearch()">
-    <input id="query" autocomplete="off" autocapitalize="none" placeholder="Search, paste a URL, or type a command">
-    <button class="go" type="submit">GO</button>
-  </form>
-  <div id="suggestions" class="suggestions"></div>
+<section class="center">
+ <div class="eyebrow">OLIKH</div>
+ <h1>What are you looking for?</h1>
+ <form class="search" onsubmit="return submitSearch()">
+  <input id="query" autocomplete="off" autocapitalize="none"
+   placeholder="Search or enter a web address">
+  <button class="go" type="submit">GO</button>
+ </form>
+ <div id="suggestions" class="suggestions"></div>
 </section>
 
 <section class="section">
-  <div class="section-head"><b>WORKSPACE</b><span>Private, focused browsing</span></div>
-  <div class="workspace">
-    <a class="card feature" href="olikh://new-tab"><b>New tab</b><span>Start a fresh page</span></a>
-    <a class="card" href="olikh://tabs"><b>Open tabs</b><span>Switch or manage tabs</span></a>
-    <a class="card" href="olikh://history"><b>History</b><span>Continue where you left off</span></a>
-    <a class="card" href="olikh://bookmarks"><b>Saved</b><span>Bookmarks and pages</span></a>
-    <a class="card" href="olikh://downloads"><b>Downloads</b><span>Files and transfers</span></a>
-    <a class="card" href="olikh://settings"><b>Settings</b><span>Configure OLIKH</span></a>
-    <a class="card feature" href="olikh://advanced"><b>Power Center</b><span>Advanced browser controls</span></a>
-    <a class="card" href="olikh://incognito"><b>Private mode</b><span>Open a private tab</span></a>
-    <a class="card" href="olikh://toggle-blocker"><b>Protection</b><span>Content blocking</span></a>
-  </div>
+ <div class="section-head"><b>QUICK ACCESS</b><span>Tap to open</span></div>
+ <div class="quick">$quickAccessHtml
+  <a class="site add" href="olikh://bookmarks"><div class="icon">+</div><div class="name">Add shortcut</div></a>
+ </div>
 </section>
 
-<section class="section">
-  <div class="section-head"><b>QUICK ACCESS</b><span>Quick launch</span></div>
-  <div class="quick-strip">$quickAccessHtml</div>
-</section>
+<div class="status"><span class="dot"></span><span>Protection $blockerLabel · $blockedRequests blocked</span></div>
 
-<section class="section">
-  <div class="protection">
-    <div class="protection-left"><div class="shield"></div><div><b>Protection $blockerLabel</b><small>$blockerText</small></div></div>
-    <div class="blocked">$blockedRequests<small>blocked · $blockedDomains domains</small></div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="section-head"><b>RECENT</b><span>Your recent activity</span></div>
-  <div class="rows">$recentHtml</div>
-</section>
-
-<section class="section">
-  <div class="section-head"><b>SAVED</b><span>Saved pages</span></div>
-  <div class="rows">$bookmarkHtml</div>
-</section>
+<div class="tip">History, saved pages, downloads and settings stay in their own browser panels.</div>
 </main>
-
-<nav class="dock">
-  <a href="olikh://history">History</a>
-  <a href="olikh://bookmarks">Saved</a>
-  <a class="active" href="olikh://new-tab">New</a>
-  <a href="olikh://downloads">Files</a>
-  <a href="olikh://settings">More</a>
-</nav>
 
 <script>
 const input=document.getElementById("query"),box=document.getElementById("suggestions");
-const commandRoutes={
+const routes={
  "history":"olikh://history","saved":"olikh://bookmarks","bookmarks":"olikh://bookmarks",
  "downloads":"olikh://downloads","settings":"olikh://settings","power center":"olikh://advanced",
  "advanced":"olikh://advanced","private":"olikh://incognito","private mode":"olikh://incognito",
  "tabs":"olikh://tabs","open tabs":"olikh://tabs","protection":"olikh://toggle-blocker"
 };
-const commands=Object.keys(commandRoutes).map(x=>x.replace(/\b\w/g,c=>c.toUpperCase()));
+const labels=Object.keys(routes).map(x=>x.replace(/\b\w/g,c=>c.toUpperCase()));
 function submitSearch(){
- const value=input.value.trim(); if(!value)return false;
- const key=value.toLowerCase();
- if(commandRoutes[key]){location.href=commandRoutes[key];return false}
- const urlLike=/^(https?:\/\/|www\.)/i.test(value)||/^[^\s]+\.[^\s]+$/.test(value);
- location.href=urlLike?(value.startsWith("http")?value:"https://"+value):
- "https://www.google.com/search?q="+encodeURIComponent(value);
+ const v=input.value.trim();if(!v)return false;
+ const k=v.toLowerCase();
+ if(routes[k]){location.href=routes[k];return false}
+ const url=/^(https?:\/\/|www\.)/i.test(v)||/^[^\s]+\.[^\s]+$/.test(v);
+ location.href=url?(v.startsWith("http")?v:"https://"+v):
+ "https://www.google.com/search?q="+encodeURIComponent(v);
  return false;
 }
 input.addEventListener("input",()=>{
  const q=input.value.trim().toLowerCase();
  if(!q){box.style.display="none";return}
- const hits=commands.filter(x=>x.toLowerCase().includes(q)).slice(0,4);
+ const hits=labels.filter(x=>x.toLowerCase().includes(q)).slice(0,4);
  if(!hits.length){box.style.display="none";return}
  box.innerHTML="";
  hits.forEach(label=>{
-   const b=document.createElement("button");b.textContent=label;
-   b.onclick=()=>{box.style.display="none";location.href=commandRoutes[label.toLowerCase()]};
-   box.appendChild(b);
+  const b=document.createElement("button");b.textContent=label;
+  b.onclick=()=>{location.href=routes[label.toLowerCase()]};
+  box.appendChild(b);
  });
  box.style.display="block";
 });
-function tick(){
- const d=new Date();
- document.getElementById("clock").textContent=d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
- document.getElementById("date").textContent=d.toLocaleDateString([], {weekday:"short",day:"numeric",month:"short"});
-}
-tick();setInterval(tick,30000);
 </script>
 </body>
 </html>
