@@ -1140,10 +1140,19 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
 
     private fun toggleCurrentBookmark() {
+        if (activeTab?.incognito == true) {
+            Toast.makeText(
+                this,
+                "Private pages are not bookmarked",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
         val currentUrl = webView.url
             ?.takeIf {
-                it.startsWith("https://") ||
-                    it.startsWith("http://")
+                it.startsWith("https://", true) ||
+                    it.startsWith("http://", true)
             }
             ?: return
 
