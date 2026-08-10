@@ -217,8 +217,7 @@ class SavedPagesActivity : AppCompatActivity() {
                     Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_SUBJECT, title)
-                        putExtra(Intent.EXTRA_TEXT, "$title
-$url")
+                        putExtra(Intent.EXTRA_TEXT, url)
                     },
                     "Share saved page"
                 )
