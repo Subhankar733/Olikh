@@ -247,6 +247,14 @@ class AdvancedBrowserHubActivity : AppCompatActivity() {
         })
 
         content.addView(actionCard(
+            "Backup & Restore",
+            "Export or restore bookmarks, history and browser preferences as an OLIKH JSON backup.",
+            "OPEN"
+        ) {
+            startActivity(Intent(this, BackupRestoreActivity::class.java))
+        })
+
+        content.addView(actionCard(
             "Clear browsing data",
             "Choose cookies, storage, cache, history, bookmarks and saved site decisions.",
             "OPEN"

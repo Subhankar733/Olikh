@@ -55,6 +55,11 @@
             android:name=".PrivacyDataActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".BackupRestoreActivity"
+            android:exported="false" />
+
+
     </application>
 
 </manifest>
