@@ -138,6 +138,7 @@ class TabGroupDialog(
         root.addView(resultCount)
 
         var tabFilter = "all"
+        var render: ((String) -> Unit)? = null
 
         val filterRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -147,7 +148,7 @@ class TabGroupDialog(
         fun filterButton(label: String, value: String): Button {
             return button(label) {
                 tabFilter = value
-                render(search.text?.toString().orEmpty())
+                render?.invoke(search.text?.toString().orEmpty())
             }.apply {
                 textSize = 11f
                 minHeight = dp(40)
@@ -237,7 +238,7 @@ class TabGroupDialog(
             )
         )
 
-        fun render(filterRaw: String) {
+        render = { filterRaw ->
             val filter = filterRaw.trim().lowercase()
             list.removeAllViews()
 
@@ -436,7 +437,7 @@ class TabGroupDialog(
         search.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                render(s?.toString().orEmpty())
+                render?.invoke(s?.toString().orEmpty())
             }
             override fun afterTextChanged(s: Editable?) = Unit
         })
@@ -450,6 +451,6 @@ class TabGroupDialog(
             (context.resources.displayMetrics.heightPixels * 0.88f).toInt()
         )
 
-        render("")
+        render?.invoke("")
     }
 }
