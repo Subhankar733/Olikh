@@ -688,7 +688,6 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             openInput(selected)
         }
 
-        installAdvancedHubLauncher()
         smartAddressBar = SmartAddressBar(
             context = this,
             editText = addressBar,
@@ -707,6 +706,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         progressBar = findViewById(R.id.progressBar)
         browserContainer = findViewById(R.id.browserContainer)
+        installAdvancedHubLauncher()
         btnTabs = findViewById(R.id.btnTabs)
         btnNewTab = findViewById(R.id.btnNewTab)
         val btnMenu = findViewById<ImageButton>(R.id.btnMenu)
