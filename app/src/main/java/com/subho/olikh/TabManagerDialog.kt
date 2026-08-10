@@ -27,7 +27,8 @@ class TabManagerDialog(
     private val onNewTab: () -> Unit,
     private val onCloseAll: () -> Unit,
     private val onCloseOthers: () -> Unit,
-    private val onReopenClosed: () -> Unit
+    private val onReopenClosed: () -> Unit,
+    private val onManageGroups: () -> Unit
 ) : Dialog(browserTabs.firstOrNull()?.webView?.context ?: error("No tabs")) {
 
     private fun dp(v: Int) = (v * context.resources.displayMetrics.density).toInt()
@@ -197,7 +198,8 @@ class TabManagerDialog(
         listOf(
             "Close others" to onCloseOthers,
             "Close all" to onCloseAll,
-            "Reopen" to onReopenClosed
+            "Reopen" to onReopenClosed,
+            "Groups" to onManageGroups
         ).forEach { (label, callback) ->
             actions.addView(
                 action(label, callback),

@@ -120,6 +120,9 @@ class MainActivity : AppCompatActivity() {
     private val tabSessionStore by lazy {
         TabSessionStore(this)
     }
+    private val tabGroupStore by lazy {
+        TabGroupStore(this)
+    }
 
     private val sitePermissionManager by lazy {
         SitePermissionManager(this)
@@ -1404,7 +1407,20 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             onNewTab = { createNewTab(initialUrl = "about:blank") },
             onCloseAll = { closeAllTabsFromManager() },
             onCloseOthers = { closeOtherTabsFromManager() },
-            onReopenClosed = { reopenLastClosedTab() }
+            onReopenClosed = { reopenLastClosedTab() },
+            onManageGroups = { showTabGroups() }
+        ).show()
+    }
+
+    private fun showTabGroups() {
+        if (tabs.isEmpty()) return
+
+        TabGroupDialog(
+            browserTabs = tabs.toList(),
+            activeIndex = activeTabIndex,
+            store = tabGroupStore,
+            onSelectTab = { index -> switchToTab(index) },
+            onChanged = { }
         ).show()
     }
 
