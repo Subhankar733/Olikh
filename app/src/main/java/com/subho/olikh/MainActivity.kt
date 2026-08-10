@@ -3124,239 +3124,164 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         popup?.showAsDropDown(anchor, 0, dp(8))
     }
     private fun showDeveloperHubV27() {
-        val options = arrayOf(
-            "Page information",
-            "HTML source",
-            "Cookies",
-            "Web resources",
-            "WebView status"
-        )
+        fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+        fun card() = GradientDrawable().apply {
+            setColor(Color.rgb(21, 25, 34))
+            setStroke(dp(1), Color.rgb(48, 56, 72))
+            cornerRadius = dp(17).toFloat()
+        }
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Developer Hub V27")
-            .setItems(options) { _, which ->
-                when (which) {
-
-                    0 -> {
-                        val info =
-                            "Title: ${webView.title ?: "-"}\n\n" +
-                            "URL: ${webView.url ?: "-"}\n\n" +
-                            "Can go back: ${webView.canGoBack()}\n" +
-                            "Can go forward: ${webView.canGoForward()}\n\n" +
-                            "User-Agent: ${
-                                webView.settings.userAgentString ?: "-"
-                            }\n\n" +
-                            "JavaScript: ${webView.settings.javaScriptEnabled}\n" +
-                            "DOM Storage: ${webView.settings.domStorageEnabled}\n" +
-                            "Database: ${webView.settings.databaseEnabled}"
-
-                        androidx.appcompat.app.AlertDialog.Builder(this)
-                            .setTitle("Page information")
-                            .setMessage(info)
-                            .setPositiveButton("Copy") { _, _ ->
-                                val clipboard =
-                                    getSystemService(
-                                        CLIPBOARD_SERVICE
-                                    ) as android.content.ClipboardManager
-
-                                clipboard.setPrimaryClip(
-                                    android.content.ClipData.newPlainText(
-                                        "Page information",
-                                        info
-                                    )
-                                )
-
-                                Toast.makeText(
-                                    this,
-                                    "Page information copied",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            .setNegativeButton("Close", null)
-                            .show()
-                    }
-
-                    1 -> {
-                        webView.evaluateJavascript(
-                            "document.documentElement.outerHTML"
-                        ) { raw ->
-
-                            val source = try {
-                                org.json.JSONTokener(raw).nextValue()
-                                    ?.toString() ?: raw
-                            } catch (_: Exception) {
-                                raw
-                            }
-
-                            val editor = EditText(this).apply {
-                                setText(source)
-                                setTextIsSelectable(true)
-                                setSingleLine(false)
-                                isVerticalScrollBarEnabled = true
-                            }
-
-                            androidx.appcompat.app.AlertDialog.Builder(this)
-                                .setTitle("HTML source")
-                                .setView(editor)
-                                .setPositiveButton("Copy") { _, _ ->
-                                    val clipboard =
-                                        getSystemService(
-                                            CLIPBOARD_SERVICE
-                                        ) as android.content.ClipboardManager
-
-                                    clipboard.setPrimaryClip(
-                                        android.content.ClipData.newPlainText(
-                                            "HTML source",
-                                            source
-                                        )
-                                    )
-
-                                    Toast.makeText(
-                                        this,
-                                        "HTML source copied",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                                .setNegativeButton("Close", null)
-                                .show()
-                        }
-                    }
-
-                    2 -> {
-                        val url = webView.url ?: "-"
-                        val cookies =
-                            android.webkit.CookieManager
-                                .getInstance()
-                                .getCookie(url)
-                                ?: "No cookies available"
-
-                        val text =
-                            "URL:\n$url\n\nCookies:\n$cookies"
-
-                        androidx.appcompat.app.AlertDialog.Builder(this)
-                            .setTitle("Cookies")
-                            .setMessage(text)
-                            .setPositiveButton("Copy") { _, _ ->
-                                val clipboard =
-                                    getSystemService(
-                                        CLIPBOARD_SERVICE
-                                    ) as android.content.ClipboardManager
-
-                                clipboard.setPrimaryClip(
-                                    android.content.ClipData.newPlainText(
-                                        "Cookies",
-                                        text
-                                    )
-                                )
-
-                                Toast.makeText(
-                                    this,
-                                    "Cookies copied",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            .setNegativeButton("Close", null)
-                            .show()
-                    }
-
-                    3 -> {
-                        webView.evaluateJavascript(
-                            """
-                            JSON.stringify(
-                                performance.getEntriesByType('resource')
-                                .map(function(r) {
-                                    return {
-                                        name: r.name,
-                                        duration: Math.round(r.duration),
-                                        transferSize: r.transferSize || 0
-                                    };
-                                })
-                            )
-                            """.trimIndent()
-                        ) { raw ->
-
-                            val resources = try {
-                                org.json.JSONTokener(raw).nextValue()
-                                    ?.toString() ?: raw
-                            } catch (_: Exception) {
-                                raw
-                            }
-
-                            val editor = EditText(this).apply {
-                                setText(resources)
-                                setTextIsSelectable(true)
-                                setSingleLine(false)
-                                isVerticalScrollBarEnabled = true
-                            }
-
-                            androidx.appcompat.app.AlertDialog.Builder(this)
-                                .setTitle("Web resources")
-                                .setView(editor)
-                                .setPositiveButton("Copy") { _, _ ->
-                                    val clipboard =
-                                        getSystemService(
-                                            CLIPBOARD_SERVICE
-                                        ) as android.content.ClipboardManager
-
-                                    clipboard.setPrimaryClip(
-                                        android.content.ClipData.newPlainText(
-                                            "Web resources",
-                                            resources
-                                        )
-                                    )
-
-                                    Toast.makeText(
-                                        this,
-                                        "Resources copied",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                                .setNegativeButton("Close", null)
-                                .show()
-                        }
-                    }
-
-                    4 -> {
-                        val settings = webView.settings
-
-                        val status =
-                            "WebView status\n\n" +
-                            "Android: ${android.os.Build.VERSION.RELEASE}\n" +
-                            "SDK: ${android.os.Build.VERSION.SDK_INT}\n\n" +
-                            "JavaScript: ${settings.javaScriptEnabled}\n" +
-                            "DOM Storage: ${settings.domStorageEnabled}\n" +
-                            "Database: ${settings.databaseEnabled}\n" +
-                            "User-Agent:\n${settings.userAgentString ?: "-"}"
-
-                        androidx.appcompat.app.AlertDialog.Builder(this)
-                            .setTitle("WebView status")
-                            .setMessage(status)
-                            .setPositiveButton("Copy") { _, _ ->
-                                val clipboard =
-                                    getSystemService(
-                                        CLIPBOARD_SERVICE
-                                    ) as android.content.ClipboardManager
-
-                                clipboard.setPrimaryClip(
-                                    android.content.ClipData.newPlainText(
-                                        "WebView status",
-                                        status
-                                    )
-                                )
-
-                                Toast.makeText(
-                                    this,
-                                    "Status copied",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            .setNegativeButton("Close", null)
-                            .show()
-                    }
-                }
+        val dialog = android.app.Dialog(this)
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), dp(10), dp(10), dp(10))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(12, 15, 22))
+                setStroke(dp(1), Color.rgb(47, 55, 70))
+                cornerRadius = dp(26).toFloat()
             }
-            .setNegativeButton("Close", null)
-            .show()
+        }
+
+        root.addView(TextView(this).apply {
+            text = "Developer Hub"
+            textSize = 21f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(Color.rgb(246, 248, 252))
+            includeFontPadding = false
+            setPadding(dp(14), dp(9), dp(14), dp(2))
+        })
+
+        root.addView(TextView(this).apply {
+            text = "Inspect pages, source, cookies and WebView state"
+            textSize = 12f
+            setTextColor(Color.rgb(145, 155, 172))
+            includeFontPadding = false
+            setPadding(dp(14), dp(3), dp(14), dp(10))
+        })
+
+        fun tool(title: String, subtitle: String, action: () -> Unit) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(16), dp(9), dp(16), dp(9))
+                minimumHeight = dp(64)
+                background = card()
+                isClickable = true
+                isFocusable = true
+            }
+            row.addView(TextView(this).apply {
+                text = title
+                textSize = 15f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextColor(Color.rgb(239, 242, 247))
+                includeFontPadding = false
+            })
+            row.addView(TextView(this).apply {
+                text = subtitle
+                textSize = 11.5f
+                setTextColor(Color.rgb(145, 155, 172))
+                setPadding(0, dp(4), 0, 0)
+                includeFontPadding = false
+            })
+            row.setOnClickListener { dialog.dismiss(); action() }
+            root.addView(row, LinearLayout.LayoutParams(-1, dp(64)).apply {
+                setMargins(dp(2), dp(3), dp(2), dp(3))
+            })
+        }
+
+        tool("Page information", "Title, URL, navigation and WebView settings") {
+            val info = "Title: ${webView.title ?: "-"}\n\n" +
+                "URL: ${webView.url ?: "-"}\n\n" +
+                "Can go back: ${webView.canGoBack()}\n" +
+                "Can go forward: ${webView.canGoForward()}\n\n" +
+                "User-Agent: ${webView.settings.userAgentString ?: "-"}\n\n" +
+                "JavaScript: ${webView.settings.javaScriptEnabled}\n" +
+                "DOM Storage: ${webView.settings.domStorageEnabled}\n" +
+                "Database: ${webView.settings.databaseEnabled}"
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Page information").setMessage(info)
+                .setPositiveButton("Copy") { _, _ ->
+                    val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cb.setPrimaryClip(android.content.ClipData.newPlainText("Page information", info))
+                    Toast.makeText(this, "Page information copied", Toast.LENGTH_SHORT).show()
+                }.setNegativeButton("Close", null).show()
+        }
+
+        tool("HTML source", "Inspect the current page source") {
+            webView.evaluateJavascript("document.documentElement.outerHTML") { raw ->
+                val source = try { org.json.JSONTokener(raw).nextValue()?.toString() ?: raw } catch (_: Exception) { raw }
+                val editor = EditText(this).apply {
+                    setText(source); setTextIsSelectable(true); setSingleLine(false); isVerticalScrollBarEnabled = true
+                }
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("HTML source").setView(editor)
+                    .setPositiveButton("Copy") { _, _ ->
+                        val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        cb.setPrimaryClip(android.content.ClipData.newPlainText("HTML source", source))
+                        Toast.makeText(this, "HTML source copied", Toast.LENGTH_SHORT).show()
+                    }.setNegativeButton("Close", null).show()
+            }
+        }
+
+        tool("Cookies", "View cookies for the current URL") {
+            val url = webView.url ?: "-"
+            val cookies = android.webkit.CookieManager.getInstance().getCookie(url) ?: "No cookies available"
+            val text = "URL:\n$url\n\nCookies:\n$cookies"
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Cookies").setMessage(text)
+                .setPositiveButton("Copy") { _, _ ->
+                    val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cb.setPrimaryClip(android.content.ClipData.newPlainText("Cookies", text))
+                    Toast.makeText(this, "Cookies copied", Toast.LENGTH_SHORT).show()
+                }.setNegativeButton("Close", null).show()
+        }
+
+        tool("Web resources", "Inspect loaded network resources") {
+            webView.evaluateJavascript("JSON.stringify(performance.getEntriesByType('resource').map(function(r){return {name:r.name,duration:Math.round(r.duration),transferSize:r.transferSize||0};}))") { raw ->
+                val resources = try { org.json.JSONTokener(raw).nextValue()?.toString() ?: raw } catch (_: Exception) { raw }
+                val editor = EditText(this).apply {
+                    setText(resources); setTextIsSelectable(true); setSingleLine(false); isVerticalScrollBarEnabled = true
+                }
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Web resources").setView(editor)
+                    .setPositiveButton("Copy") { _, _ ->
+                        val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        cb.setPrimaryClip(android.content.ClipData.newPlainText("Web resources", resources))
+                        Toast.makeText(this, "Resources copied", Toast.LENGTH_SHORT).show()
+                    }.setNegativeButton("Close", null).show()
+            }
+        }
+
+        tool("WebView status", "Runtime engine, SDK and feature status") {
+            val s = webView.settings
+            val status = "WebView status\n\nAndroid: ${android.os.Build.VERSION.RELEASE}\nSDK: ${android.os.Build.VERSION.SDK_INT}\n\n" +
+                "JavaScript: ${s.javaScriptEnabled}\nDOM Storage: ${s.domStorageEnabled}\nDatabase: ${s.databaseEnabled}\nUser-Agent:\n${s.userAgentString ?: "-"}"
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("WebView status").setMessage(status)
+                .setPositiveButton("Copy") { _, _ ->
+                    val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cb.setPrimaryClip(android.content.ClipData.newPlainText("WebView status", status))
+                    Toast.makeText(this, "Status copied", Toast.LENGTH_SHORT).show()
+                }.setNegativeButton("Close", null).show()
+        }
+
+        root.addView(TextView(this).apply {
+            text = "CLOSE"; textSize = 13f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(Color.rgb(154, 171, 255)); gravity = Gravity.CENTER
+            minimumHeight = dp(46); setOnClickListener { dialog.dismiss() }
+        })
+
+        dialog.setContentView(root)
+        dialog.setOnShowListener {
+            dialog.window?.let { w ->
+                w.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                w.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                w.attributes = w.attributes.apply { dimAmount = 0.58f }
+                w.setLayout(dp(348), android.view.WindowManager.LayoutParams.WRAP_CONTENT)
+            }
+        }
+        dialog.show()
     }
 
     private fun showSearchAddressV26() {
