@@ -16,6 +16,8 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import java.text.DateFormat
+import java.util.Date
 
 class LibraryDialog(
     context: Context,
@@ -204,6 +206,7 @@ class LibraryDialog(
                     parent = content,
                     title = entry.title,
                     url = entry.url,
+                    savedAt = entry.visitedAt,
                     action = {
                         dismiss()
                         onOpenHistory(entry)
@@ -251,6 +254,7 @@ class LibraryDialog(
                     parent = content,
                     title = entry.title,
                     url = entry.url,
+                    savedAt = entry.savedAt,
                     action = {
                         dismiss()
                         onOpenBookmark(entry)
@@ -316,16 +320,18 @@ class LibraryDialog(
         })
     }
 
+
     private fun addEntry(
         parent: LinearLayout,
         title: String,
         url: String,
+        savedAt: Long,
         action: () -> Unit,
         deleteAction: () -> Unit
     ) {
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(d(16), d(13), d(16), d(13))
+            setPadding(d(16), d(13), d(16), d(10))
             background = rounded("#191C21", 16f)
             isClickable = true
             isFocusable = true
@@ -344,7 +350,8 @@ class LibraryDialog(
 
         card.addView(TextView(context).apply {
             text = title
-                .replace("\n", " ")
+                .replace("
+", " ")
                 .trim()
                 .ifBlank { url }
                 .take(70)
@@ -362,6 +369,67 @@ class LibraryDialog(
             maxLines = 1
             setPadding(0, d(5), 0, 0)
         })
+
+        if (savedAt > 0L) {
+            card.addView(TextView(context).apply {
+                text = DateFormat.getDateTimeInstance(
+                    DateFormat.SHORT,
+                    DateFormat.SHORT
+                ).format(Date(savedAt))
+                textSize = 10f
+                setTextColor(Color.parseColor("#6F7680"))
+                setPadding(0, d(5), 0, d(7))
+            })
+        }
+
+        val actions = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        actions.addView(Button(context).apply {
+            text = "OPEN"
+            textSize = 9f
+            setTextColor(Color.WHITE)
+            background = rounded("#252A32", 12f)
+            setOnClickListener { action() }
+            installPressAnimation(this)
+        }, LinearLayout.LayoutParams(0, d(40), 1f).apply {
+            rightMargin = d(5)
+        })
+
+        actions.addView(Button(context).apply {
+            text = "COPY"
+            textSize = 9f
+            setTextColor(Color.WHITE)
+            background = rounded("#20252C", 12f)
+            setOnClickListener {
+                val clipboard =
+                    context.getSystemService(
+                        android.content.ClipboardManager::class.java
+                    )
+                clipboard.setPrimaryClip(
+                    android.content.ClipData.newPlainText(
+                        "OLIKH URL",
+                        url
+                    )
+                )
+            }
+            installPressAnimation(this)
+        }, LinearLayout.LayoutParams(0, d(40), 1f).apply {
+            rightMargin = d(5)
+        })
+
+        actions.addView(Button(context).apply {
+            text = "DELETE"
+            textSize = 9f
+            setTextColor(Color.WHITE)
+            background = rounded("#2B2022", 12f)
+            setOnClickListener { deleteAction() }
+            installPressAnimation(this)
+        }, LinearLayout.LayoutParams(0, d(40), 1f))
+
+        card.addView(actions)
 
         parent.addView(
             card,
