@@ -15,7 +15,7 @@ concurrency:
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -57,24 +57,40 @@ jobs:
           sdkmanager --install \
             'platform-tools' \
             'emulator' \
-            'platforms;android-30' \
-            'system-images;android-30;google_apis;x86_64'
+            'platforms;android-30'
+
+          echo "===== EMULATOR ACCELERATION CHECK ====="
+          accel_check="$(emulator -accel-check 2>&1 || true)"
+          printf '%s\n' "$accel_check"
+
+          if printf '%s\n' "$accel_check" | grep -Eqi 'KVM.*(installed and usable|is usable|usable)'; then
+            SYSTEM_IMAGE='system-images;android-30;google_apis;x86_64'
+            ACCEL_MODE='auto'
+            echo "KVM is usable; using x86_64 Android image."
+          else
+            SYSTEM_IMAGE='system-images;android-30;google_apis;arm64-v8a'
+            ACCEL_MODE='off'
+            echo "KVM is unavailable; using ARM64 Android image with software CPU emulation."
+          fi
+
+          sdkmanager --install "$SYSTEM_IMAGE"
 
           echo "Creating smoke-test AVD..."
 
           echo no | avdmanager create avd \
             --force \
             --name smoke-test \
-            --package 'system-images;android-30;google_apis;x86_64' \
+            --package "$SYSTEM_IMAGE" \
             --device 'pixel_2'
 
           echo "===== AVD CHECK ====="
           avdmanager list avd
+
           echo "===== EMULATOR LIST ====="
           emulator -list-avds
 
           emulator -list-avds | grep -Fx "smoke-test" >/dev/null || {
-            echo "ERROR: smoke-test AVD was not created in $ANDROID_AVD_HOME"
+            echo "ERROR: smoke-test AVD was not created."
             find "$ANDROID_USER_HOME" "$ANDROID_AVD_HOME" -maxdepth 3 -type f -print || true
             exit 1
           }
@@ -97,7 +113,7 @@ jobs:
             -wipe-data \
             -no-metrics \
             -gpu software \
-            -accel auto \
+            -accel "$ACCEL_MODE" \
             -cores 2 \
             -memory 2048 \
             > "$RUNNER_TEMP/emulator.log" 2>&1 &
@@ -106,7 +122,7 @@ jobs:
 
           echo "Waiting for emulator..."
 
-          for i in {1..180}; do
+          for i in {1..450}; do
             if adb -s "$ANDROID_SERIAL" get-state 2>/dev/null | grep -q '^device$'; then
               boot_completed="$(adb -s "$ANDROID_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
 
@@ -116,8 +132,8 @@ jobs:
               fi
             fi
 
-            if [ "$i" -eq 180 ]; then
-              echo "ERROR: Emulator failed to boot within 6 minutes."
+            if [ "$i" -eq 450 ]; then
+              echo "ERROR: Emulator failed to boot within 15 minutes."
               echo "===== EMULATOR LOG ====="
               cat "$RUNNER_TEMP/emulator.log" || true
               exit 1
@@ -127,25 +143,27 @@ jobs:
           done
 
           echo "Waiting for Android package manager..."
-          for i in {1..30}; do
+
+          for i in {1..60}; do
             if adb -s "$ANDROID_SERIAL" shell pm path android >/dev/null 2>&1; then
               break
             fi
             sleep 2
           done
 
-          sleep 15
+          sleep 10
 
-          echo "Installing OLIKH APK without streamed install..."
+          echo "Installing OLIKH APK..."
 
           installed=0
+
           for attempt in 1 2 3; do
             echo "APK install attempt $attempt/3"
 
             if adb -s "$ANDROID_SERIAL" push \
                 app/build/outputs/apk/debug/app-debug.apk \
                 /data/local/tmp/olikh-debug.apk && \
-               adb -s "$ANDROID_SERIAL" shell pm install -r \
+              adb -s "$ANDROID_SERIAL" shell pm install -r \
                 /data/local/tmp/olikh-debug.apk; then
               installed=1
               break
@@ -179,3 +197,11 @@ jobs:
             | grep -F "com.subho.olikh"
 
           echo "OLIKH emulator smoke test passed."
+
+      - name: Upload emulator log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: olikh-emulator-log
+          path: ${{ runner.temp }}/emulator.log
+          if-no-files-found: ignore
