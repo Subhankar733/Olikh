@@ -2,60 +2,64 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#090B0F">
+    android:background="#080A0E">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#090B0F">
+        android:background="#080A0E">
 
+        <!-- Compact browser chrome -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="58dp"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="6dp"
             android:layout_marginEnd="8dp"
             android:gravity="center_vertical"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
             android:background="@drawable/bg_ui_shell">
 
             <ImageButton
                 android:id="@+id/btnMenu"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:background="@drawable/bg_ui_action"
                 android:src="@drawable/ic_olikh_chevron_down"
-                android:tint="#F2F4F8"
+                android:tint="#F5F7FA"
+                android:padding="10dp"
                 android:contentDescription="Browser menu" />
 
             <EditText
                 android:id="@+id/addressBar"
                 android:layout_width="0dp"
-                android:layout_height="46dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
-                android:layout_marginStart="7dp"
-                android:layout_marginEnd="7dp"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp"
                 android:background="@drawable/bg_url_bar"
                 android:hint="Search or enter address"
                 android:inputType="textUri"
                 android:imeOptions="actionGo"
                 android:singleLine="true"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
+                android:paddingStart="15dp"
+                android:paddingEnd="15dp"
+                android:includeFontPadding="false"
                 android:textColor="#F5F7FA"
-                android:textColorHint="#778091"
+                android:textColorHint="#7F899A"
                 android:textSize="14sp"
                 android:selectAllOnFocus="true" />
 
             <ImageButton
                 android:id="@+id/btnReload"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:background="@drawable/bg_ui_action"
                 android:src="@drawable/ic_reload"
-                android:tint="#F2F4F8"
+                android:tint="#F5F7FA"
+                android:padding="10dp"
                 android:contentDescription="Reload" />
         </LinearLayout>
 
@@ -64,7 +68,9 @@
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="2dp"
-            android:layout_marginTop="3dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="12dp"
             android:max="100"
             android:progressTint="#8FA3FF"
             android:visibility="gone" />
@@ -75,7 +81,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:layout_marginTop="2dp"
-            android:background="#090B0F">
+            android:background="#080A0E">
 
             <WebView
                 android:id="@+id/webView"
@@ -83,44 +89,48 @@
                 android:layout_height="match_parent" />
         </FrameLayout>
 
+        <!-- Compact navigation/action bar -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="58dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="6dp"
             android:gravity="center_vertical"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
             android:background="@drawable/bg_ui_shell">
 
             <ImageButton
                 android:id="@+id/btnBack"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:background="@drawable/bg_ui_action"
                 android:src="@drawable/ic_back"
-                android:tint="#DDE2EA"
+                android:tint="#E2E6EE"
+                android:padding="10dp"
                 android:contentDescription="Back" />
 
             <ImageButton
                 android:id="@+id/btnForward"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="5dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="4dp"
                 android:background="@drawable/bg_ui_action"
                 android:src="@drawable/ic_forward"
-                android:tint="#DDE2EA"
+                android:tint="#E2E6EE"
+                android:padding="10dp"
                 android:contentDescription="Forward" />
 
             <ImageButton
                 android:id="@+id/btnHome"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="5dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="4dp"
                 android:background="@drawable/bg_ui_action"
                 android:src="@drawable/ic_home"
-                android:tint="#AEB7C8"
+                android:tint="#B8C1D1"
+                android:padding="10dp"
                 android:contentDescription="Home" />
 
             <View
@@ -130,44 +140,50 @@
 
             <ImageButton
                 android:id="@+id/btnHistory"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:background="@drawable/bg_ui_action"
                 android:src="@drawable/ic_history"
-                android:tint="#AEB7C8"
+                android:tint="#B8C1D1"
+                android:padding="10dp"
                 android:contentDescription="History" />
 
             <ImageButton
                 android:id="@+id/btnBookmark"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="5dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="4dp"
                 android:background="@drawable/bg_ui_action"
                 android:src="@drawable/ic_bookmark"
-                android:tint="#AEB7C8"
+                android:tint="#B8C1D1"
+                android:padding="10dp"
                 android:contentDescription="Bookmark" />
 
             <Button
                 android:id="@+id/btnTabs"
-                android:layout_width="48dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="6dp"
+                android:layout_width="46dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="5dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:padding="0dp"
                 android:background="@drawable/bg_tab_button"
+                android:gravity="center"
                 android:text="1"
                 android:textColor="#FFFFFF"
-                android:textSize="13sp" />
+                android:textSize="13sp"
+                android:includeFontPadding="false"
+                android:contentDescription="Open tabs" />
 
             <ImageButton
                 android:id="@+id/btnNewTab"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="6dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="5dp"
                 android:background="@drawable/bg_ui_plus"
                 android:src="@drawable/ic_add"
                 android:tint="#FFFFFF"
+                android:padding="10dp"
                 android:contentDescription="New tab" />
         </LinearLayout>
     </LinearLayout>
