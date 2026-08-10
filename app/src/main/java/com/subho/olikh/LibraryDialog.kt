@@ -350,8 +350,7 @@ class LibraryDialog(
 
         card.addView(TextView(context).apply {
             text = title
-                .replace("
-", " ")
+                .replace("\n", " ")
                 .trim()
                 .ifBlank { url }
                 .take(70)
