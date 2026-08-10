@@ -117,6 +117,10 @@ class BrowserDiagnosticsActivity : AppCompatActivity() {
         addInfo(content, "Search engine", browserPrefs.getString("search_engine", "Google") ?: "Google")
         addInfo(content, "Advanced preferences", advancedPrefs.all.size.toString())
 
+        content.addView(action("Copy diagnostics", "Copy a plain-text diagnostic report without page contents or passwords.", "COPY") {
+            copyReport()
+        })
+
         content.addView(action("Share diagnostics", "Create a plain-text diagnostic report for troubleshooting.", "SHARE") {
             shareReport()
         })
@@ -190,28 +194,39 @@ class BrowserDiagnosticsActivity : AppCompatActivity() {
         return row
     }
 
-    private fun shareReport() {
-        val report = buildString {
-            appendLine("OLIKH Browser Diagnostics")
-            appendLine()
-            appendLine("Android = ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
-            appendLine("Device = ${Build.MANUFACTURER} ${Build.MODEL}")
-            appendLine("WebView provider = ${runCatching { WebView.getCurrentWebViewPackage()?.packageName ?: "Unknown" }.getOrDefault("Unknown")}")
-            appendLine("WebView version = ${runCatching { WebView.getCurrentWebViewPackage()?.versionName ?: "Unknown" }.getOrDefault("Unknown")}")
-            appendLine("Protection = ${blocker.isEnabled()}")
-            appendLine("Blocked requests = ${blocker.blockedRequests()}")
-            appendLine("Blocked domains = ${blocker.blockedHostCount()}")
-            appendLine("Search engine = ${browserPrefs.getString("search_engine", "Google")}")
-            appendLine()
-            appendLine("WebView preferences:")
-            browserPrefs.all.filterKeys { it.endsWith("_enabled") }.toSortedMap()
-                .forEach { (k, v) -> appendLine("$k = $v") }
-        }
+    private fun buildReport(): String = buildString {
+        appendLine("OLIKH Browser Diagnostics")
+        appendLine()
+        appendLine("Android = ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+        appendLine("Device = ${Build.MANUFACTURER} ${Build.MODEL}")
+        appendLine("WebView provider = ${runCatching { WebView.getCurrentWebViewPackage()?.packageName ?: "Unknown" }.getOrDefault("Unknown")}")
+        appendLine("WebView version = ${runCatching { WebView.getCurrentWebViewPackage()?.versionName ?: "Unknown" }.getOrDefault("Unknown")}")
+        appendLine("Protection = ${blocker.isEnabled()}")
+        appendLine("Blocked requests = ${blocker.blockedRequests()}")
+        appendLine("Blocked domains = ${blocker.blockedHostCount()}")
+        appendLine("Search engine = ${browserPrefs.getString("search_engine", "Google")}")
+        appendLine()
+        appendLine("WebView preferences:")
+        browserPrefs.all.filterKeys { it.endsWith("_enabled") }.toSortedMap()
+            .forEach { (k, v) -> appendLine("$k = $v") }
+    }
 
+    private fun copyReport() {
+        val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+        clipboard.setPrimaryClip(
+            android.content.ClipData.newPlainText(
+                "OLIKH diagnostics",
+                buildReport()
+            )
+        )
+        toast("Diagnostics copied")
+    }
+
+    private fun shareReport() {
         startActivity(android.content.Intent.createChooser(
             android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(android.content.Intent.EXTRA_TEXT, report)
+                putExtra(android.content.Intent.EXTRA_TEXT, buildReport())
             },
             "Share OLIKH diagnostics"
         ))

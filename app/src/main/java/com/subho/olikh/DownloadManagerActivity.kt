@@ -258,7 +258,7 @@ class DownloadManagerActivity : AppCompatActivity() {
             })
         }
 
-        if (sourceUri != null && status != DownloadManager.STATUS_SUCCESSFUL) {
+        if (!sourceUri.isNullOrBlank()) {
             buttons.addView(actionButton("COPY URL") {
                 copyText("Download URL", sourceUri)
             })

@@ -100,6 +100,25 @@ class HistoryManager(context: Context) {
         return entries.take(MAX_HISTORY)
     }
 
+    fun search(query: String, limit: Int = 100): List<HistoryEntry> {
+        val q = query.trim()
+        if (q.isBlank()) return getAll().take(limit.coerceAtLeast(0))
+
+        return getAll()
+            .asSequence()
+            .filter {
+                it.title.contains(q, ignoreCase = true) ||
+                    it.url.contains(q, ignoreCase = true)
+            }
+            .take(limit.coerceAtLeast(0))
+            .toList()
+    }
+
+    fun recent(limit: Int = 20): List<HistoryEntry> =
+        getAll()
+            .sortedByDescending { it.visitedAt }
+            .take(limit.coerceAtLeast(0))
+
     fun remove(url: String): Boolean {
         val cleanUrl = url.trim()
         val current = getAll()
