@@ -1421,7 +1421,10 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             activeIndex = activeTabIndex,
             store = tabGroupStore,
             onSelectTab = { index -> switchToTab(index) },
-            onChanged = { }
+            onChanged = {
+                persistTabSession()
+                btnTabs.text = tabs.size.toString()
+            }
         ).show()
     }
 
@@ -1471,14 +1474,16 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         val sourceGroupId = tabGroupStore.groupFor(sourceUrl)
 
         if (sourceUrl.isBlank() || sourceUrl == "about:blank" || isOlikhStartPageUrl(sourceUrl)) {
-            createNewTab(incognito = source.incognito, initialUrl = "about:blank")
+            createNewTab(
+                incognito = source.incognito,
+                initialUrl = "about:blank"
+            )
         } else {
-            createNewTab(incognito = source.incognito, initialUrl = sourceUrl)
-        }
-
-        val duplicatedUrl = activeTab?.webView?.url?.trim().orEmpty()
-        if (!source.incognito && sourceGroupId != null && duplicatedUrl.isNotBlank()) {
-            tabGroupStore.assign(duplicatedUrl, sourceGroupId)
+            createNewTab(
+                incognito = source.incognito,
+                initialUrl = sourceUrl,
+                restoreGroupId = if (source.incognito) null else sourceGroupId
+            )
         }
     }
 
