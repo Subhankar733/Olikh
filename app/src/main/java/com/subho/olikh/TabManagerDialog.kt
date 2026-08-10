@@ -178,6 +178,23 @@ class TabManagerDialog(
 
         row.addView(info)
 
+        val duplicate = Button(context).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(48), dp(36)).apply {
+                setMargins(dp(4), 0, dp(4), 0)
+            }
+            text = "Dup"
+            isAllCaps = false
+            textSize = 10f
+            setTextColor(Color.rgb(205, 212, 222))
+            background = panel(Color.rgb(29, 34, 43), 12)
+            contentDescription = "Duplicate tab"
+            setOnClickListener {
+                dismiss()
+                onDuplicateTab(index)
+            }
+        }
+        row.addView(duplicate)
+
         val close = ImageButton(context).apply {
             layoutParams = LinearLayout.LayoutParams(dp(36), dp(36))
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
@@ -258,6 +275,26 @@ class TabManagerDialog(
         header.addView(plus)
         root.addView(header)
 
+        val search = EditText(context).apply {
+            hint = "Search open tabs"
+            setSingleLine(true)
+            textSize = 13f
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.rgb(120, 130, 145))
+            background = panel(Color.rgb(17, 21, 28), 14, Color.rgb(42, 49, 62))
+            setPadding(dp(14), 0, dp(14), 0)
+        }
+        root.addView(
+            search,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(48)
+            ).apply {
+                topMargin = dp(10)
+                bottomMargin = dp(6)
+            }
+        )
+
         val actions = LinearLayout(context).apply {
             gravity = Gravity.CENTER
             setPadding(0, dp(14), 0, dp(8))
@@ -318,8 +355,12 @@ class TabManagerDialog(
             )
         )
 
-        fun render(filterId: String?) {
+        var selectedFilter: String? = null
+
+        fun render(filterId: String?, queryRaw: String = "") {
             grid.removeAllViews()
+            val query = queryRaw.trim().lowercase()
+            var shown = 0
 
             browserTabs.forEachIndexed { index, tab ->
                 val groupId = if (tab.incognito) {
@@ -332,11 +373,37 @@ class TabManagerDialog(
                     return@forEachIndexed
                 }
 
+                val haystack = (
+                    tab.title + " " +
+                    tabUrl(tab) + " " +
+                    groupNameFor(tab)
+                ).lowercase()
+
+                if (query.isNotBlank() && !haystack.contains(query)) {
+                    return@forEachIndexed
+                }
+
                 addCard(
                     grid = grid,
                     index = index,
                     tab = tab,
                     groupName = groupNameFor(tab)
+                )
+                shown++
+            }
+
+            if (shown == 0) {
+                grid.addView(
+                    text(
+                        if (query.isBlank()) "No tabs in this filter." else "No matching tabs.",
+                        13f,
+                        Color.rgb(145, 153, 168)
+                    ),
+                    GridLayout.LayoutParams().apply {
+                        width = ViewGroup.LayoutParams.MATCH_PARENT
+                        height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        columnSpec = GridLayout.spec(0, 2)
+                    }
                 )
             }
         }
@@ -353,7 +420,10 @@ class TabManagerDialog(
                     Color.rgb(47, 55, 70)
                 )
                 setPadding(dp(13), 0, dp(13), 0)
-                setOnClickListener { render(id) }
+                setOnClickListener {
+                    selectedFilter = id
+                    render(selectedFilter, search.text?.toString().orEmpty())
+                }
             }
 
             filterBar.addView(
@@ -390,6 +460,26 @@ class TabManagerDialog(
             addFilter("Ungrouped  •  $ungroupedCount", "__ungrouped__")
         }
 
+        search.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) = Unit
+
+            override fun onTextChanged(
+                s: CharSequence?,
+                start: Int,
+                before: Int,
+                count: Int
+            ) {
+                render(selectedFilter, s?.toString().orEmpty())
+            }
+
+            override fun afterTextChanged(s: android.text.Editable?) = Unit
+        })
+
         val done = action("Done") { }
         root.addView(
             done,
@@ -408,6 +498,6 @@ class TabManagerDialog(
             (context.resources.displayMetrics.heightPixels * 0.88f).toInt()
         )
 
-        render(null)
+        render(null, "")
     }
 }
