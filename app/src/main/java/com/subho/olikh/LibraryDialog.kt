@@ -150,70 +150,6 @@ class LibraryDialog(
 
         root.addView(controls)
 
-        val controls = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(0, d(2), 0, d(8))
-        }
-
-        fun controlButton(
-            label: String,
-            action: () -> Unit
-        ): Button {
-            return Button(context).apply {
-                text = label
-                textSize = 9f
-                setTextColor(Color.WHITE)
-                setAllCaps(false)
-                background = rounded("#20252C", 14f)
-                setOnClickListener { action() }
-                installPressAnimation(this)
-            }
-        }
-
-        controls.addView(
-            controlButton("ALL") {
-                libraryMode = LibraryMode.ALL
-                render(searchInput.text?.toString().orEmpty())
-            },
-            LinearLayout.LayoutParams(0, d(42), 1f).apply {
-                rightMargin = d(4)
-            }
-        )
-
-        controls.addView(
-            controlButton("HISTORY") {
-                libraryMode = LibraryMode.HISTORY
-                render(searchInput.text?.toString().orEmpty())
-            },
-            LinearLayout.LayoutParams(0, d(42), 1f).apply {
-                rightMargin = d(4)
-            }
-        )
-
-        controls.addView(
-            controlButton("BOOKMARKS") {
-                libraryMode = LibraryMode.BOOKMARKS
-                render(searchInput.text?.toString().orEmpty())
-            },
-            LinearLayout.LayoutParams(0, d(42), 1f).apply {
-                rightMargin = d(4)
-            }
-        )
-
-        val sortButton = controlButton("NEWEST") {
-            sortNewestFirst = !sortNewestFirst
-            it?.let { _ ->
-                // label is refreshed below
-            }
-            render(searchInput.text?.toString().orEmpty())
-        }
-
-        controls.addView(
-            sortButton,
-            LinearLayout.LayoutParams(0, d(42), 1f)
-        )
-
-        root.addView(controls)
 
         val scroll = ScrollView(context)
 
@@ -490,20 +426,6 @@ class LibraryDialog(
             .show()
     }
 
-    private fun confirmClear(
-        title: String,
-        message: String,
-        action: () -> Unit
-    ) {
-        androidx.appcompat.app.AlertDialog.Builder(context)
-            .setTitle(title)
-            .setMessage(message)
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Clear") { _, _ ->
-                action()
-            }
-            .show()
-    }
 
     private fun confirmDelete(
         title: String,
