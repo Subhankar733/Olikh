@@ -137,6 +137,42 @@ class TabGroupDialog(
         }
         root.addView(resultCount)
 
+        var tabFilter = "all"
+
+        val filterRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        fun filterButton(label: String, value: String): Button {
+            return button(label) {
+                tabFilter = value
+                render(search.text?.toString().orEmpty())
+            }.apply {
+                textSize = 11f
+                minHeight = dp(40)
+            }
+        }
+
+        filterRow.addView(
+            filterButton("All", "all"),
+            LinearLayout.LayoutParams(0, dp(42), 1f)
+        )
+        filterRow.addView(
+            filterButton("Grouped", "grouped"),
+            LinearLayout.LayoutParams(0, dp(42), 1f)
+        )
+        filterRow.addView(
+            filterButton("Ungrouped", "ungrouped"),
+            LinearLayout.LayoutParams(0, dp(42), 1f)
+        )
+        filterRow.addView(
+            filterButton("Private", "private"),
+            LinearLayout.LayoutParams(0, dp(42), 1f)
+        )
+
+        root.addView(filterRow)
+
         root.addView(button("Create group") {
             if (blockPrivateGroups()) return@button
             val input = EditText(context).apply {
@@ -244,10 +280,16 @@ class TabGroupDialog(
                 })
 
                 row.addView(button("Open") {
-                    val index = browserTabs.indexOfFirst { tab ->
-                        !tab.incognito &&
-                            store.groupFor(tab.webView.url ?: tab.url) == group.id
-                    }
+                    val index = browserTabs
+                        .mapIndexed { index, tab -> index to tab }
+                        .filter { (_, tab) ->
+                            !tab.incognito &&
+                                store.groupFor(tab.webView.url ?: tab.url) == group.id
+                        }
+                        .maxByOrNull { (_, tab) -> tab.lastAccessed }
+                        ?.first
+                        ?: -1
+
                     if (index >= 0) {
                         dismiss()
                         onSelectTab(index)
@@ -325,6 +367,18 @@ class TabGroupDialog(
                 } else {
                     groupById[store.groupFor(url)]?.name ?: "Ungrouped"
                 }
+
+                val isPrivate = tab.incognito
+                val isGrouped = !isPrivate && store.groupFor(url) != null
+
+                val matchesTabFilter = when (tabFilter) {
+                    "grouped" -> isGrouped
+                    "ungrouped" -> !isPrivate && !isGrouped
+                    "private" -> isPrivate
+                    else -> true
+                }
+
+                if (!matchesTabFilter) return@forEach
 
                 val haystack = "$title $url $groupName".lowercase()
                 if (filter.isNotBlank() && !haystack.contains(filter)) return@forEach

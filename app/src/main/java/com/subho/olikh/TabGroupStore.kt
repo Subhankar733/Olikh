@@ -41,7 +41,10 @@ class TabGroupStore(context: Context) {
             buildMap {
                 obj.keys().forEach { key ->
                     val groupId = obj.optString(key).trim()
-                    if (key.isNotBlank() && groupId.isNotBlank()) put(key, groupId)
+                    val normalized = cleanKey(key)
+                    if (normalized != null && groupId.isNotBlank()) {
+                        put(normalized, groupId)
+                    }
                 }
             }.toMutableMap()
         }.getOrElse { mutableMapOf() }
@@ -132,8 +135,42 @@ class TabGroupStore(context: Context) {
         writeMemberships(memberships)
     }
 
-    private fun cleanKey(url: String?): String? =
-        url?.trim()?.takeIf {
-            it.startsWith("https://", true) || it.startsWith("http://", true)
+    private fun cleanKey(url: String?): String? {
+        val raw = url?.trim().orEmpty()
+        if (!raw.startsWith("https://", true) &&
+            !raw.startsWith("http://", true)
+        ) {
+            return null
         }
+
+        return runCatching {
+            val uri = android.net.Uri.parse(raw)
+
+            val scheme = uri.scheme?.lowercase() ?: return@runCatching null
+            val host = uri.host?.lowercase() ?: return@runCatching null
+
+            val normalizedPath = uri.path
+                ?.replace(Regex("/+$"), "")
+                ?.ifBlank { "/" }
+                ?: "/"
+
+            buildString {
+                append(scheme)
+                append("://")
+                append(host)
+
+                if (uri.port != -1) {
+                    append(":")
+                    append(uri.port)
+                }
+
+                append(normalizedPath)
+
+                if (!uri.query.isNullOrBlank()) {
+                    append("?")
+                    append(uri.query)
+                }
+            }
+        }.getOrNull()
+    }
 }
