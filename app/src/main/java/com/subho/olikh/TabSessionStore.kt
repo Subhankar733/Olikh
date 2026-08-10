@@ -18,9 +18,12 @@ class TabSessionStore(context: Context) {
         Context.MODE_PRIVATE
     )
 
+    private val groupStore = TabGroupStore(context)
+
     data class SessionTab(
         val title: String,
         val url: String,
+        val groupId: String? = null,
         val incognito: Boolean = false
     )
 
@@ -48,10 +51,13 @@ class TabSessionStore(context: Context) {
             val url = cleanUrl(tab.webView.url ?: tab.url)
             if (url.isBlank() || !seenUrls.add(url)) return@forEach
 
+            val groupId = groupStore.groupFor(url)
+
             normal.put(
                 JSONObject()
                     .put("title", cleanTitle(tab.title))
                     .put("url", url)
+                    .put("groupId", groupId.orEmpty())
             )
         }
 
@@ -98,6 +104,9 @@ class TabSessionStore(context: Context) {
                 result += SessionTab(
                     title = item.optString("title").ifBlank { "Tab" },
                     url = url,
+                    groupId = item.optString("groupId")
+                        .trim()
+                        .ifBlank { null },
                     incognito = false
                 )
             }
