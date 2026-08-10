@@ -140,9 +140,6 @@ class LibraryDialog(
 
         val sortButton = controlButton("NEWEST") {
             sortNewestFirst = !sortNewestFirst
-            it?.let { _ ->
-                // label is refreshed below
-            }
             render(searchInput.text?.toString().orEmpty())
         }
 
