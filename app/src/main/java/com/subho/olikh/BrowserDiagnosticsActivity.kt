@@ -113,6 +113,29 @@ class BrowserDiagnosticsActivity : AppCompatActivity() {
             recreate()
         })
 
+        content.addView(section("TABS & SESSION"))
+        val tabGroups = TabGroupStore(this)
+        tabGroups.cleanupDanglingMemberships()
+        val groupCount = tabGroups.getGroups().size
+        addInfo(content, "Tab groups", groupCount.toString())
+        addInfo(
+            content,
+            "Restore previous session",
+            if (browserPrefs.getBoolean("restore_session", true)) "ON" else "OFF"
+        )
+        addInfo(
+            content,
+            "Recently closed",
+            if (browserPrefs.getBoolean("recently_closed", true)) "ON" else "OFF"
+        )
+        addInfo(
+            content,
+            "Current page",
+            browserPrefs.getString("current_url", "").orEmpty()
+                .ifBlank { "None" }
+                .take(120)
+        )
+
         content.addView(section("CONFIGURATION"))
         addInfo(content, "Search engine", browserPrefs.getString("search_engine", "Google") ?: "Google")
         addInfo(content, "Advanced preferences", advancedPrefs.all.size.toString())

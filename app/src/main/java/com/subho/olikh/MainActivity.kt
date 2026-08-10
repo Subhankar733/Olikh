@@ -1822,6 +1822,16 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         title = tab.title.ifBlank { "OLIKH" }
 
+        if (!tab.incognito) {
+            getSharedPreferences(
+                "olikh_browser",
+                MODE_PRIVATE
+            ).edit()
+                .putString("current_url", webView.url ?: tab.url)
+                .putString("current_title", tab.title)
+                .apply()
+        }
+
         updateNavigationButtons()
         updateBookmarkButton()
     }
@@ -2340,6 +2350,19 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                     }
 
                 tab.lastAccessed = System.currentTimeMillis()
+
+                if (!tab.incognito && !url.isNullOrBlank()) {
+                    getSharedPreferences(
+                        "olikh_browser",
+                        MODE_PRIVATE
+                    ).edit()
+                        .putString("current_url", url)
+                        .putString(
+                            "current_title",
+                            tab.title.ifBlank { url }
+                        )
+                        .apply()
+                }
 
                 recordHistory(tab, url)
                 persistTabSession()
