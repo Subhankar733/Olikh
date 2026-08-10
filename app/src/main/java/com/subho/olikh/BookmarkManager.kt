@@ -20,44 +20,42 @@ class BookmarkManager(context: Context) {
         )
 
     fun add(title: String, url: String): Boolean {
-        if (!isValidUrl(url)) return false
+        val cleanUrl = url.trim().take(MAX_URL_LENGTH)
+        if (!isValidUrl(cleanUrl)) return false
 
         val cleanTitle = title
             .replace("\n", " ")
             .trim()
-            .ifBlank { url }
+            .take(MAX_TITLE_LENGTH)
+            .ifBlank { cleanUrl }
 
         val entries = getAll().toMutableList()
-
-        // Same URL only needs one bookmark.
-        entries.removeAll { it.url == url }
+        entries.removeAll { it.url == cleanUrl }
 
         entries.add(
             0,
             BookmarkEntry(
                 title = cleanTitle,
-                url = url,
+                url = cleanUrl,
                 savedAt = System.currentTimeMillis()
             )
         )
 
-        save(entries)
+        save(entries.take(MAX_BOOKMARKS))
         return true
     }
 
     fun remove(url: String): Boolean {
+        val cleanUrl = url.trim()
         val entries = getAll().toMutableList()
-        val removed = entries.removeAll { it.url == url }
+        val removed = entries.removeAll { it.url == cleanUrl }
 
-        if (removed) {
-            save(entries)
-        }
-
+        if (removed) save(entries)
         return removed
     }
 
     fun contains(url: String): Boolean {
-        return getAll().any { it.url == url }
+        return getAll().any { it.url == url.trim() }
     }
 
     fun getAll(): List<BookmarkEntry> {
@@ -65,31 +63,39 @@ class BookmarkManager(context: Context) {
             prefs.getString(KEY_BOOKMARKS, null)
                 ?: return emptyList()
 
-        return runCatching {
+        val entries = runCatching {
             val array = JSONArray(raw)
 
             buildList {
                 for (i in 0 until array.length()) {
-                    val item = array.getJSONObject(i)
-                    val url = item.optString("url")
+                    val item = array.optJSONObject(i)
+                        ?: continue
+
+                    val url =
+                        item.optString("url")
+                            .trim()
+                            .take(MAX_URL_LENGTH)
 
                     if (!isValidUrl(url)) continue
 
                     add(
                         BookmarkEntry(
-                            title = item
-                                .optString("title")
+                            title = item.optString("title")
+                                .replace("\n", " ")
+                                .trim()
+                                .take(MAX_TITLE_LENGTH)
                                 .ifBlank { url },
-
                             url = url,
-
-                            savedAt =
-                                item.optLong("savedAt")
+                            savedAt = item.optLong("savedAt")
+                                .coerceAtLeast(0L)
                         )
                     )
                 }
             }
         }.getOrDefault(emptyList())
+
+        save(entries.take(MAX_BOOKMARKS))
+        return entries.take(MAX_BOOKMARKS)
     }
 
     fun clear() {
@@ -101,21 +107,27 @@ class BookmarkManager(context: Context) {
     private fun save(entries: List<BookmarkEntry>) {
         val array = JSONArray()
 
-        entries.forEach { entry ->
+        entries.take(MAX_BOOKMARKS).forEach { entry ->
+            val cleanUrl = entry.url.trim().take(MAX_URL_LENGTH)
+            if (!isValidUrl(cleanUrl)) return@forEach
+
             array.put(
                 JSONObject().apply {
-                    put("title", entry.title)
-                    put("url", entry.url)
-                    put("savedAt", entry.savedAt)
+                    put(
+                        "title",
+                        entry.title
+                            .replace("\n", " ")
+                            .trim()
+                            .take(MAX_TITLE_LENGTH)
+                    )
+                    put("url", cleanUrl)
+                    put("savedAt", entry.savedAt.coerceAtLeast(0L))
                 }
             )
         }
 
         prefs.edit()
-            .putString(
-                KEY_BOOKMARKS,
-                array.toString()
-            )
+            .putString(KEY_BOOKMARKS, array.toString())
             .apply()
     }
 
@@ -125,9 +137,7 @@ class BookmarkManager(context: Context) {
         if (
             !clean.startsWith("https://", true) &&
             !clean.startsWith("http://", true)
-        ) {
-            return false
-        }
+        ) return false
 
         val uri = runCatching { Uri.parse(clean) }.getOrNull()
             ?: return false
@@ -138,14 +148,15 @@ class BookmarkManager(context: Context) {
         if (
             host == "olikh.local" ||
             host.endsWith(".olikh.local")
-        ) {
-            return false
-        }
+        ) return false
 
         return true
     }
 
     companion object {
         private const val KEY_BOOKMARKS = "bookmarks"
+        private const val MAX_BOOKMARKS = 500
+        private const val MAX_TITLE_LENGTH = 300
+        private const val MAX_URL_LENGTH = 4096
     }
 }

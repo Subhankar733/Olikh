@@ -20,26 +20,28 @@ class HistoryManager(context: Context) {
         )
 
     fun add(title: String, url: String) {
-        if (!isValidUrl(url)) return
+        val cleanUrl = url.trim().take(MAX_URL_LENGTH)
+        if (!isValidUrl(cleanUrl)) return
 
         val cleanTitle = title
             .replace("\n", " ")
             .trim()
+            .take(MAX_TITLE_LENGTH)
             .takeUnless {
                 it.equals("about:blank", ignoreCase = true) ||
                 it.equals("OLIKH Start", ignoreCase = true)
             }
-            ?: hostLabel(url)
+            ?: hostLabel(cleanUrl)
 
         val entries = getAll()
-            .filterNot { it.url == url }
+            .filterNot { it.url == cleanUrl }
             .toMutableList()
 
         entries.add(
             0,
             HistoryEntry(
                 title = cleanTitle,
-                url = url,
+                url = cleanUrl,
                 visitedAt = System.currentTimeMillis()
             )
         )
@@ -57,29 +59,26 @@ class HistoryManager(context: Context) {
 
             buildList {
                 for (i in 0 until array.length()) {
-                    val item = array.getJSONObject(i)
+                    val item = array.optJSONObject(i)
+                        ?: continue
 
                     val url =
-                        item.optString("url").trim()
+                        item.optString("url")
+                            .trim()
+                            .take(MAX_URL_LENGTH)
 
-                    if (!isValidUrl(url)) {
-                        continue
-                    }
+                    if (!isValidUrl(url)) continue
 
                     val rawTitle =
-                        item.optString("title").trim()
+                        item.optString("title")
+                            .trim()
+                            .take(MAX_TITLE_LENGTH)
 
                     val title =
                         if (
                             rawTitle.isBlank() ||
-                            rawTitle.equals(
-                                "about:blank",
-                                ignoreCase = true
-                            ) ||
-                            rawTitle.equals(
-                                "OLIKH Start",
-                                ignoreCase = true
-                            )
+                            rawTitle.equals("about:blank", ignoreCase = true) ||
+                            rawTitle.equals("OLIKH Start", ignoreCase = true)
                         ) {
                             hostLabel(url)
                         } else {
@@ -90,37 +89,27 @@ class HistoryManager(context: Context) {
                         HistoryEntry(
                             title = title,
                             url = url,
-                            visitedAt =
-                                item.optLong("visitedAt")
+                            visitedAt = item.optLong("visitedAt").coerceAtLeast(0L)
                         )
                     )
                 }
             }
         }.getOrDefault(emptyList())
 
-        /*
-         * Rewrite the stored history after filtering.
-         * This permanently removes old internal/junk entries.
-         */
         save(entries.take(MAX_HISTORY))
-
         return entries.take(MAX_HISTORY)
     }
 
     fun remove(url: String): Boolean {
+        val cleanUrl = url.trim()
         val current = getAll()
 
         val updated =
-            current.filterNot {
-                it.url == url
-            }
+            current.filterNot { it.url == cleanUrl }
 
-        if (updated.size == current.size) {
-            return false
-        }
+        if (updated.size == current.size) return false
 
         save(updated)
-
         return true
     }
 
@@ -130,76 +119,56 @@ class HistoryManager(context: Context) {
             .apply()
     }
 
-    private fun save(
-        entries: List<HistoryEntry>
-    ) {
+    private fun save(entries: List<HistoryEntry>) {
         val array = JSONArray()
 
-        entries.forEach { entry ->
-            if (!isValidUrl(entry.url)) {
-                return@forEach
-            }
+        entries.take(MAX_HISTORY).forEach { entry ->
+            val cleanUrl = entry.url.trim().take(MAX_URL_LENGTH)
+            if (!isValidUrl(cleanUrl)) return@forEach
 
             array.put(
                 JSONObject().apply {
-                    put("title", entry.title)
-                    put("url", entry.url)
                     put(
-                        "visitedAt",
-                        entry.visitedAt
+                        "title",
+                        entry.title
+                            .replace("\n", " ")
+                            .trim()
+                            .take(MAX_TITLE_LENGTH)
                     )
+                    put("url", cleanUrl)
+                    put("visitedAt", entry.visitedAt.coerceAtLeast(0L))
                 }
             )
         }
 
         prefs.edit()
-            .putString(
-                KEY_HISTORY,
-                array.toString()
-            )
+            .putString(KEY_HISTORY, array.toString())
             .apply()
     }
 
-    private fun isValidUrl(
-        rawUrl: String
-    ): Boolean {
+    private fun isValidUrl(rawUrl: String): Boolean {
         val url = rawUrl.trim()
 
         if (
             !url.startsWith("https://", true) &&
             !url.startsWith("http://", true)
-        ) {
-            return false
-        }
+        ) return false
 
-        val uri =
-            runCatching {
-                Uri.parse(url)
-            }.getOrNull()
-                ?: return false
+        val uri = runCatching { Uri.parse(url) }.getOrNull()
+            ?: return false
 
-        val host =
-            uri.host
-                ?.lowercase()
-                ?.trim()
-                ?: return false
+        val host = uri.host?.lowercase()?.trim()
+            ?: return false
 
-        /*
-         * Never store OLIKH's own internal pages.
-         */
         if (
             host == "olikh.local" ||
             host.endsWith(".olikh.local")
-        ) {
-            return false
-        }
+        ) return false
 
         return true
     }
 
-    private fun hostLabel(
-        url: String
-    ): String {
+    private fun hostLabel(url: String): String {
         return runCatching {
             Uri.parse(url)
                 .host
@@ -210,10 +179,9 @@ class HistoryManager(context: Context) {
     }
 
     companion object {
-        private const val KEY_HISTORY =
-            "history"
-
-        private const val MAX_HISTORY =
-            500
+        private const val KEY_HISTORY = "history"
+        private const val MAX_HISTORY = 500
+        private const val MAX_TITLE_LENGTH = 300
+        private const val MAX_URL_LENGTH = 4096
     }
 }
