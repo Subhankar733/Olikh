@@ -1,7 +1,10 @@
 package com.subho.olikh
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.print.PrintAttributes
+import android.print.PrintManager
 import android.view.Gravity
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -16,7 +19,10 @@ class ReaderModeActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private var originalUrl = ""
     private var readerActive = false
+    private var showingOriginal = false
     private var fontScale = 1.0f
+    private var darkTheme = false
+    private var wideLayout = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,9 +75,34 @@ class ReaderModeActivity : AppCompatActivity() {
         }, LinearLayout.LayoutParams(dp(52), dp(44)))
 
         toolbar.addView(Button(this).apply {
+            text = "Theme"
+            setTextColor(Color.WHITE)
+            setOnClickListener { toggleTheme() }
+        }, LinearLayout.LayoutParams(dp(70), dp(44)))
+
+        toolbar.addView(Button(this).apply {
+            text = "Width"
+            setTextColor(Color.WHITE)
+            setOnClickListener { toggleWidth() }
+        }, LinearLayout.LayoutParams(dp(66), dp(44)))
+
+        toolbar.addView(Button(this).apply {
+            text = "Share"
+            setTextColor(Color.WHITE)
+            setOnClickListener { sharePage() }
+        }, LinearLayout.LayoutParams(dp(70), dp(44)))
+
+        toolbar.addView(Button(this).apply {
+            text = "Print"
+            setTextColor(Color.WHITE)
+            setOnClickListener { printPage() }
+        }, LinearLayout.LayoutParams(dp(64), dp(44)))
+
+        toolbar.addView(Button(this).apply {
             text = "Original"
             setTextColor(Color.WHITE)
             setOnClickListener {
+                showingOriginal = true
                 readerActive = false
                 webView.loadUrl(originalUrl)
             }
@@ -86,6 +117,10 @@ class ReaderModeActivity : AppCompatActivity() {
 
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
+                    if (showingOriginal) {
+                        showingOriginal = false
+                        return
+                    }
                     if (!readerActive) activateReaderMode()
                 }
             }
@@ -142,7 +177,7 @@ class ReaderModeActivity : AppCompatActivity() {
                   '<title>' + title.replace(/</g, '&lt;') + '</title>' +
                   '<style>' +
                   'html,body{margin:0;padding:0;background:#f8f6f1;color:#242424}' +
-                  'body{font-family:serif;font-size:20px;line-height:1.72}' +
+                  'body{font-family:serif;font-size:20px;line-height:1.72;transition:background .2s,color .2s}' +
                   '.olikh-reader{max-width:760px;margin:0 auto;padding:28px 20px 72px}' +
                   'img,video{max-width:100%;height:auto}' +
                   'pre{white-space:pre-wrap;overflow:auto}' +
@@ -158,6 +193,68 @@ class ReaderModeActivity : AppCompatActivity() {
         """.trimIndent()
 
         webView.evaluateJavascript("javascript:$js", null)
+    }
+
+    private fun toggleTheme() {
+        darkTheme = !darkTheme
+        val js = if (darkTheme) {
+            "document.documentElement.style.background='#181818';document.body.style.background='#181818';document.body.style.color='#e8e8e8';document.querySelectorAll('a').forEach(function(a){a.style.color='#8ab4f8'});"
+        } else {
+            "document.documentElement.style.background='#f8f6f1';document.body.style.background='#f8f6f1';document.body.style.color='#242424';document.querySelectorAll('a').forEach(function(a){a.style.color='#245b9c'});"
+        }
+        webView.evaluateJavascript(js, null)
+        Toast.makeText(
+            this,
+            if (darkTheme) "Reader dark theme" else "Reader light theme",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun toggleWidth() {
+        wideLayout = !wideLayout
+        val width = if (wideLayout) "760px" else "620px"
+        webView.evaluateJavascript(
+            "document.querySelector('.olikh-reader').style.maxWidth='$width';",
+            null
+        )
+        Toast.makeText(
+            this,
+            if (wideLayout) "Wide reading width" else "Narrow reading width",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun sharePage() {
+        runCatching {
+            startActivity(
+                Intent.createChooser(
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, webView.title ?: "OLIKH Reader")
+                        putExtra(Intent.EXTRA_TEXT, originalUrl)
+                    },
+                    "Share page"
+                )
+            )
+        }.onFailure {
+            Toast.makeText(this, "Unable to share page", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun printPage() {
+        runCatching {
+            val manager = getSystemService(PrintManager::class.java)
+            val adapter = webView.createPrintDocumentAdapter(
+                (webView.title ?: "OLIKH Reader").take(60)
+            )
+            manager.print(
+                webView.title?.take(60) ?: "OLIKH Reader",
+                adapter,
+                PrintAttributes.Builder().build()
+            )
+        }.onFailure {
+            Toast.makeText(this, "Printing unavailable", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun changeFont(delta: Float) {

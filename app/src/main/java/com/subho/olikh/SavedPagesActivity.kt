@@ -1,5 +1,6 @@
 package com.subho.olikh
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.webkit.WebView
@@ -108,6 +109,26 @@ class SavedPagesActivity : AppCompatActivity() {
             })
 
             actions.addView(Button(this).apply {
+                text = "OPEN ONLINE"
+                textSize = 9f
+                setOnClickListener {
+                    runCatching {
+                        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(page.url)))
+                    }.onFailure {
+                        toast("No browser available")
+                    }
+                }
+            })
+
+            actions.addView(Button(this).apply {
+                text = "SHARE"
+                textSize = 9f
+                setOnClickListener {
+                    sharePage(page.title, page.url)
+                }
+            })
+
+            actions.addView(Button(this).apply {
                 text = "DELETE"
                 textSize = 9f
                 setOnClickListener {
@@ -187,6 +208,24 @@ class SavedPagesActivity : AppCompatActivity() {
         }
         dialog.show()
         dialog.window?.setLayout(-1, -1)
+    }
+
+    private fun sharePage(title: String, url: String) {
+        runCatching {
+            startActivity(
+                Intent.createChooser(
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, title)
+                        putExtra(Intent.EXTRA_TEXT, "$title
+$url")
+                    },
+                    "Share saved page"
+                )
+            )
+        }.onFailure {
+            toast("Unable to share page")
+        }
     }
 
     private fun removeRecord(id: String) {
