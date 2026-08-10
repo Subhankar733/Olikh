@@ -224,7 +224,14 @@ object OlikhNewBrowserFeatures {
 
     fun savePage(activity: Activity, webView: WebView) {
         val title = webView.title?.take(100)?.ifBlank { "Saved page" } ?: "Saved page"
-        val url = webView.url ?: return
+        val url = webView.url
+            ?.trim()
+            ?.takeIf {
+                it.startsWith("https://", true) ||
+                    it.startsWith("http://", true)
+            }
+            ?: return
+
         val dir = File(activity.filesDir, "olikh_saved_pages").apply { mkdirs() }
         val id = "page_${System.currentTimeMillis()}"
         val file = File(dir, "$id.html")
