@@ -346,30 +346,90 @@ class MainActivity : AppCompatActivity() {
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>
-:root{--bg:#f3f4f6;--ink:#111318;--muted:#747982;--line:#dfe1e5;--surface:#fff;--dark:#17181c;--soft:#eef0f3}
+:root{
+ --bg:#f5f6f8;--surface:#ffffff;--surface2:#eef1f5;--ink:#15171c;
+ --muted:#727986;--line:#dfe3e8;--dark:#17191e;--dark2:#22252c;
+ --accent:#536dfe;--accentSoft:#e9edff;--success:#1b8f68
+}
+@media(prefers-color-scheme:dark){
+ :root{--bg:#0f1116;--surface:#171a20;--surface2:#20242c;--ink:#f4f6fa;
+ --muted:#9aa3b2;--line:#2b303a;--dark:#17191e;--dark2:#22252c;
+ --accent:#8b9bff;--accentSoft:#242b4d}
+}
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{min-height:100vh}.page{max-width:760px;margin:0 auto;padding:18px 18px 112px}
-.top{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 20px}
-.identity{display:flex;align-items:center;gap:11px}.logo{width:40px;height:40px;border-radius:13px;background:#111318;color:#fff;display:grid;place-items:center;font-size:21px;font-weight:900}
-.identity b{display:block;font-size:17px}.identity span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
-.time{text-align:right;color:var(--muted);font-size:10px}.time b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
-.command{background:var(--dark);color:#fff;border-radius:24px;padding:23px 18px 18px;box-shadow:0 10px 28px rgba(0,0,0,.12)}
-.command-label{font-size:10px;color:#a8adb7;letter-spacing:.08em;font-weight:700}.command h1{font-size:28px;line-height:1.05;margin:7px 0 18px;letter-spacing:-.05em}
-.search{display:flex;gap:7px;background:#fff;border-radius:15px;padding:6px}.search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#111;padding:12px 10px;font-size:15px}
-.go{width:48px;border:0;border-radius:12px;background:#15161a;color:#fff;font-weight:800}.suggestions{display:none;margin-top:7px;border-radius:13px;overflow:hidden;background:#fff;color:#111}
-.suggestions button{width:100%;border:0;border-bottom:1px solid #eee;background:#fff;padding:12px 14px;text-align:left;font-size:13px}
-.section{margin-top:25px}.section-head{display:flex;align-items:end;justify-content:space-between;margin:0 2px 11px}.section-head b{font-size:13px}.section-head span{font-size:10px;color:var(--muted)}
-.workspace{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{display:block;min-height:96px;border:1px solid var(--line);border-radius:18px;background:var(--surface);padding:17px;color:var(--ink);text-decoration:none}
-.card.dark{background:#111318;border-color:#111318;color:#fff}.card b{display:block;font-size:14px}.card span{display:block;color:var(--muted);font-size:11px;line-height:1.35;margin-top:6px}.card.dark span{color:#aeb3bd}
-.quick-strip{display:flex;gap:9px;overflow-x:auto;padding-bottom:3px}.quick{flex:0 0 112px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;color:var(--ink);text-decoration:none}
-.quick-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#17181c;color:#fff;font-size:14px;font-weight:800;margin-bottom:9px}.quick-text{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
-.protection{display:flex;align-items:center;justify-content:space-between;background:#111318;color:#fff;border-radius:19px;padding:17px}.protection-left{display:flex;align-items:center;gap:11px}.shield{width:10px;height:10px;border-radius:50%;background:#fff}
-.protection b{font-size:13px}.protection small{display:block;color:#aeb3bd;font-size:10px;margin-top:4px}.blocked{text-align:right;font-size:19px;font-weight:800}.blocked small{font-size:9px}
-.rows{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}.row{display:flex;align-items:center;gap:10px;padding:14px;text-decoration:none;color:var(--ink);border-bottom:1px solid #eceef1}.row:last-child{border-bottom:0}
-.row-icon{width:30px;height:30px;border-radius:9px;background:var(--soft);display:grid;place-items:center;font-size:14px}.row-copy{min-width:0;flex:1}.row-copy b,.row-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row-copy b{font-size:12px}.row-copy small{color:var(--muted);font-size:9px;margin-top:3px}.row-arrow{font-size:20px;color:#999}
-.empty{padding:20px 14px;color:var(--muted);font-size:11px}.dock{position:fixed;left:14px;right:14px;bottom:12px;max-width:732px;margin:auto;display:flex;gap:7px;padding:7px;border-radius:19px;background:#111318;box-shadow:0 10px 30px rgba(0,0,0,.22)}
-.dock a{flex:1;text-align:center;text-decoration:none;color:#fff;background:#20232a;border-radius:13px;padding:10px 3px;font-size:10px}.dock a.active{background:#fff;color:#111;font-weight:800}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+ font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{min-height:100vh}
+.page{max-width:780px;margin:0 auto;padding:16px 16px 104px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:2px 3px 16px}
+.identity{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:12px;background:var(--dark);color:#fff;
+ display:grid;place-items:center;font-size:19px;font-weight:850}
+.identity b{display:block;font-size:16px;letter-spacing:-.02em}
+.identity span{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.time{text-align:right;color:var(--muted);font-size:9px}
+.time b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
+.command{background:var(--dark);color:#fff;border-radius:20px;padding:19px 16px 15px;
+ box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.command-label{font-size:9px;color:#aeb5c2;letter-spacing:.12em;font-weight:800}
+.command h1{font-size:25px;line-height:1.08;margin:6px 0 15px;letter-spacing:-.045em}
+.search{display:flex;gap:6px;background:var(--surface);border:1px solid rgba(255,255,255,.12);
+ border-radius:13px;padding:5px}
+.search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);
+ padding:11px 9px;font-size:14px}
+.go{width:47px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:800}
+.suggestions{display:none;margin-top:6px;border-radius:11px;overflow:hidden;background:var(--surface);color:var(--ink)}
+.suggestions button{width:100%;border:0;border-bottom:1px solid var(--line);background:var(--surface);
+ color:var(--ink);padding:11px 13px;text-align:left;font-size:12px}
+.section{margin-top:22px}
+.section-head{display:flex;align-items:end;justify-content:space-between;margin:0 2px 9px}
+.section-head b{font-size:11px;letter-spacing:.07em}
+.section-head span{font-size:9px;color:var(--muted)}
+.workspace{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.card{display:block;min-height:88px;border:1px solid var(--line);border-radius:16px;
+ background:var(--surface);padding:15px;color:var(--ink);text-decoration:none;
+ transition:transform .12s ease,background .12s ease}
+.card:active{transform:scale(.985)}
+.card.dark{background:var(--dark);border-color:var(--dark);color:#fff}
+.card b{display:block;font-size:13px;letter-spacing:-.01em}
+.card span{display:block;color:var(--muted);font-size:10px;line-height:1.35;margin-top:5px}
+.card.dark span{color:#aeb5c2}
+.quick-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.quick-strip::-webkit-scrollbar{display:none}
+.quick{flex:0 0 108px;background:var(--surface);border:1px solid var(--line);
+ border-radius:14px;padding:11px;color:var(--ink);text-decoration:none}
+.quick-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;
+ background:var(--dark);color:#fff;font-size:12px;font-weight:800;margin-bottom:8px}
+.quick-text{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.protection{display:flex;align-items:center;justify-content:space-between;background:var(--dark);
+ color:#fff;border-radius:17px;padding:15px}
+.protection-left{display:flex;align-items:center;gap:10px}
+.shield{width:9px;height:9px;border-radius:50%;background:#6ee7b7;box-shadow:0 0 0 4px rgba(110,231,183,.12)}
+.protection b{font-size:12px}
+.protection small{display:block;color:#aeb5c2;font-size:9px;margin-top:3px}
+.blocked{text-align:right;font-size:17px;font-weight:850}
+.blocked small{font-size:8px}
+.rows{background:var(--surface);border:1px solid var(--line);border-radius:15px;overflow:hidden}
+.row{display:flex;align-items:center;gap:9px;padding:12px;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row-icon{width:29px;height:29px;border-radius:9px;background:var(--surface2);
+ display:grid;place-items:center;font-size:13px}
+.row-copy{min-width:0;flex:1}
+.row-copy strong,.row-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-copy strong{font-size:11px}
+.row-copy small{color:var(--muted);font-size:9px;margin-top:2px}
+.row-arrow{font-size:17px;color:var(--muted)}
+.blank{padding:17px 12px;color:var(--muted);font-size:10px}
+.dock{position:fixed;left:12px;right:12px;bottom:10px;max-width:756px;margin:auto;
+ display:flex;gap:6px;padding:6px;border-radius:17px;background:rgba(23,25,30,.97);
+ box-shadow:0 8px 26px rgba(0,0,0,.20);backdrop-filter:blur(12px)}
+.dock a{flex:1;text-align:center;text-decoration:none;color:#dfe3eb;background:#23262d;
+ border-radius:11px;padding:9px 3px;font-size:9px}
+.dock a.active{background:#fff;color:#111;font-weight:800}
+@media(min-width:600px){
+ .page{padding-left:22px;padding-right:22px}
+ .workspace{gap:11px}.card{min-height:92px;padding:16px}
+}
 </style>
 </head>
 <body>
@@ -379,11 +439,11 @@ body{min-height:100vh}.page{max-width:760px;margin:0 auto;padding:18px 18px 112p
  <div class="time"><b id="clock">--:--</b><span id="date">---</span></div>
 </header>
 <section class="command">
- <div class="command-label">COMMAND CENTER</div><h1>Where do you want to go?</h1>
+ <div class="command-label">OLIKH SEARCH</div><h1>Search the web</h1>
  <form class="search" onsubmit="return submitSearch()"><input id="query" autocomplete="off" autocapitalize="none" placeholder="Search, paste a URL, or type a command"><button class="go" type="submit">GO</button></form>
  <div id="suggestions" class="suggestions"></div>
 </section>
-<section class="section"><div class="section-head"><b>WORKSPACE</b><span>your browser, your rules</span></div>
+<section class="section"><div class="section-head"><b>WORKSPACE</b><span>Private, focused browsing</span></div>
  <div class="workspace">
   <a class="card dark" href="olikh://new-tab"><b>New tab</b><span>Start a fresh page</span></a>
   <a class="card" href="olikh://tabs"><b>Open tabs</b><span>Switch or manage tabs</span></a>
@@ -396,10 +456,10 @@ body{min-height:100vh}.page{max-width:760px;margin:0 auto;padding:18px 18px 112p
   <a class="card" href="olikh://toggle-blocker"><b>Protection</b><span>Content blocking</span></a>
  </div>
 </section>
-<section class="section"><div class="section-head"><b>QUICK ACCESS</b><span>one tap</span></div><div class="quick-strip">$quickAccessHtml</div></section>
+<section class="section"><div class="section-head"><b>QUICK ACCESS</b><span>Quick launch</span></div><div class="quick-strip">$quickAccessHtml</div></section>
 <section class="section"><div class="protection"><div class="protection-left"><div class="shield"></div><div><b>Protection $blockerLabel</b><small>Privacy shield is active for this browser</small></div></div><div class="blocked">$blockedRequests<small>blocked · $blockedDomains domains</small></div></div></section>
-<section class="section"><div class="section-head"><b>RECENT</b><span>continue browsing</span></div><div class="rows">$recentHtml</div></section>
-<section class="section"><div class="section-head"><b>SAVED</b><span>your bookmarks</span></div><div class="rows">$bookmarkHtml</div></section>
+<section class="section"><div class="section-head"><b>RECENT</b><span>Your recent activity</span></div><div class="rows">$recentHtml</div></section>
+<section class="section"><div class="section-head"><b>SAVED</b><span>Saved pages</span></div><div class="rows">$bookmarkHtml</div></section>
 </main>
 <nav class="dock">
  <a href="olikh://history">History</a><a href="olikh://bookmarks">Saved</a><a class="active" href="olikh://new-tab">New</a><a href="olikh://downloads">Files</a><a href="olikh://settings">More</a>
