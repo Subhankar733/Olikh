@@ -123,10 +123,41 @@ jobs:
             sleep 2
           done
 
-          echo "Installing OLIKH APK..."
+          echo "Waiting for Android package manager..."
+          for i in {1..30}; do
+            if adb -s "$ANDROID_SERIAL" shell pm path android >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
 
-          adb -s "$ANDROID_SERIAL" install -r \
-            app/build/outputs/apk/debug/app-debug.apk
+          sleep 15
+
+          echo "Installing OLIKH APK without streamed install..."
+
+          installed=0
+          for attempt in 1 2 3; do
+            echo "APK install attempt $attempt/3"
+
+            if adb -s "$ANDROID_SERIAL" push \
+                app/build/outputs/apk/debug/app-debug.apk \
+                /data/local/tmp/olikh-debug.apk && \
+               adb -s "$ANDROID_SERIAL" shell pm install -r \
+                /data/local/tmp/olikh-debug.apk; then
+              installed=1
+              break
+            fi
+
+            echo "APK install attempt $attempt failed; reconnecting ADB..."
+            adb reconnect offline >/dev/null 2>&1 || true
+            sleep 10
+          done
+
+          if [ "$installed" -ne 1 ]; then
+            echo "ERROR: OLIKH APK could not be installed."
+            adb -s "$ANDROID_SERIAL" shell getprop || true
+            exit 1
+          fi
 
           echo "Launching OLIKH..."
 
