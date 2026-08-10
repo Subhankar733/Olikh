@@ -66,7 +66,7 @@ class DownloadManagerActivity : AppCompatActivity() {
         header.addView(Button(this).apply {
             text = "CLEAR"
             textSize = 10f
-            setOnClickListener { clearCompleted() }
+            setOnClickListener { confirmClearCompleted() }
         }, LinearLayout.LayoutParams(-2, dp(44)))
 
         root.addView(header)
@@ -273,6 +273,17 @@ class DownloadManagerActivity : AppCompatActivity() {
         list.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
             setMargins(0, dp(4), 0, dp(4))
         })
+    }
+
+    private fun confirmClearCompleted() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Clear completed downloads?")
+            .setMessage("Completed download records will be removed from the Android DownloadManager list.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Clear") { _, _ ->
+                clearCompleted()
+            }
+            .show()
     }
 
     private fun clearCompleted() {

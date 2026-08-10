@@ -36,6 +36,15 @@ class LibraryDialog(
     private lateinit var content: LinearLayout
     private lateinit var searchInput: EditText
 
+    private enum class LibraryMode {
+        ALL,
+        HISTORY,
+        BOOKMARKS
+    }
+
+    private var libraryMode = LibraryMode.ALL
+    private var sortNewestFirst = true
+
     init {
         setTitle("Library")
 
@@ -78,6 +87,71 @@ class LibraryDialog(
                 bottomMargin = d(8)
             }
         )
+
+        val controls = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, d(2), 0, d(8))
+        }
+
+        fun controlButton(
+            label: String,
+            action: () -> Unit
+        ): Button {
+            return Button(context).apply {
+                text = label
+                textSize = 9f
+                setTextColor(Color.WHITE)
+                setAllCaps(false)
+                background = rounded("#20252C", 14f)
+                setOnClickListener { action() }
+                installPressAnimation(this)
+            }
+        }
+
+        controls.addView(
+            controlButton("ALL") {
+                libraryMode = LibraryMode.ALL
+                render(searchInput.text?.toString().orEmpty())
+            },
+            LinearLayout.LayoutParams(0, d(42), 1f).apply {
+                rightMargin = d(4)
+            }
+        )
+
+        controls.addView(
+            controlButton("HISTORY") {
+                libraryMode = LibraryMode.HISTORY
+                render(searchInput.text?.toString().orEmpty())
+            },
+            LinearLayout.LayoutParams(0, d(42), 1f).apply {
+                rightMargin = d(4)
+            }
+        )
+
+        controls.addView(
+            controlButton("BOOKMARKS") {
+                libraryMode = LibraryMode.BOOKMARKS
+                render(searchInput.text?.toString().orEmpty())
+            },
+            LinearLayout.LayoutParams(0, d(42), 1f).apply {
+                rightMargin = d(4)
+            }
+        )
+
+        val sortButton = controlButton("NEWEST") {
+            sortNewestFirst = !sortNewestFirst
+            it?.let { _ ->
+                // label is refreshed below
+            }
+            render(searchInput.text?.toString().orEmpty())
+        }
+
+        controls.addView(
+            sortButton,
+            LinearLayout.LayoutParams(0, d(42), 1f)
+        )
+
+        root.addView(controls)
 
         val scroll = ScrollView(context)
 
@@ -159,126 +233,174 @@ class LibraryDialog(
 
         val cleanQuery = query.trim()
 
-        val filteredHistory =
+        val filteredHistory = (
             if (cleanQuery.isBlank()) {
-                history.take(50)
+                history
             } else {
                 history.filter {
-                    matches(
-                        it.title,
-                        it.url,
-                        cleanQuery
-                    )
-                }.take(50)
+                    matches(it.title, it.url, cleanQuery)
+                }
             }
+        )
+            .sortedWith(
+                if (sortNewestFirst) {
+                    compareByDescending<HistoryEntry> { it.visitedAt }
+                        .thenBy { it.title.lowercase() }
+                } else {
+                    compareBy<HistoryEntry> { it.visitedAt }
+                        .thenBy { it.title.lowercase() }
+                }
+            )
+            .take(100)
 
-        val filteredBookmarks =
+        val filteredBookmarks = (
             if (cleanQuery.isBlank()) {
                 bookmarks
             } else {
                 bookmarks.filter {
-                    matches(
-                        it.title,
-                        it.url,
-                        cleanQuery
+                    matches(it.title, it.url, cleanQuery)
+                }
+            }
+        )
+            .sortedWith(
+                if (sortNewestFirst) {
+                    compareByDescending<BookmarkEntry> { it.savedAt }
+                        .thenBy { it.title.lowercase() }
+                } else {
+                    compareBy<BookmarkEntry> { it.savedAt }
+                        .thenBy { it.title.lowercase() }
+                }
+            )
+            .take(100)
+
+        content.addView(TextView(context).apply {
+            text = when (libraryMode) {
+                LibraryMode.ALL ->
+                    "History ${filteredHistory.size}  •  Bookmarks ${filteredBookmarks.size}"
+                LibraryMode.HISTORY ->
+                    "History ${filteredHistory.size}"
+                LibraryMode.BOOKMARKS ->
+                    "Bookmarks ${filteredBookmarks.size}"
+            }
+            textSize = 12f
+            setTextColor(Color.parseColor("#777E88"))
+            setPadding(0, d(6), 0, d(8))
+        })
+
+        if (libraryMode == LibraryMode.ALL ||
+            libraryMode == LibraryMode.HISTORY
+        ) {
+            addSectionTitle(
+                content,
+                "HISTORY",
+                filteredHistory.size
+            )
+
+            if (filteredHistory.isEmpty()) {
+                addEmpty(
+                    content,
+                    if (cleanQuery.isBlank()) {
+                        "No browsing history yet"
+                    } else {
+                        "No matching history"
+                    }
+                )
+            } else {
+                filteredHistory.forEach { entry ->
+                    addEntry(
+                        parent = content,
+                        title = entry.title,
+                        url = entry.url,
+                        savedAt = entry.visitedAt,
+                        action = {
+                            dismiss()
+                            onOpenHistory(entry)
+                        },
+                        deleteAction = {
+                            confirmDelete(
+                                title = "Delete history entry?",
+                                message = entry.title
+                                    .replace("\n", " ")
+                                    .trim()
+                                    .ifBlank { entry.url },
+                                action = {
+                                    onDeleteHistory(entry)
+                                    dismiss()
+                                }
+                            )
+                        }
                     )
                 }
             }
 
-        addSectionTitle(
-            content,
-            "HISTORY",
-            filteredHistory.size
-        )
-
-        if (filteredHistory.isEmpty()) {
-            addEmpty(
-                content,
-                if (cleanQuery.isBlank()) {
-                    "No browsing history yet"
-                } else {
-                    "No matching history"
-                }
-            )
-        } else {
-            filteredHistory.forEach { entry ->
-                addEntry(
-                    parent = content,
-                    title = entry.title,
-                    url = entry.url,
-                    savedAt = entry.visitedAt,
+            addAction(content, "Clear history") {
+                confirmClear(
+                    title = "Clear browsing history?",
+                    message = "This will remove all saved history entries.",
                     action = {
+                        onClearHistory()
                         dismiss()
-                        onOpenHistory(entry)
-                    },
-                    deleteAction = {
-                        confirmDelete(
-                            title = "Delete history entry?",
-                            message = entry.title
-                                .replace("\n", " ")
-                                .trim()
-                                .ifBlank { entry.url },
-                            action = {
-                                onDeleteHistory(entry)
-                                dismiss()
-                            }
-                        )
                     }
                 )
             }
         }
 
-        addAction(content, "Clear history") {
-            onClearHistory()
-            dismiss()
-        }
-
-        addSectionTitle(
-            content,
-            "BOOKMARKS",
-            filteredBookmarks.size
-        )
-
-        if (filteredBookmarks.isEmpty()) {
-            addEmpty(
+        if (libraryMode == LibraryMode.ALL ||
+            libraryMode == LibraryMode.BOOKMARKS
+        ) {
+            addSectionTitle(
                 content,
-                if (cleanQuery.isBlank()) {
-                    "No bookmarks saved yet"
-                } else {
-                    "No matching bookmarks"
-                }
+                "BOOKMARKS",
+                filteredBookmarks.size
             )
-        } else {
-            filteredBookmarks.forEach { entry ->
-                addEntry(
-                    parent = content,
-                    title = entry.title,
-                    url = entry.url,
-                    savedAt = entry.savedAt,
+
+            if (filteredBookmarks.isEmpty()) {
+                addEmpty(
+                    content,
+                    if (cleanQuery.isBlank()) {
+                        "No bookmarks saved yet"
+                    } else {
+                        "No matching bookmarks"
+                    }
+                )
+            } else {
+                filteredBookmarks.forEach { entry ->
+                    addEntry(
+                        parent = content,
+                        title = entry.title,
+                        url = entry.url,
+                        savedAt = entry.savedAt,
+                        action = {
+                            dismiss()
+                            onOpenBookmark(entry)
+                        },
+                        deleteAction = {
+                            confirmDelete(
+                                title = "Delete bookmark?",
+                                message = entry.title
+                                    .replace("\n", " ")
+                                    .trim()
+                                    .ifBlank { entry.url },
+                                action = {
+                                    onDeleteBookmark(entry)
+                                    dismiss()
+                                }
+                            )
+                        }
+                    )
+                }
+            }
+
+            addAction(content, "Clear bookmarks") {
+                confirmClear(
+                    title = "Clear all bookmarks?",
+                    message = "This will remove all saved bookmarks.",
                     action = {
+                        onClearBookmarks()
                         dismiss()
-                        onOpenBookmark(entry)
-                    },
-                    deleteAction = {
-                        confirmDelete(
-                            title = "Delete bookmark?",
-                            message = entry.title
-                                .replace("\n", " ")
-                                .trim()
-                                .ifBlank { entry.url },
-                            action = {
-                                onDeleteBookmark(entry)
-                                dismiss()
-                            }
-                        )
                     }
                 )
             }
-        }
-
-        addAction(content, "Clear bookmarks") {
-            onClearBookmarks()
-            dismiss()
         }
     }
 
@@ -289,6 +411,21 @@ class LibraryDialog(
     ): Boolean {
         return title.contains(query, ignoreCase = true) ||
             url.contains(query, ignoreCase = true)
+    }
+
+    private fun confirmClear(
+        title: String,
+        message: String,
+        action: () -> Unit
+    ) {
+        androidx.appcompat.app.AlertDialog.Builder(context)
+            .setTitle(title)
+            .setMessage(message)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Clear") { _, _ ->
+                action()
+            }
+            .show()
     }
 
     private fun confirmDelete(
