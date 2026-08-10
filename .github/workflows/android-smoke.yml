@@ -38,21 +38,86 @@ jobs:
           test -s app/build/outputs/apk/debug/app-debug.apk
 
       - name: Run on Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 30
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -no-metrics -gpu swiftshader_indirect
-          disable-animations: false
-          script: |
-            adb wait-for-device
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell am force-stop com.subho.olikh
-            adb shell am start -n com.subho.olikh/.MainActivity
-            sleep 8
-            adb shell dumpsys activity activities | grep -F "com.subho.olikh" >/dev/null
-            adb shell pidof com.subho.olikh >/dev/null
-            adb shell am force-stop com.subho.olikh
-            echo "OLIKH emulator smoke test passed."
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          export ANDROID_SERIAL=emulator-5554
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install \
+            'platform-tools' \
+            'emulator' \
+            'platforms;android-30' \
+            'system-images;android-30;google_apis;x86_64' >/dev/null
+
+          echo no | avdmanager create avd \
+            --force \
+            --name smoke-test \
+            --package 'system-images;android-30;google_apis;x86_64' \
+            --device 'pixel_2'
+
+          echo 'hw.cpu.ncore=2' >> "$HOME/.android/avd/smoke-test.avd/config.ini"
+
+          cleanup() {
+            adb -s "$ANDROID_SERIAL" emu kill >/dev/null 2>&1 || true
+            pkill -f 'emulator.*-avd smoke-test' >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          emulator -avd smoke-test \
+            -port 5554 \
+            -no-window \
+            -no-audio \
+            -no-boot-anim \
+            -no-snapshot \
+            -no-metrics \
+            -gpu swiftshader_indirect \
+            -accel off \
+            > "$RUNNER_TEMP/emulator.log" 2>&1 &
+
+          adb start-server >/dev/null
+
+          echo "Waiting for emulator..."
+
+          for i in {1..360}; do
+            if adb -s "$ANDROID_SERIAL" get-state 2>/dev/null | grep -q '^device$'; then
+              boot_completed="$(adb -s "$ANDROID_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
+
+              if [ "$boot_completed" = "1" ]; then
+                echo "Emulator booted."
+                break
+              fi
+            fi
+
+            if [ "$i" -eq 360 ]; then
+              echo "Emulator failed to boot."
+              cat "$RUNNER_TEMP/emulator.log" || true
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          echo "Installing OLIKH APK..."
+
+          adb -s "$ANDROID_SERIAL" install -r \
+            app/build/outputs/apk/debug/app-debug.apk
+
+          echo "Launching OLIKH..."
+
+          adb -s "$ANDROID_SERIAL" shell am force-stop com.subho.olikh
+          adb -s "$ANDROID_SERIAL" shell am start -W \
+            -n com.subho.olikh/.MainActivity
+
+          sleep 10
+
+          echo "Checking OLIKH process..."
+
+          adb -s "$ANDROID_SERIAL" shell pidof com.subho.olikh
+          adb -s "$ANDROID_SERIAL" shell dumpsys activity activities \
+            | grep -F "com.subho.olikh"
+
+          echo "OLIKH emulator smoke test passed."
