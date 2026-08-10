@@ -1467,11 +1467,17 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
     private fun duplicateTab(index: Int) {
         val source = tabs.getOrNull(index) ?: return
         val sourceUrl = source.webView.url?.trim()?.takeIf { it.isNotBlank() } ?: source.url.trim()
+        val sourceGroupId = tabGroupStore.groupFor(sourceUrl)
 
         if (sourceUrl.isBlank() || sourceUrl == "about:blank" || isOlikhStartPageUrl(sourceUrl)) {
             createNewTab(incognito = source.incognito, initialUrl = "about:blank")
         } else {
             createNewTab(incognito = source.incognito, initialUrl = sourceUrl)
+        }
+
+        val duplicatedUrl = activeTab?.webView?.url?.trim().orEmpty()
+        if (!source.incognito && sourceGroupId != null && duplicatedUrl.isNotBlank()) {
+            tabGroupStore.assign(duplicatedUrl, sourceGroupId)
         }
     }
 
@@ -2111,6 +2117,12 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                 isReload: Boolean
             ) {
                 super.doUpdateVisitedHistory(view, url, isReload)
+
+                val newUrl = url?.trim().orEmpty()
+                if (newUrl.isNotBlank() && !tab.incognito) {
+                    tabGroupStore.moveMembership(tab.url, newUrl)
+                }
+
                 url?.let { tab.url = it }
             }
 
@@ -2441,11 +2453,58 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
     private fun installLongPressActions(targetWebView: WebView) {
         targetWebView.setOnLongClickListener {
             val result = targetWebView.hitTestResult
+
+            if (result.type == WebView.HitTestResult.IMAGE_TYPE) {
+                val imageUrl = result.extra?.trim().orEmpty()
+                if (imageUrl.isBlank()) return@setOnLongClickListener false
+
+                val safeImageUrl = imageUrl.takeIf { isSafeHttpNavigationUrl(it) }
+                val items = if (safeImageUrl != null) {
+                    arrayOf(
+                        "Open image",
+                        "Open image in new tab",
+                        "Open image in incognito tab",
+                        "Download image",
+                        "Copy image URL",
+                        "Share image URL"
+                    )
+                } else {
+                    arrayOf("Copy image URL", "Share image URL")
+                }
+
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Image")
+                    .setItems(items) { _, which ->
+                        if (safeImageUrl == null) {
+                            when (which) {
+                                0 -> copyTextToClipboard("OLIKH image", imageUrl, "Image URL copied")
+                                1 -> shareText("Share image", imageUrl)
+                            }
+                            return@setItems
+                        }
+
+                        when (which) {
+                            0 -> targetWebView.loadUrl(safeImageUrl)
+                            1 -> createNewTab(incognito = false, initialUrl = safeImageUrl)
+                            2 -> createNewTab(incognito = true, initialUrl = safeImageUrl)
+                            3 -> DownloadHelper(this).downloadFile(
+                                safeImageUrl,
+                                targetWebView.settings.userAgentString,
+                                null,
+                                null
+                            )
+                            4 -> copyTextToClipboard("OLIKH image", safeImageUrl, "Image URL copied")
+                            5 -> shareText("Share image", safeImageUrl)
+                        }
+                    }
+                    .show()
+
+                return@setOnLongClickListener true
+            }
+
             val linkUrl = when (result.type) {
                 WebView.HitTestResult.SRC_ANCHOR_TYPE,
-                WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE ->
-                    result.extra
-
+                WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> result.extra
                 else -> null
             }
 
@@ -2453,119 +2512,60 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                 return@setOnLongClickListener false
             }
 
-            val safeLinkUrl =
-                linkUrl.takeIf { isSafeHttpNavigationUrl(it) }
-
-            val items =
-                if (safeLinkUrl != null) {
-                    arrayOf(
-                        "Open link",
-                        "Open in new tab",
-                        "Open in incognito tab",
-                        "Copy link",
-                        "Share link"
-                    )
-                } else {
-                    arrayOf(
-                        "Copy link",
-                        "Share link"
-                    )
-                }
+            val safeLinkUrl = linkUrl.takeIf { isSafeHttpNavigationUrl(it) }
+            val items = if (safeLinkUrl != null) {
+                arrayOf(
+                    "Open link",
+                    "Open in new tab",
+                    "Open in incognito tab",
+                    "Copy link",
+                    "Share link"
+                )
+            } else {
+                arrayOf("Copy link", "Share link")
+            }
 
             androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Link")
                 .setItems(items) { _, which ->
                     if (safeLinkUrl == null) {
                         when (which) {
-                            0 -> {
-                                val clipboard =
-                                    getSystemService(
-                                        android.content.Context.CLIPBOARD_SERVICE
-                                    ) as android.content.ClipboardManager
-
-                                clipboard.setPrimaryClip(
-                                    android.content.ClipData.newPlainText(
-                                        "OLIKH link",
-                                        linkUrl
-                                    )
-                                )
-
-                                Toast.makeText(
-                                    this,
-                                    "Link copied",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-
-                            1 -> {
-                                val intent =
-                                    Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(
-                                            Intent.EXTRA_TEXT,
-                                            linkUrl
-                                        )
-                                    }
-
-                                startActivity(
-                                    Intent.createChooser(
-                                        intent,
-                                        "Share link"
-                                    )
-                                )
-                            }
+                            0 -> copyTextToClipboard("OLIKH link", linkUrl, "Link copied")
+                            1 -> shareText("Share link", linkUrl)
                         }
                         return@setItems
                     }
 
                     when (which) {
                         0 -> targetWebView.loadUrl(safeLinkUrl)
-
-                        1 -> createNewTab(
-                            incognito = false,
-                            initialUrl = safeLinkUrl
-                        )
-
-                        2 -> createNewTab(
-                            incognito = true,
-                            initialUrl = safeLinkUrl
-                        )
-
-                        3 -> {
-                            val clipboard =
-                                getSystemService(android.content.Context.CLIPBOARD_SERVICE)
-                                    as android.content.ClipboardManager
-
-                            clipboard.setPrimaryClip(
-                                android.content.ClipData.newPlainText(
-                                    "OLIKH link",
-                                    linkUrl
-                                )
-                            )
-
-                            Toast.makeText(
-                                this,
-                                "Link copied",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-
-                        4 -> {
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, linkUrl)
-                            }
-
-                            startActivity(
-                                Intent.createChooser(intent, "Share link")
-                            )
-                        }
+                        1 -> createNewTab(incognito = false, initialUrl = safeLinkUrl)
+                        2 -> createNewTab(incognito = true, initialUrl = safeLinkUrl)
+                        3 -> copyTextToClipboard("OLIKH link", safeLinkUrl, "Link copied")
+                        4 -> shareText("Share link", safeLinkUrl)
                     }
                 }
                 .show()
 
             true
         }
+    }
+
+    private fun copyTextToClipboard(label: String, value: String, message: String) {
+        val clipboard =
+            getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                as android.content.ClipboardManager
+        clipboard.setPrimaryClip(
+            android.content.ClipData.newPlainText(label, value)
+        )
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun shareText(title: String, value: String) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, value)
+        }
+        startActivity(Intent.createChooser(intent, title))
     }
 
     private fun animateBrowserButton(view: View) {

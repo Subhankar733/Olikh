@@ -29,14 +29,30 @@ class TabGroupDialog(
             setOnClickListener { action() }
         }
 
+    private fun currentTab(): BrowserTab? =
+        browserTabs.getOrNull(activeIndex)
+
     private fun currentUrl(): String? =
-        browserTabs.getOrNull(activeIndex)?.webView?.url
-            ?: browserTabs.getOrNull(activeIndex)?.url
+        currentTab()?.webView?.url ?: currentTab()?.url
+
+    private fun isPrivateTab(): Boolean =
+        currentTab()?.incognito == true
 
     private fun currentGroupName(): String {
+        if (isPrivateTab()) return "Private tab"
         val id = store.groupFor(currentUrl()) ?: return "Not in a group"
         return store.getGroups().firstOrNull { it.id == id }?.name
             ?: "Not in a group"
+    }
+
+    private fun blockPrivateGroups(): Boolean {
+        if (!isPrivateTab()) return false
+        AlertDialog.Builder(context)
+            .setTitle("Private tab")
+            .setMessage("Private tabs cannot be added to tab groups.")
+            .setPositiveButton("OK", null)
+            .show()
+        return true
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +78,7 @@ class TabGroupDialog(
         })
 
         root.addView(button("Create group") {
+            if (blockPrivateGroups()) return@button
             val input = EditText(context).apply {
                 hint = "Group name"
                 setSingleLine(true)
@@ -82,6 +99,7 @@ class TabGroupDialog(
         })
 
         root.addView(button("Add current tab to group") {
+            if (blockPrivateGroups()) return@button
             val groups = store.getGroups()
             if (groups.isEmpty()) {
                 AlertDialog.Builder(context)
@@ -101,6 +119,7 @@ class TabGroupDialog(
         })
 
         root.addView(button("Remove current tab from group") {
+            if (blockPrivateGroups()) return@button
             store.remove(currentUrl())
             onChanged()
             dismiss()
@@ -112,8 +131,9 @@ class TabGroupDialog(
                 gravity = Gravity.CENTER_VERTICAL
             }
 
-            val count = browserTabs.count {
-                store.groupFor(it.webView.url ?: it.url) == group.id
+            val count = browserTabs.count { tab ->
+                !tab.incognito &&
+                    store.groupFor(tab.webView.url ?: tab.url) == group.id
             }
 
             row.addView(TextView(context).apply {
@@ -126,8 +146,9 @@ class TabGroupDialog(
             })
 
             row.addView(button("Open") {
-                val index = browserTabs.indexOfFirst {
-                    store.groupFor(it.webView.url ?: it.url) == group.id
+                val index = browserTabs.indexOfFirst { tab ->
+                    !tab.incognito &&
+                        store.groupFor(tab.webView.url ?: tab.url) == group.id
                 }
                 if (index >= 0) {
                     dismiss()

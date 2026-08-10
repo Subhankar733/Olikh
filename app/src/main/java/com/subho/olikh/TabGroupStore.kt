@@ -97,6 +97,24 @@ class TabGroupStore(context: Context) {
         return true
     }
 
+    fun moveMembership(oldUrl: String?, newUrl: String?): Boolean {
+        val oldKey = cleanKey(oldUrl) ?: return false
+        val newKey = cleanKey(newUrl) ?: return false
+        if (oldKey == newKey) return false
+
+        val memberships = readMemberships()
+        val groupId = memberships.remove(oldKey) ?: return false
+
+        if (readGroups().none { it.id == groupId }) {
+            writeMemberships(memberships)
+            return false
+        }
+
+        memberships[newKey] = groupId
+        writeMemberships(memberships)
+        return true
+    }
+
     fun remove(url: String?) {
         val key = cleanKey(url) ?: return
         val memberships = readMemberships()
