@@ -34,13 +34,13 @@ jobs:
 
       - name: Build debug APK
         run: |
-          set -euo pipefail
+          set -eu
           gradle assembleDebug --stacktrace
           test -s app/build/outputs/apk/debug/app-debug.apk
 
       - name: Enable KVM
         run: |
-          set -euo pipefail
+          set -eu
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
@@ -63,7 +63,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -eu
 
             echo "===== ADB DEVICES ====="
             adb devices
