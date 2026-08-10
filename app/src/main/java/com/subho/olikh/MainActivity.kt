@@ -1059,6 +1059,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                     ClosedTabSnapshot(
                         title = it.title,
                         url = it.url,
+                        groupId = it.groupId,
                         incognito = false
                     )
                 }
@@ -1074,7 +1075,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             recentlyClosedTabs.clear()
             recentlyClosedTabs.addAll(
                 tabSessionStore.restoreRecentlyClosed().map {
-                    ClosedTabEntry(it.title, it.url)
+                    ClosedTabEntry(it.title, it.url, it.groupId)
                 }
             )
             return false
@@ -1112,7 +1113,7 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         recentlyClosedTabs.clear()
         recentlyClosedTabs.addAll(
             tabSessionStore.restoreRecentlyClosed().map {
-                ClosedTabEntry(it.title, it.url)
+                ClosedTabEntry(it.title, it.url, it.groupId)
             }
         )
 
@@ -1483,7 +1484,8 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
     private data class ClosedTabEntry(
         val title: String,
-        val url: String
+        val url: String,
+        val groupId: String? = null
     )
 
     private val recentlyClosedTabs =
@@ -1519,10 +1521,13 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
             .trim()
             .ifBlank { url }
 
+        val groupId = tabGroupStore.groupFor(url)
+
         recentlyClosedTabs.addFirst(
             ClosedTabEntry(
                 title = title,
-                url = url
+                url = url,
+                groupId = groupId
             )
         )
 
@@ -1547,7 +1552,8 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
         createNewTab(
             incognito = false,
-            initialUrl = entry.url
+            initialUrl = entry.url,
+            restoreGroupId = entry.groupId
         )
     }
 
@@ -1585,11 +1591,13 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
 
                 createNewTab(
                     incognito = false,
-                    initialUrl = entry.url
+                    initialUrl = entry.url,
+                    restoreGroupId = entry.groupId
                 )
             }
             .setNeutralButton("Clear") { _, _ ->
                 recentlyClosedTabs.clear()
+                persistTabSession()
 
                 Toast.makeText(
                     this,
@@ -1676,7 +1684,8 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
     @SuppressLint("SetJavaScriptEnabled")
     private fun createNewTab(
         incognito: Boolean = false,
-        initialUrl: String = homePage
+        initialUrl: String = homePage,
+        restoreGroupId: String? = null
     ) {
         val newWebView = WebView(this)
 
@@ -1745,6 +1754,11 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         )
 
         tabs.add(tab)
+
+        if (!incognito && restoreGroupId != null) {
+            tabGroupStore.assign(initialUrl, restoreGroupId)
+        }
+
         activeTabIndex = tabs.lastIndex
 
         newWebView.webViewClient = createTabWebViewClient(tab)

@@ -133,6 +133,7 @@ class TabSessionStore(context: Context) {
                     JSONObject()
                         .put("title", cleanTitle(it.title))
                         .put("url", url)
+                        .put("groupId", it.groupId.orEmpty())
                 )
             }
 
@@ -157,6 +158,7 @@ class TabSessionStore(context: Context) {
                         ClosedTabSnapshot(
                             title = cleanTitle(item.optString("title")),
                             url = url,
+                            groupId = item.optString("groupId").trim().ifBlank { null },
                             incognito = false
                         )
                     )
@@ -171,5 +173,6 @@ class TabSessionStore(context: Context) {
 data class ClosedTabSnapshot(
     val title: String,
     val url: String,
+    val groupId: String? = null,
     val incognito: Boolean = false
 )
