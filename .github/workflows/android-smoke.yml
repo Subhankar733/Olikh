@@ -96,7 +96,9 @@ jobs:
             -no-snapshot \
             -no-metrics \
             -gpu swiftshader_indirect \
-            -accel off \
+            -accel on \
+            -cores 2 \
+            -memory 2048 \
             > "$RUNNER_TEMP/emulator.log" 2>&1 &
 
           adb start-server >/dev/null
