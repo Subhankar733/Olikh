@@ -126,10 +126,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val homePage: String
-        get() = browserPrefs.getString(
-            "home_page",
-            "https://www.google.com"
-        ) ?: "https://www.google.com"
+        get() =
+            browserPrefs.getString(
+                "home_page",
+                "https://www.google.com"
+            )
+                ?.takeIf { isSafeHttpNavigationUrl(it) }
+                ?: "https://www.google.com"
 
 
     private fun isOlikhStartPageUrl(url: String?): Boolean {
@@ -2357,6 +2360,36 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
         }
     }
 
+    private fun isSafeHttpNavigationUrl(rawUrl: String): Boolean {
+        val url = rawUrl.trim()
+
+        if (
+            !url.startsWith("https://", true) &&
+            !url.startsWith("http://", true)
+        ) {
+            return false
+        }
+
+        val uri =
+            runCatching { Uri.parse(url) }.getOrNull()
+                ?: return false
+
+        val host =
+            uri.host
+                ?.lowercase()
+                ?.trim()
+                ?: return false
+
+        if (
+            host == "olikh.local" ||
+            host.endsWith(".olikh.local")
+        ) {
+            return false
+        }
+
+        return true
+    }
+
     private fun recordHistory(tab: BrowserTab, url: String?) {
         if (tab.incognito) return
 
@@ -2395,28 +2428,82 @@ function tick(){const d=new Date();document.getElementById("clock").textContent=
                 return@setOnLongClickListener false
             }
 
-            val items = arrayOf(
-                "Open link",
-                "Open in new tab",
-                "Open in incognito tab",
-                "Copy link",
-                "Share link"
-            )
+            val safeLinkUrl =
+                linkUrl.takeIf { isSafeHttpNavigationUrl(it) }
+
+            val items =
+                if (safeLinkUrl != null) {
+                    arrayOf(
+                        "Open link",
+                        "Open in new tab",
+                        "Open in incognito tab",
+                        "Copy link",
+                        "Share link"
+                    )
+                } else {
+                    arrayOf(
+                        "Copy link",
+                        "Share link"
+                    )
+                }
 
             androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Link")
                 .setItems(items) { _, which ->
+                    if (safeLinkUrl == null) {
+                        when (which) {
+                            0 -> {
+                                val clipboard =
+                                    getSystemService(
+                                        android.content.Context.CLIPBOARD_SERVICE
+                                    ) as android.content.ClipboardManager
+
+                                clipboard.setPrimaryClip(
+                                    android.content.ClipData.newPlainText(
+                                        "OLIKH link",
+                                        linkUrl
+                                    )
+                                )
+
+                                Toast.makeText(
+                                    this,
+                                    "Link copied",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            1 -> {
+                                val intent =
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(
+                                            Intent.EXTRA_TEXT,
+                                            linkUrl
+                                        )
+                                    }
+
+                                startActivity(
+                                    Intent.createChooser(
+                                        intent,
+                                        "Share link"
+                                    )
+                                )
+                            }
+                        }
+                        return@setItems
+                    }
+
                     when (which) {
-                        0 -> targetWebView.loadUrl(linkUrl)
+                        0 -> targetWebView.loadUrl(safeLinkUrl)
 
                         1 -> createNewTab(
                             incognito = false,
-                            initialUrl = linkUrl
+                            initialUrl = safeLinkUrl
                         )
 
                         2 -> createNewTab(
                             incognito = true,
-                            initialUrl = linkUrl
+                            initialUrl = safeLinkUrl
                         )
 
                         3 -> {
