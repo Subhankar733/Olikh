@@ -93,6 +93,12 @@ class ReaderModeActivity : AppCompatActivity() {
         }, LinearLayout.LayoutParams(dp(70), dp(44)))
 
         toolbar.addView(Button(this).apply {
+            text = "Copy"
+            setTextColor(Color.WHITE)
+            setOnClickListener { copyArticleText() }
+        }, LinearLayout.LayoutParams(dp(64), dp(44)))
+
+        toolbar.addView(Button(this).apply {
             text = "Print"
             setTextColor(Color.WHITE)
             setOnClickListener { printPage() }
@@ -222,6 +228,33 @@ class ReaderModeActivity : AppCompatActivity() {
             if (wideLayout) "Wide reading width" else "Narrow reading width",
             Toast.LENGTH_SHORT
         ).show()
+    }
+
+    private fun copyArticleText() {
+        webView.evaluateJavascript(
+            "(function(){return document.body ? document.body.innerText : '';})()"
+        ) { raw ->
+            val text = raw
+                .removePrefix("\"")
+                .removeSuffix("\"")
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\t", "\t")
+                .replace("\\\"", "\"")
+                .replace("\\\\", "\\")
+                .trim()
+
+            if (text.isBlank()) {
+                Toast.makeText(this, "No readable article text", Toast.LENGTH_SHORT).show()
+                return@evaluateJavascript
+            }
+
+            val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+            clipboard.setPrimaryClip(
+                android.content.ClipData.newPlainText("OLIKH Reader", text)
+            )
+            Toast.makeText(this, "Article text copied", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun sharePage() {

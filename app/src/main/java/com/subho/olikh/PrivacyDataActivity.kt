@@ -217,7 +217,6 @@ class PrivacyDataActivity : AppCompatActivity() {
             runCatching {
                 WebView(this).apply {
                     clearCache(true)
-                    clearHistory()
                     destroy()
                 }
             }

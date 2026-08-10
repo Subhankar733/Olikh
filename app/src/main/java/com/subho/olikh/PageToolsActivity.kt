@@ -360,24 +360,12 @@ class PageToolsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun saveCompletePage() {
-        val currentUrl = webView.url
-        if (currentUrl.isNullOrBlank()) {
+        if (webView.url.isNullOrBlank()) {
             toast("No page loaded")
             return
         }
 
-        val dir = File(filesDir, "olikh_saved_pages").apply { mkdirs() }
-        val safeName = currentUrl
-            .replace(Regex("[^A-Za-z0-9._-]"), "_")
-            .takeLast(80)
-        val file = File(dir, "page_${System.currentTimeMillis()}_$safeName")
-
-        runCatching {
-            webView.saveWebArchive(file.absolutePath)
-            toast("Page saved for offline use")
-        }.onFailure {
-            toast("Could not save page")
-        }
+        OlikhNewBrowserFeatures.savePage(this, webView)
     }
 
     private fun printCurrentPage() {

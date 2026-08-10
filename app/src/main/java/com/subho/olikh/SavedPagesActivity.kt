@@ -11,6 +11,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
+import java.text.DateFormat
+import java.util.Date
 
 class SavedPagesActivity : AppCompatActivity() {
     private lateinit var list: LinearLayout
@@ -95,7 +97,21 @@ class SavedPagesActivity : AppCompatActivity() {
                 text = page.url
                 textSize = 10f
                 setTextColor(Color.GRAY)
-                setPadding(0, dp(4), 0, dp(8))
+                setPadding(0, dp(4), 0, dp(2))
+            })
+
+            card.addView(TextView(this).apply {
+                text = if (page.savedAt > 0L) {
+                    "Saved ${DateFormat.getDateTimeInstance(
+                        DateFormat.SHORT,
+                        DateFormat.SHORT
+                    ).format(Date(page.savedAt))}"
+                } else {
+                    "Saved time unavailable"
+                }
+                textSize = 9f
+                setTextColor(Color.rgb(125, 130, 138))
+                setPadding(0, 0, 0, dp(8))
             })
 
             val actions = LinearLayout(this)
@@ -117,6 +133,18 @@ class SavedPagesActivity : AppCompatActivity() {
                     }.onFailure {
                         toast("No browser available")
                     }
+                }
+            })
+
+            actions.addView(Button(this).apply {
+                text = "COPY URL"
+                textSize = 9f
+                setOnClickListener {
+                    val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+                    clipboard.setPrimaryClip(
+                        android.content.ClipData.newPlainText("OLIKH saved page URL", page.url)
+                    )
+                    toast("URL copied")
                 }
             })
 
