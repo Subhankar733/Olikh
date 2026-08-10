@@ -55,6 +55,16 @@ class TabGroupStore(context: Context) {
 
     fun getGroups(): List<Group> = readGroups()
 
+    fun cleanupDanglingMemberships() {
+        val validIds = readGroups().mapTo(mutableSetOf()) { it.id }
+        val memberships = readMemberships()
+        val before = memberships.size
+        memberships.entries.removeIf { it.value !in validIds }
+        if (memberships.size != before) {
+            writeMemberships(memberships)
+        }
+    }
+
     fun create(name: String): Group? {
         val clean = name.trim().take(60)
         if (clean.isBlank()) return null

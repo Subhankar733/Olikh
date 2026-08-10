@@ -78,6 +78,8 @@ class TabGroupDialog(
             setBackgroundColor(Color.rgb(14, 17, 23))
         }
 
+        store.cleanupDanglingMemberships()
+
         root.addView(TextView(context).apply {
             text = "Tab Groups"
             textSize = 24f
@@ -97,7 +99,43 @@ class TabGroupDialog(
             setTextColor(Color.WHITE)
             setHintTextColor(Color.GRAY)
         }
-        root.addView(search)
+
+        val searchRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        searchRow.addView(
+            search,
+            LinearLayout.LayoutParams(
+                0,
+                dp(48),
+                1f
+            )
+        )
+
+        searchRow.addView(
+            button("Clear") {
+                search.setText("")
+                search.requestFocus()
+            },
+            LinearLayout.LayoutParams(
+                dp(76),
+                dp(44)
+            ).apply {
+                setMargins(dp(6), 0, 0, 0)
+            }
+        )
+
+        root.addView(searchRow)
+
+        val resultCount = TextView(context).apply {
+            text = "0 groups • 0 tabs"
+            textSize = 10f
+            setTextColor(Color.rgb(150, 158, 172))
+            setPadding(0, dp(4), 0, dp(4))
+        }
+        root.addView(resultCount)
 
         root.addView(button("Create group") {
             if (blockPrivateGroups()) return@button
@@ -168,6 +206,7 @@ class TabGroupDialog(
             list.removeAllViews()
 
             val groups = store.getGroups()
+                .sortedBy { it.name.lowercase() }
             val groupById = groups.associateBy { it.id }
 
             list.addView(TextView(context).apply {
@@ -267,7 +306,18 @@ class TabGroupDialog(
             })
 
             var shownTabs = 0
-            browserTabs.forEachIndexed { index, tab ->
+
+            val orderedTabs = browserTabs
+                .mapIndexed { index, tab -> index to tab }
+                .sortedWith(
+                    compareByDescending<Pair<Int, BrowserTab>> {
+                        it.second === currentTab()
+                    }.thenByDescending {
+                        it.second.lastAccessed
+                    }
+                )
+
+            orderedTabs.forEach { (index, tab) ->
                 val title = tabTitle(tab, index)
                 val url = tabUrl(tab)
                 val groupName = if (tab.incognito) {
@@ -277,7 +327,7 @@ class TabGroupDialog(
                 }
 
                 val haystack = "$title $url $groupName".lowercase()
-                if (filter.isNotBlank() && !haystack.contains(filter)) return@forEachIndexed
+                if (filter.isNotBlank() && !haystack.contains(filter)) return@forEach
 
                 val row = LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
@@ -316,6 +366,8 @@ class TabGroupDialog(
                 )
                 shownTabs++
             }
+
+            resultCount.text = "${shownGroups} group${if (shownGroups == 1) "" else "s"} • ${shownTabs} tab${if (shownTabs == 1) "" else "s"}"
 
             if (shownTabs == 0) {
                 list.addView(TextView(context).apply {
