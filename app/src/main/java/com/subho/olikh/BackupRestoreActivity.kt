@@ -14,8 +14,11 @@ import org.json.JSONObject
 class BackupRestoreActivity : AppCompatActivity() {
 
     private companion object {
-        const val REQUEST_EXPORT = 4301
-        const val REQUEST_IMPORT = 4302
+        const val REQUEST_EXPORT = 4401
+        const val REQUEST_IMPORT = 4402
+        const val BACKUP_FORMAT = "olikh-backup"
+        const val BACKUP_VERSION = 2
+        const val MAX_ITEMS = 500
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +35,7 @@ class BackupRestoreActivity : AppCompatActivity() {
         })
 
         root.addView(TextView(this).apply {
-            text = "Export or restore bookmarks, history and browser preferences as one OLIKH JSON backup."
+            text = "Export or restore bookmarks, history, browser preferences, advanced settings, tabs, tab groups and saved site permissions as one OLIKH JSON backup."
             textSize = 13f
             setPadding(0, dp(8), 0, dp(18))
         })
@@ -90,9 +93,10 @@ class BackupRestoreActivity : AppCompatActivity() {
     private fun exportBackup(uri: Uri) {
         runCatching {
             val root = JSONObject().apply {
-                put("format", "olikh-backup")
-                put("version", 1)
+                put("format", BACKUP_FORMAT)
+                put("version", BACKUP_VERSION)
                 put("createdAt", System.currentTimeMillis())
+
                 put("bookmarks", JSONArray().apply {
                     BookmarkManager(this@BackupRestoreActivity)
                         .getAll()
@@ -104,6 +108,7 @@ class BackupRestoreActivity : AppCompatActivity() {
                             })
                         }
                 })
+
                 put("history", JSONArray().apply {
                     HistoryManager(this@BackupRestoreActivity)
                         .getAll()
@@ -115,6 +120,7 @@ class BackupRestoreActivity : AppCompatActivity() {
                             })
                         }
                 })
+
                 put(
                     "browserPreferences",
                     preferencesToJson(
@@ -124,6 +130,7 @@ class BackupRestoreActivity : AppCompatActivity() {
                         )
                     )
                 )
+
                 put(
                     "advancedPreferences",
                     preferencesToJson(
@@ -133,39 +140,80 @@ class BackupRestoreActivity : AppCompatActivity() {
                         )
                     )
                 )
+
+                put(
+                    "tabSession",
+                    preferencesToJson(
+                        getSharedPreferences(
+                            "olikh_tab_session",
+                            MODE_PRIVATE
+                        )
+                    )
+                )
+
+                put(
+                    "tabGroups",
+                    preferencesToJson(
+                        getSharedPreferences(
+                            "olikh_tab_groups",
+                            MODE_PRIVATE
+                        )
+                    )
+                )
+
+                put(
+                    "sitePermissions",
+                    preferencesToJson(
+                        getSharedPreferences(
+                            "site_permissions",
+                            MODE_PRIVATE
+                        )
+                    )
+                )
             }
 
             contentResolver.openOutputStream(uri)?.use {
-                it.write(root.toString(2).toByteArray(Charsets.UTF_8))
+                it.write(
+                    root.toString(2)
+                        .toByteArray(Charsets.UTF_8)
+                )
             } ?: error("Unable to open backup file")
 
-            toast("Backup exported successfully")
+            toast("Backup v2 exported successfully")
         }.onFailure {
-            toast("Export failed: ${it.message ?: "unknown error"}")
+            toast(
+                "Export failed: ${it.message ?: "unknown error"}"
+            )
         }
     }
 
     private fun importBackup(uri: Uri) {
         runCatching {
-            val text = contentResolver.openInputStream(uri)?.use {
-                it.readBytes().toString(Charsets.UTF_8)
-            } ?: error("Unable to read backup file")
+            val text =
+                contentResolver.openInputStream(uri)?.use {
+                    it.readBytes().toString(Charsets.UTF_8)
+                } ?: error("Unable to read backup file")
 
             val root = JSONObject(text)
 
-            if (root.optString("format") != "olikh-backup") {
+            if (root.optString("format") != BACKUP_FORMAT) {
                 error("Not an OLIKH backup")
             }
 
-            if (root.optInt("version", -1) != 1) {
+            val version = root.optInt("version", -1)
+            if (version != 1 && version != BACKUP_VERSION) {
                 error("Unsupported backup version")
             }
 
-            val bookmarks = root.optJSONArray("bookmarks") ?: JSONArray()
-            val history = root.optJSONArray("history") ?: JSONArray()
+            restoreBookmarks(
+                root.optJSONArray("bookmarks")
+                    ?: JSONArray()
+            )
 
-            restoreBookmarks(bookmarks)
-            restoreHistory(history)
+            restoreHistory(
+                root.optJSONArray("history")
+                    ?: JSONArray()
+            )
 
             root.optJSONObject("browserPreferences")?.let {
                 jsonToPreferences(
@@ -187,9 +235,49 @@ class BackupRestoreActivity : AppCompatActivity() {
                 )
             }
 
-            toast("Backup restored successfully")
+            if (version >= 2) {
+                root.optJSONObject("tabSession")?.let {
+                    jsonToPreferences(
+                        getSharedPreferences(
+                            "olikh_tab_session",
+                            MODE_PRIVATE
+                        ),
+                        it
+                    )
+                }
+
+                root.optJSONObject("tabGroups")?.let {
+                    jsonToPreferences(
+                        getSharedPreferences(
+                            "olikh_tab_groups",
+                            MODE_PRIVATE
+                        ),
+                        it
+                    )
+                }
+
+                root.optJSONObject("sitePermissions")?.let {
+                    jsonToPreferences(
+                        getSharedPreferences(
+                            "site_permissions",
+                            MODE_PRIVATE
+                        ),
+                        it
+                    )
+                }
+            }
+
+            toast(
+                if (version == 1) {
+                    "Backup restored successfully"
+                } else {
+                    "Backup v2 restored successfully"
+                }
+            )
         }.onFailure {
-            toast("Restore failed: ${it.message ?: "invalid backup"}")
+            toast(
+                "Restore failed: ${it.message ?: "invalid backup"}"
+            )
         }
     }
 
@@ -214,11 +302,12 @@ class BackupRestoreActivity : AppCompatActivity() {
                 put("url", url.take(4096))
                 put(
                     "savedAt",
-                    item.optLong("savedAt").coerceAtLeast(0L)
+                    item.optLong("savedAt")
+                        .coerceAtLeast(0L)
                 )
             })
 
-            if (clean.length() >= 500) break
+            if (clean.length() >= MAX_ITEMS) break
         }
 
         getSharedPreferences(
@@ -250,11 +339,12 @@ class BackupRestoreActivity : AppCompatActivity() {
                 put("url", url.take(4096))
                 put(
                     "visitedAt",
-                    item.optLong("visitedAt").coerceAtLeast(0L)
+                    item.optLong("visitedAt")
+                        .coerceAtLeast(0L)
                 )
             })
 
-            if (clean.length() >= 500) break
+            if (clean.length() >= MAX_ITEMS) break
         }
 
         getSharedPreferences(
@@ -283,6 +373,13 @@ class BackupRestoreActivity : AppCompatActivity() {
                 is Float -> out.put(key, value.toDouble())
                 is Double -> out.put(key, value)
                 is String -> out.put(key, value)
+                is Set<*> -> {
+                    val array = JSONArray()
+                    value.filterIsInstance<String>()
+                        .sorted()
+                        .forEach(array::put)
+                    out.put(key, array)
+                }
             }
         }
 
@@ -300,8 +397,20 @@ class BackupRestoreActivity : AppCompatActivity() {
                 is Boolean -> editor.putBoolean(key, value)
                 is Int -> editor.putInt(key, value)
                 is Long -> editor.putLong(key, value)
-                is Double -> editor.putFloat(key, value.toFloat())
+                is Double -> editor.putFloat(
+                    key,
+                    value.toFloat()
+                )
                 is String -> editor.putString(key, value)
+                is JSONArray -> {
+                    val values = buildSet {
+                        for (i in 0 until value.length()) {
+                            val item = value.optString(i)
+                            if (item.isNotBlank()) add(item)
+                        }
+                    }
+                    editor.putStringSet(key, values)
+                }
             }
         }
 
