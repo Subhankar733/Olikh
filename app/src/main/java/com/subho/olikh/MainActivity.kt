@@ -8715,29 +8715,182 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         val input = EditText(this).apply {
             hint = "Find text on this page"
             setSingleLine(true)
+            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_NEXT
+        }
+
+        val counter = android.widget.TextView(this).apply {
+            text = "0 / 0"
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(12, 0, 12, 0)
+        }
+
+        val previous = android.widget.Button(this).apply {
+            text = "◀"
+            contentDescription = "Previous match"
+        }
+
+        val next = android.widget.Button(this).apply {
+            text = "▶"
+            contentDescription = "Next match"
+        }
+
+        val clear = android.widget.Button(this).apply {
+            text = "✕"
+            contentDescription = "Clear search"
+        }
+
+        val controls = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            addView(
+                previous,
+                android.widget.LinearLayout.LayoutParams(
+                    48,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+            addView(
+                next,
+                android.widget.LinearLayout.LayoutParams(
+                    48,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+            addView(
+                counter,
+                android.widget.LinearLayout.LayoutParams(
+                    0,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                )
+            )
+            addView(
+                clear,
+                android.widget.LinearLayout.LayoutParams(
+                    48,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(24, 8, 24, 8)
+            addView(
+                input,
+                android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+            addView(
+                controls,
+                android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        val updateCounter = { active: Int, matches: Int ->
+            counter.text =
+                if (matches > 0) "$active / $matches" else "0 / 0"
+        }
+
+        webView.setFindListener { activeMatchOrdinal, numberOfMatches, _ ->
+            runOnUiThread {
+                updateCounter(activeMatchOrdinal + 1, numberOfMatches)
+            }
+        }
+
+        val search = {
+            val query = input.text.toString().trim()
+            if (query.isNotEmpty()) {
+                webView.findAllAsync(query)
+                webView.findNext(true)
+            } else {
+                webView.clearMatches()
+                updateCounter(0, 0)
+            }
         }
 
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Find in page")
-            .setView(input)
-            .setPositiveButton("Find", null)
+            .setView(container)
             .setNegativeButton("Close") { _, _ ->
                 webView.clearMatches()
+                updateCounter(0, 0)
             }
             .create()
 
+        previous.setOnClickListener {
+            if (input.text.toString().trim().isNotEmpty()) {
+                webView.findNext(false)
+            }
+        }
+
+        next.setOnClickListener {
+            if (input.text.toString().trim().isNotEmpty()) {
+                webView.findNext(true)
+            }
+        }
+
+        clear.setOnClickListener {
+            input.text?.clear()
+            webView.clearMatches()
+            updateCounter(0, 0)
+            input.requestFocus()
+        }
+
+        input.addTextChangedListener(
+            object : android.text.TextWatcher {
+                override fun beforeTextChanged(
+                    text: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) = Unit
+
+                override fun onTextChanged(
+                    text: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {
+                    search()
+                }
+
+                override fun afterTextChanged(editable: android.text.Editable?) = Unit
+            }
+        )
+
+        input.setOnEditorActionListener { _, actionId, event ->
+            val enterPressed =
+                event?.keyCode == android.view.KeyEvent.KEYCODE_ENTER &&
+                    event.action == android.view.KeyEvent.ACTION_DOWN
+
+            if (
+                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT ||
+                enterPressed
+            ) {
+                webView.findNext(true)
+                true
+            } else {
+                false
+            }
+        }
+
         dialog.setOnShowListener {
             animateDialogEntrance(dialog)
+            input.requestFocus()
+            dialog.window?.setSoftInputMode(
+                android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+            )
+        }
 
-            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
-                .setOnClickListener {
-                    val query = input.text.toString().trim()
-
-                    if (query.isNotEmpty()) {
-                        webView.findAllAsync(query)
-                        webView.findNext(true)
-                    }
-                }
+        dialog.setOnDismissListener {
+            webView.clearMatches()
+            webView.setFindListener(null)
         }
 
         dialog.show()
