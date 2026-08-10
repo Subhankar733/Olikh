@@ -3,11 +3,14 @@ package com.subho.olikh
 import android.app.Dialog
 import android.graphics.Color
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 
@@ -55,6 +58,17 @@ class TabGroupDialog(
         return true
     }
 
+    private fun tabTitle(tab: BrowserTab, index: Int): String {
+        val title = tab.title.trim()
+        if (title.isNotBlank()) return title.take(80)
+        val url = (tab.webView.url ?: tab.url).trim()
+        if (url.isNotBlank()) return url.take(80)
+        return "Tab ${index + 1}"
+    }
+
+    private fun tabUrl(tab: BrowserTab): String =
+        (tab.webView.url ?: tab.url).trim()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -74,8 +88,16 @@ class TabGroupDialog(
             text = "Current: ${currentGroupName()}"
             textSize = 13f
             setTextColor(Color.LTGRAY)
-            setPadding(0, dp(6), 0, dp(12))
+            setPadding(0, dp(6), 0, dp(8))
         })
+
+        val search = EditText(context).apply {
+            hint = "Search tabs or groups"
+            setSingleLine(true)
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY)
+        }
+        root.addView(search)
 
         root.addView(button("Create group") {
             if (blockPrivateGroups()) return@button
@@ -125,70 +147,193 @@ class TabGroupDialog(
             dismiss()
         })
 
-        store.getGroups().forEach { group ->
-            val row = LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-            }
+        val scroll = ScrollView(context).apply {
+            isFillViewport = true
+        }
+        val list = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        scroll.addView(list)
+        root.addView(
+            scroll,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        )
 
-            val count = browserTabs.count { tab ->
-                !tab.incognito &&
-                    store.groupFor(tab.webView.url ?: tab.url) == group.id
-            }
+        fun render(filterRaw: String) {
+            val filter = filterRaw.trim().lowercase()
+            list.removeAllViews()
 
-            row.addView(TextView(context).apply {
-                text = "${group.name}  ($count)"
-                textSize = 15f
+            val groups = store.getGroups()
+            val groupById = groups.associateBy { it.id }
+
+            list.addView(TextView(context).apply {
+                text = "Groups"
+                textSize = 16f
                 setTextColor(Color.WHITE)
-                layoutParams = LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
-                )
+                setPadding(0, dp(10), 0, dp(8))
             })
 
-            row.addView(button("Open") {
-                val index = browserTabs.indexOfFirst { tab ->
+            var shownGroups = 0
+            groups.forEach { group ->
+                val count = browserTabs.count { tab ->
                     !tab.incognito &&
                         store.groupFor(tab.webView.url ?: tab.url) == group.id
                 }
-                if (index >= 0) {
-                    dismiss()
-                    onSelectTab(index)
-                }
-            })
+                if (filter.isNotBlank() &&
+                    !group.name.lowercase().contains(filter) &&
+                    count == 0
+                ) return@forEach
 
-            row.addView(button("Rename") {
-                val input = EditText(context).apply {
-                    setText(group.name)
-                    setSingleLine(true)
+                val row = LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
                 }
-                AlertDialog.Builder(context)
-                    .setTitle("Rename group")
-                    .setView(input)
-                    .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Save") { _, _ ->
-                        if (store.rename(group.id, input.text.toString())) {
+
+                row.addView(TextView(context).apply {
+                    text = "${group.name}  ($count)"
+                    textSize = 15f
+                    setTextColor(Color.WHITE)
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1f
+                    )
+                })
+
+                row.addView(button("Open") {
+                    val index = browserTabs.indexOfFirst { tab ->
+                        !tab.incognito &&
+                            store.groupFor(tab.webView.url ?: tab.url) == group.id
+                    }
+                    if (index >= 0) {
+                        dismiss()
+                        onSelectTab(index)
+                    }
+                })
+
+                row.addView(button("Rename") {
+                    val input = EditText(context).apply {
+                        setText(group.name)
+                        setSingleLine(true)
+                    }
+                    AlertDialog.Builder(context)
+                        .setTitle("Rename group")
+                        .setView(input)
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Save") { _, _ ->
+                            if (store.rename(group.id, input.text.toString())) {
+                                onChanged()
+                                dismiss()
+                            }
+                        }
+                        .show()
+                })
+
+                row.addView(button("Delete") {
+                    AlertDialog.Builder(context)
+                        .setTitle("Delete group?")
+                        .setMessage("Tabs stay open; only the group is removed.")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Delete") { _, _ ->
+                            store.delete(group.id)
                             onChanged()
                             dismiss()
                         }
-                    }
-                    .show()
+                        .show()
+                })
+
+                list.addView(row)
+                shownGroups++
+            }
+
+            if (shownGroups == 0) {
+                list.addView(TextView(context).apply {
+                    text = if (filter.isBlank()) "No groups yet." else "No matching groups."
+                    textSize = 13f
+                    setTextColor(Color.LTGRAY)
+                    setPadding(0, dp(8), 0, dp(12))
+                })
+            }
+
+            list.addView(TextView(context).apply {
+                text = "Tabs"
+                textSize = 16f
+                setTextColor(Color.WHITE)
+                setPadding(0, dp(18), 0, dp(8))
             })
 
-            row.addView(button("Delete") {
-                AlertDialog.Builder(context)
-                    .setTitle("Delete group?")
-                    .setMessage("Tabs stay open; only the group is removed.")
-                    .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Delete") { _, _ ->
-                        store.delete(group.id)
-                        onChanged()
+            var shownTabs = 0
+            browserTabs.forEachIndexed { index, tab ->
+                val title = tabTitle(tab, index)
+                val url = tabUrl(tab)
+                val groupName = if (tab.incognito) {
+                    "Private tab"
+                } else {
+                    groupById[store.groupFor(url)]?.name ?: "Ungrouped"
+                }
+
+                val haystack = "$title $url $groupName".lowercase()
+                if (filter.isNotBlank() && !haystack.contains(filter)) return@forEachIndexed
+
+                val row = LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(10), dp(10), dp(10), dp(10))
+                    setBackgroundColor(
+                        if (index == activeIndex) Color.rgb(35, 42, 52)
+                        else Color.rgb(20, 24, 31)
+                    )
+                    setOnClickListener {
                         dismiss()
+                        onSelectTab(index)
                     }
-                    .show()
-            })
+                }
 
-            root.addView(row)
+                row.addView(TextView(context).apply {
+                    text = if (index == activeIndex) "● $title" else title
+                    textSize = 14f
+                    setTextColor(Color.WHITE)
+                })
+
+                row.addView(TextView(context).apply {
+                    text = "$groupName${if (url.isBlank()) "" else "  •  ${url.take(120)}"}"
+                    textSize = 11f
+                    setTextColor(Color.LTGRAY)
+                    setPadding(0, dp(3), 0, 0)
+                })
+
+                list.addView(
+                    row,
+                    LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        bottomMargin = dp(6)
+                    }
+                )
+                shownTabs++
+            }
+
+            if (shownTabs == 0) {
+                list.addView(TextView(context).apply {
+                    text = if (filter.isBlank()) "No tabs." else "No matching tabs."
+                    textSize = 13f
+                    setTextColor(Color.LTGRAY)
+                    setPadding(0, dp(8), 0, dp(12))
+                })
+            }
         }
+
+        search.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                render(s?.toString().orEmpty())
+            }
+            override fun afterTextChanged(s: Editable?) = Unit
+        })
 
         root.addView(button("Close") { dismiss() })
 
@@ -196,7 +341,9 @@ class TabGroupDialog(
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setLayout(
             (context.resources.displayMetrics.widthPixels * 0.94f).toInt(),
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            (context.resources.displayMetrics.heightPixels * 0.88f).toInt()
         )
+
+        render("")
     }
 }
