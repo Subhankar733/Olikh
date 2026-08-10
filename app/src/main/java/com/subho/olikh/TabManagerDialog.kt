@@ -285,15 +285,53 @@ class TabManagerDialog(
             background = panel(Color.rgb(17, 21, 28), 14, Color.rgb(42, 49, 62))
             setPadding(dp(14), 0, dp(14), 0)
         }
+        val searchTools = LinearLayout(context).apply {
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        search.layoutParams = LinearLayout.LayoutParams(
+            0,
+            dp(48),
+            1f
+        )
+
+        val clearSearch = action("Clear") {
+            search.setText("")
+            search.requestFocus()
+        }.apply {
+            layoutParams = LinearLayout.LayoutParams(
+                dp(70),
+                dp(42)
+            ).apply {
+                setMargins(dp(6), 0, 0, 0)
+            }
+        }
+
+        searchTools.addView(search)
+        searchTools.addView(clearSearch)
+
         root.addView(
-            search,
+            searchTools,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(48)
             ).apply {
                 topMargin = dp(10)
-                bottomMargin = dp(6)
+                bottomMargin = dp(2)
             }
+        )
+
+        val resultCount = text(
+            "0 tabs shown",
+            10f,
+            Color.rgb(137, 146, 162)
+        )
+        root.addView(
+            resultCount,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(24)
+            )
         )
 
         val actions = LinearLayout(context).apply {
@@ -357,13 +395,15 @@ class TabManagerDialog(
         )
 
         var selectedFilter: String? = null
+        var sortMode = "recent"
 
         fun render(filterId: String?, queryRaw: String = "") {
             grid.removeAllViews()
             val query = queryRaw.trim().lowercase()
-            var shown = 0
 
-            browserTabs.forEachIndexed { index, tab ->
+            val matches = browserTabs.mapIndexed { index, tab ->
+                index to tab
+            }.filter { (_, tab) ->
                 val groupId = if (tab.incognito) {
                     "__private__"
                 } else {
@@ -371,7 +411,7 @@ class TabManagerDialog(
                 }
 
                 if (filterId != null && groupId != filterId) {
-                    return@forEachIndexed
+                    return@filter false
                 }
 
                 val haystack = (
@@ -380,26 +420,60 @@ class TabManagerDialog(
                     groupNameFor(tab)
                 ).lowercase()
 
-                if (query.isNotBlank() && !haystack.contains(query)) {
-                    return@forEachIndexed
+                query.isBlank() || haystack.contains(query)
+            }.let { list ->
+                when (sortMode) {
+                    "title" -> list.sortedBy {
+                        it.second.title.ifBlank { "New tab" }.lowercase()
+                    }
+                    else -> list.sortedByDescending {
+                        it.second.lastAccessed
+                    }
                 }
+            }
 
+            matches.forEach { (index, tab) ->
                 addCard(
                     grid = grid,
                     index = index,
                     tab = tab,
                     groupName = groupNameFor(tab)
                 )
-                shown++
             }
 
-            if (shown == 0) {
-                grid.addView(
+            resultCount.text = "${matches.size} tab${if (matches.size == 1) "" else "s"} shown"
+
+            if (matches.isEmpty()) {
+                val empty = LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER
+                    setPadding(dp(20), dp(40), dp(20), dp(40))
+                }
+
+                empty.addView(
                     text(
                         if (query.isBlank()) "No tabs in this filter." else "No matching tabs.",
-                        13f,
-                        Color.rgb(145, 153, 168)
-                    ),
+                        15f,
+                        Color.rgb(225, 230, 238)
+                    )
+                )
+
+                val newTab = action("Open new tab") {
+                    onNewTab()
+                }
+
+                empty.addView(
+                    newTab,
+                    LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        dp(44)
+                    ).apply {
+                        topMargin = dp(14)
+                    }
+                )
+
+                grid.addView(
+                    empty,
                     GridLayout.LayoutParams().apply {
                         width = ViewGroup.LayoutParams.MATCH_PARENT
                         height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -439,6 +513,34 @@ class TabManagerDialog(
         }
 
         addFilter("All", null)
+
+        val sortButton = Button(context).apply {
+            text = "Sort: Recent"
+            isAllCaps = false
+            textSize = 10f
+            setTextColor(Color.rgb(225, 230, 238))
+            background = panel(
+                Color.rgb(35, 42, 56),
+                13,
+                Color.rgb(70, 82, 105)
+            )
+            setPadding(dp(13), 0, dp(13), 0)
+            setOnClickListener {
+                sortMode = if (sortMode == "recent") "title" else "recent"
+                text = if (sortMode == "recent") "Sort: Recent" else "Sort: Title"
+                render(selectedFilter, search.text?.toString().orEmpty())
+            }
+        }
+
+        filterBar.addView(
+            sortButton,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                dp(38)
+            ).apply {
+                setMargins(dp(3), dp(2), dp(3), dp(2))
+            }
+        )
 
         groupStore.getGroups().forEach { group ->
             val count = browserTabs.count { tab ->
