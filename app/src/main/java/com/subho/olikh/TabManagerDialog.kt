@@ -2,12 +2,10 @@ package com.subho.olikh
 
 import android.app.Dialog
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
-import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
@@ -30,6 +28,8 @@ class TabManagerDialog(
     private val onReopenClosed: () -> Unit,
     private val onManageGroups: () -> Unit
 ) : Dialog(browserTabs.firstOrNull()?.webView?.context ?: error("No tabs")) {
+
+    private val groupStore by lazy { TabGroupStore(context) }
 
     private fun dp(v: Int) = (v * context.resources.displayMetrics.density).toInt()
 
@@ -71,14 +71,37 @@ class TabManagerDialog(
         }
     }.getOrNull()
 
-    private fun addCard(grid: GridLayout, index: Int, tab: BrowserTab) {
+    private fun tabUrl(tab: BrowserTab): String =
+        tab.webView.url?.trim()?.takeIf { it.isNotBlank() }
+            ?: tab.url.trim()
+
+    private fun groupNameFor(tab: BrowserTab): String {
+        if (tab.incognito) return "Private tab"
+
+        val groupId = groupStore.groupFor(tabUrl(tab))
+            ?: return "Ungrouped"
+
+        return groupStore.getGroups()
+            .firstOrNull { it.id == groupId }
+            ?.name
+            ?: "Ungrouped"
+    }
+
+    private fun addCard(
+        grid: GridLayout,
+        index: Int,
+        tab: BrowserTab,
+        groupName: String
+    ) {
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(12), dp(12), dp(10))
             background = panel(
-                if (index == activeIndex) Color.rgb(25, 31, 45) else Color.rgb(17, 21, 28),
+                if (index == activeIndex) Color.rgb(25, 31, 45)
+                else Color.rgb(17, 21, 28),
                 20,
-                if (index == activeIndex) Color.rgb(102, 116, 238) else Color.rgb(42, 49, 62)
+                if (index == activeIndex) Color.rgb(102, 116, 238)
+                else Color.rgb(42, 49, 62)
             )
             setOnClickListener {
                 dismiss()
@@ -104,7 +127,11 @@ class TabManagerDialog(
 
         val info = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+            )
         }
 
         info.addView(text(
@@ -112,18 +139,42 @@ class TabManagerDialog(
             14f,
             Color.WHITE
         ))
-        val currentUrl = tab.webView.url
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?: tab.url
 
         info.addView(
             text(
-                currentUrl.ifBlank { "about:blank" }.take(42),
+                tabUrl(tab).ifBlank { "about:blank" }.take(42),
                 10f,
                 Color.rgb(145, 153, 168)
             )
         )
+
+        val badge = TextView(context).apply {
+            text = groupName
+            textSize = 9f
+            setTextColor(
+                if (groupName == "Private tab") {
+                    Color.rgb(255, 193, 94)
+                } else {
+                    Color.rgb(174, 184, 255)
+                }
+            )
+            setPadding(dp(8), dp(4), dp(8), dp(4))
+            background = panel(
+                if (groupName == "Private tab") {
+                    Color.rgb(57, 42, 22)
+                } else {
+                    Color.rgb(28, 35, 54)
+                },
+                10
+            )
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(6)
+            }
+        }
+        info.addView(badge)
 
         row.addView(info)
 
@@ -158,7 +209,11 @@ class TabManagerDialog(
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(18), dp(18), dp(14))
-            background = panel(Color.rgb(9, 12, 17), 26, Color.rgb(38, 45, 58))
+            background = panel(
+                Color.rgb(9, 12, 17),
+                26,
+                Color.rgb(38, 45, 58)
+            )
         }
 
         val header = LinearLayout(context).apply {
@@ -167,18 +222,30 @@ class TabManagerDialog(
 
         val titleBox = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+            )
         }
-        titleBox.addView(text("Open spaces", 26f, Color.WHITE))
-        titleBox.addView(text(
-            "${browserTabs.size} active • tap a card to enter",
-            11f,
-            Color.rgb(137, 146, 162)
-        ))
+
+        titleBox.addView(
+            text("Open spaces", 26f, Color.WHITE)
+        )
+        titleBox.addView(
+            text(
+                "${browserTabs.size} active • tap a card to enter",
+                11f,
+                Color.rgb(137, 146, 162)
+            )
+        )
         header.addView(titleBox)
 
         val plus = ImageButton(context).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(52), dp(52))
+            layoutParams = LinearLayout.LayoutParams(
+                dp(52),
+                dp(52)
+            )
             setImageResource(android.R.drawable.ic_input_add)
             setColorFilter(Color.WHITE)
             background = panel(Color.rgb(89, 103, 232), 17)
@@ -195,6 +262,7 @@ class TabManagerDialog(
             gravity = Gravity.CENTER
             setPadding(0, dp(14), 0, dp(8))
         }
+
         listOf(
             "Close others" to onCloseOthers,
             "Close all" to onCloseAll,
@@ -203,21 +271,41 @@ class TabManagerDialog(
         ).forEach { (label, callback) ->
             actions.addView(
                 action(label, callback),
-                LinearLayout.LayoutParams(0, dp(42), 1f).apply {
+                LinearLayout.LayoutParams(
+                    0,
+                    dp(42),
+                    1f
+                ).apply {
                     setMargins(dp(3), 0, dp(3), 0)
                 }
             )
         }
         root.addView(actions)
 
+        val filterScroll = ScrollView(context).apply {
+            isHorizontalScrollBarEnabled = false
+        }
+
+        val filterBar = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        filterScroll.addView(filterBar)
+        root.addView(
+            filterScroll,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(48)
+            ).apply {
+                bottomMargin = dp(4)
+            }
+        )
+
         val scroll = ScrollView(context)
         val grid = GridLayout(context).apply {
             columnCount = 2
             useDefaultMargins = false
-        }
-
-        browserTabs.forEachIndexed { index, tab ->
-            addCard(grid, index, tab)
         }
 
         scroll.addView(grid)
@@ -229,6 +317,78 @@ class TabManagerDialog(
                 1f
             )
         )
+
+        fun render(filterId: String?) {
+            grid.removeAllViews()
+
+            browserTabs.forEachIndexed { index, tab ->
+                val groupId = if (tab.incognito) {
+                    "__private__"
+                } else {
+                    groupStore.groupFor(tabUrl(tab)) ?: "__ungrouped__"
+                }
+
+                if (filterId != null && groupId != filterId) {
+                    return@forEachIndexed
+                }
+
+                addCard(
+                    grid = grid,
+                    index = index,
+                    tab = tab,
+                    groupName = groupNameFor(tab)
+                )
+            }
+        }
+
+        fun addFilter(label: String, id: String?) {
+            val button = Button(context).apply {
+                text = label
+                isAllCaps = false
+                textSize = 10f
+                setTextColor(Color.rgb(225, 230, 238))
+                background = panel(
+                    Color.rgb(23, 27, 35),
+                    13,
+                    Color.rgb(47, 55, 70)
+                )
+                setPadding(dp(13), 0, dp(13), 0)
+                setOnClickListener { render(id) }
+            }
+
+            filterBar.addView(
+                button,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    dp(38)
+                ).apply {
+                    setMargins(dp(3), dp(2), dp(3), dp(2))
+                }
+            )
+        }
+
+        addFilter("All", null)
+
+        groupStore.getGroups().forEach { group ->
+            val count = browserTabs.count { tab ->
+                !tab.incognito && groupStore.groupFor(tabUrl(tab)) == group.id
+            }
+            if (count > 0) {
+                addFilter("${group.name}  •  $count", group.id)
+            }
+        }
+
+        val privateCount = browserTabs.count { it.incognito }
+        if (privateCount > 0) {
+            addFilter("Private  •  $privateCount", "__private__")
+        }
+
+        val ungroupedCount = browserTabs.count { tab ->
+            !tab.incognito && groupStore.groupFor(tabUrl(tab)) == null
+        }
+        if (ungroupedCount > 0) {
+            addFilter("Ungrouped  •  $ungroupedCount", "__ungrouped__")
+        }
 
         val done = action("Done") { }
         root.addView(
@@ -247,5 +407,7 @@ class TabManagerDialog(
             (context.resources.displayMetrics.widthPixels * 0.96f).toInt(),
             (context.resources.displayMetrics.heightPixels * 0.88f).toInt()
         )
+
+        render(null)
     }
 }
