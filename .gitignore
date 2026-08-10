@@ -8,3 +8,8 @@ local.properties
 
 # Local backups
 *.bak
+
+# Local Olikh backups and helper scripts
+.olikh-backups/
+.olikh-batch*.txt
+olikh_*.sh
