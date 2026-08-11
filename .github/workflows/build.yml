@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: olikh-release-build-${{ github.ref }}
@@ -39,7 +39,6 @@ jobs:
           echo "$OLIKH_KEYSTORE_BASE64" | base64 --decode > olikh-release.jks
           chmod 600 olikh-release.jks
           test -s olikh-release.jks
-          echo "Release keystore restored successfully."
 
       - name: Build signed Release APK
         env:
@@ -50,7 +49,6 @@ jobs:
         run: |
           gradle assembleRelease --stacktrace
           test -s app/build/outputs/apk/release/app-release.apk
-          echo "Signed release APK created successfully."
 
       - name: Verify APK
         run: |
@@ -59,13 +57,23 @@ jobs:
           test -n "$APKSIGNER"
           "$APKSIGNER" verify --verbose app/build/outputs/apk/release/app-release.apk
 
-      - name: Upload Release APK
+      - name: Upload Release APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: OLIKH-release
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 7
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: build-${{ github.run_number }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            app/build/outputs/apk/release/app-release.apk \
+            --title "OLIKH Build #${{ github.run_number }}" \
+            --generate-notes
 
       - name: Cleanup signing material
         if: always()
