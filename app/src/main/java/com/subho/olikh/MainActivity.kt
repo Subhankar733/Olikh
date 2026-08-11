@@ -271,20 +271,33 @@ private fun showOlikhStartPage() {
     val protection = if (olikhBlocker.isEnabled()) "ON" else "OFF"
     val blocked = olikhBlocker.blockedRequests()
 
-    val shortcuts = getQuickAccessItems().take(6).joinToString("") { item ->
-        val name = escapeHtml(item.name)
-        val url = escapeHtml(item.url)
-        val initial = escapeHtml(
-            item.name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "•"
-        )
+    val shortcuts = getQuickAccessItems()
+        .take(6)
+        .joinToString("") { item ->
+            val name = escapeHtml(item.name)
+            val url = escapeHtml(item.url)
+            val initial = escapeHtml(
+                item.name.trim()
+                    .firstOrNull()
+                    ?.uppercaseChar()
+                    ?.toString()
+                    ?: "•"
+            )
 
-        """<a class="site" href="$url">
-            <span class="site-icon">$initial</span>
-            <span class="site-name">$name</span>
-        </a>"""
-    }.ifBlank {
-        """<div class="empty">Add your favorite destinations here</div>"""
-    }
+            """
+            <a class="site" href="$url">
+                <span class="site-icon">$initial</span>
+                <span class="site-copy">
+                    <b>$name</b>
+                    <small>Open site</small>
+                </span>
+                <span class="site-arrow">›</span>
+            </a>
+            """.trimIndent()
+        }
+        .ifBlank {
+            """<div class="empty">Add your favorite destinations here</div>"""
+        }
 
     val recent = historyManager.getAll()
         .asSequence()
@@ -313,15 +326,18 @@ private fun showOlikhStartPage() {
 
             val url = escapeHtml(entry.url)
 
-            """<a class="recent" href="$url">
+            """
+            <a class="recent" href="$url">
                 <span class="recent-icon">↗</span>
                 <span class="recent-copy">
                     <b>$title</b>
                     <small>$host</small>
                 </span>
-                <span class="arrow">›</span>
-            </a>"""
-        }.ifBlank {
+                <span class="recent-arrow">›</span>
+            </a>
+            """.trimIndent()
+        }
+        .ifBlank {
             """<div class="empty">Your recent pages will appear here</div>"""
         }
 
@@ -330,74 +346,96 @@ private fun showOlikhStartPage() {
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090B10">
+<meta name="theme-color" content="#080A0F">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{
  margin:0;
- background:#090b10;
+ background:#080a0f;
  color:#f5f7fb;
  font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif
 }
 body{min-height:100vh}
 a{text-decoration:none;color:inherit}
-.page{
- max-width:680px;
- margin:auto;
- padding:22px 16px 42px
-}
-.hero{position:relative;padding:4px 0 0}
-.hero:after{
- content:"";
+.page{max-width:680px;margin:auto;padding:20px 15px 42px}
+.hero{position:relative;padding:2px 1px 0;overflow:hidden}
+.hero-glow{
  position:absolute;
- right:-20px;
- top:-20px;
- width:150px;
- height:150px;
+ right:-75px;
+ top:-85px;
+ width:220px;
+ height:220px;
  border-radius:50%;
- background:radial-gradient(circle,rgba(113,135,255,.14),rgba(113,135,255,0) 68%);
+ background:radial-gradient(circle,rgba(104,126,255,.22),rgba(104,126,255,0) 68%);
  pointer-events:none
+}
+.brand{
+ display:flex;
+ align-items:center;
+ gap:8px;
+ margin-bottom:25px
+}
+.brand-mark{
+ width:29px;
+ height:29px;
+ border-radius:9px;
+ display:grid;
+ place-items:center;
+ background:linear-gradient(145deg,#7187ff,#5369e7);
+ color:#fff;
+ font-size:13px;
+ font-weight:900;
+ box-shadow:0 7px 22px rgba(91,112,245,.25)
+}
+.brand-name{
+ font-size:11px;
+ font-weight:850;
+ letter-spacing:.16em;
+ color:#e9ecf5
 }
 .eyebrow{
  font-size:9px;
- letter-spacing:.19em;
- color:#747e90;
+ letter-spacing:.2em;
+ color:#707a8d;
  text-transform:uppercase;
  margin-bottom:9px
 }
 h1{
- font-size:31px;
+ font-size:32px;
  line-height:1.02;
- letter-spacing:-.048em;
- font-weight:750;
+ letter-spacing:-.052em;
+ font-weight:800;
  margin:0
 }
-h1 span{color:#7187ff}
+h1 span{
+ color:#7187ff;
+ text-shadow:0 0 28px rgba(113,135,255,.18)
+}
 .sub{
  font-size:11px;
- color:#778193;
- margin-top:8px
+ color:#778194;
+ margin-top:9px
 }
 .search{
- height:56px;
- margin-top:19px;
- background:#12161d;
- border:1px solid #252d39;
- border-radius:18px;
+ height:58px;
+ margin-top:20px;
+ background:linear-gradient(180deg,#141922,#11151c);
+ border:1px solid #28303d;
+ border-radius:19px;
  display:flex;
  align-items:center;
  padding:5px 5px 5px 14px;
- box-shadow:0 8px 26px rgba(0,0,0,.12);
+ box-shadow:0 12px 30px rgba(0,0,0,.18);
  transition:.18s
 }
 .search:focus-within{
- border-color:#5c6dcc;
- box-shadow:0 0 0 3px rgba(113,135,255,.08),0 10px 30px rgba(0,0,0,.20)
+ border-color:#5d70d2;
+ box-shadow:0 0 0 3px rgba(113,135,255,.08),0 14px 34px rgba(0,0,0,.22)
 }
 .search-icon{
- font-size:21px;
- color:#919aab;
- width:24px;
+ font-size:22px;
+ color:#8c96a8;
+ width:25px;
  line-height:1
 }
 input{
@@ -407,100 +445,90 @@ input{
  outline:0;
  background:transparent;
  color:#f4f6fa;
- font-size:14px
+ font-size:14px;
+ padding:0 7px
 }
-input::placeholder{color:#737e8f}
+input::placeholder{color:#737d8f}
 .go{
- height:44px;
- min-width:58px;
+ height:46px;
+ min-width:62px;
  border:0;
- border-radius:13px;
- background:#7187ff;
+ border-radius:14px;
+ background:linear-gradient(145deg,#7a8eff,#6278f0);
  color:#fff;
  font-size:10px;
- font-weight:800;
- letter-spacing:.04em
+ font-weight:850;
+ letter-spacing:.05em;
+ box-shadow:0 7px 18px rgba(98,120,240,.22)
 }
-.section{margin-top:25px}
+.section{margin-top:27px}
 .head{
  display:flex;
- align-items:center;
+ align-items:end;
  justify-content:space-between;
- margin-bottom:10px
+ margin-bottom:11px
 }
-.title{
- font-size:12px;
- font-weight:700;
- color:#e3e7ee
-}
-.meta{
- font-size:9px;
- color:#6f798a
-}
-.sites{
- display:grid;
- grid-template-columns:repeat(4,minmax(0,1fr));
- gap:8px
-}
+.title{font-size:13px;font-weight:750;color:#e5e8ef}
+.meta{font-size:9px;color:#687285}
+.sites{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .site{
- min-height:72px;
- background:linear-gradient(180deg,#141a22,#10151b);
- border:1px solid #242c37;
- border-radius:16px;
+ min-height:70px;
+ padding:10px 11px;
+ background:linear-gradient(145deg,#151b24,#10151c);
+ border:1px solid #252e3a;
+ border-radius:17px;
  display:flex;
- flex-direction:column;
  align-items:center;
- justify-content:center;
- gap:7px;
+ gap:10px;
  transition:.15s
 }
-.site:active{
- transform:scale(.97);
- background:#191f29
-}
+.site:active{transform:scale(.975);background:#1a202a}
 .site-icon{
- width:30px;
- height:30px;
- border-radius:10px;
+ flex:0 0 auto;
+ width:36px;
+ height:36px;
+ border-radius:12px;
  background:#202833;
  display:grid;
  place-items:center;
- color:#e3e7ee;
- font-size:11px;
- font-weight:750
+ color:#e5e9f2;
+ font-size:12px;
+ font-weight:800;
+ border:1px solid #2a3340
 }
-.site-name{
- max-width:72px;
+.site-copy{min-width:0;flex:1}
+.site-copy b,.site-copy small{
+ display:block;
  overflow:hidden;
  text-overflow:ellipsis;
- white-space:nowrap;
- color:#aeb7c5;
- font-size:9px
+ white-space:nowrap
 }
+.site-copy b{font-size:10px;font-weight:700;color:#e5e8ef}
+.site-copy small{font-size:8px;color:#707a8c;margin-top:3px}
+.site-arrow{font-size:20px;color:#626d7e;padding-left:3px}
 .recent-wrap{
- background:#11161d;
- border:1px solid #232b36;
- border-radius:16px;
  overflow:hidden;
- box-shadow:0 8px 26px rgba(0,0,0,.12)
+ border:1px solid #232b36;
+ border-radius:17px;
+ background:#11161d
 }
 .recent{
- min-height:59px;
+ min-height:62px;
  display:flex;
  align-items:center;
  padding:0 12px;
- border-bottom:1px solid #1d252f
+ border-bottom:1px solid #1d2530
 }
 .recent:last-child{border-bottom:0}
 .recent:active{background:#171d26}
 .recent-icon{
- width:30px;
- height:30px;
+ width:31px;
+ height:31px;
  border-radius:10px;
- background:#1b222b;
+ background:#1c232d;
  display:grid;
  place-items:center;
- color:#929cad;
+ color:#8d98aa;
  font-size:13px;
  margin-right:10px
 }
@@ -511,86 +539,59 @@ input::placeholder{color:#737e8f}
  text-overflow:ellipsis;
  white-space:nowrap
 }
-.recent-copy b{
- font-size:10px;
- font-weight:650;
- color:#e3e7ee
-}
-.recent-copy small{
- font-size:8px;
- color:#707a8b;
- margin-top:3px
-}
-.arrow{
- font-size:21px;
- color:#667183;
- padding-left:8px
-}
+.recent-copy b{font-size:10px;font-weight:650;color:#e3e7ee}
+.recent-copy small{font-size:8px;color:#707a8b;margin-top:3px}
+.recent-arrow{font-size:20px;color:#626d7e;padding-left:8px}
 .protection{
- margin-top:17px;
+ margin-top:18px;
  display:flex;
  align-items:center;
- padding:12px;
- border:1px solid #232b36;
- background:linear-gradient(180deg,#121920,#10151b);
- border-radius:16px;
- box-shadow:0 8px 24px rgba(0,0,0,.10)
+ padding:13px;
+ border:1px solid #25302f;
+ background:linear-gradient(145deg,#131b1b,#10161a);
+ border-radius:17px;
+ box-shadow:0 9px 26px rgba(0,0,0,.12)
 }
 .shield{
- width:31px;
- height:31px;
- border-radius:10px;
- background:#15251f;
+ width:34px;
+ height:34px;
+ border-radius:11px;
+ background:#14251f;
  display:grid;
  place-items:center;
  color:#67d6a4;
- font-size:13px
+ font-size:14px;
+ font-weight:800
 }
 .ptext{flex:1;padding-left:10px}
-.ptext b{font-size:10px;font-weight:700}
-.ptext small{
- display:block;
- color:#6f798a;
- font-size:8px;
- margin-top:3px
-}
+.ptext b{font-size:10px;font-weight:750}
+.ptext small{display:block;color:#6f798a;font-size:8px;margin-top:3px}
 .pcount{text-align:right}
-.pcount b{
- font-size:11px;
- color:#7187ff
-}
-.pcount small{
- display:block;
- color:#6f798a;
- font-size:8px;
- margin-top:2px
-}
-.empty{
- padding:18px 12px;
- color:#737d8e;
- font-size:9px
-}
+.pcount b{font-size:11px;color:#7187ff}
+.pcount small{display:block;color:#6f798a;font-size:8px;margin-top:2px}
+.empty{padding:18px 12px;color:#737d8e;font-size:9px}
 @media(max-width:370px){
  .page{padding-left:13px;padding-right:13px}
- .site{min-height:67px}
- .site-name{font-size:8px}
- h1{font-size:28px}
+ h1{font-size:29px}
+ .site{min-height:67px;padding:9px}
 }
 </style>
 </head>
 <body>
 <main class="page">
 <section class="hero">
+<div class="hero-glow"></div>
+<div class="brand">
+<div class="brand-mark">O</div>
+<div class="brand-name">OLIKH</div>
+</div>
 <div class="eyebrow">Private browser</div>
 <h1>Browse <span>simply.</span></h1>
 <div class="sub">Fast, focused, and private.</div>
 
 <form class="search" onsubmit="return go()">
 <span class="search-icon">⌕</span>
-<input id="q"
- autocomplete="off"
- autocapitalize="none"
- spellcheck="false"
+<input id="q" autocomplete="off" autocapitalize="none" spellcheck="false"
  placeholder="Search or enter an address">
 <button class="go" type="submit">GO</button>
 </form>
@@ -630,14 +631,29 @@ function go(){
  const v=document.getElementById("q").value.trim();
  if(!v)return false;
 
- const looksUrl =
-   /^(https?:\/\/|www\.)/i.test(v) ||
-   /^[^\s]+\.[^\s]+$/.test(v);
+ const looksUrl=/^(https?:\/\/|www\.)/i.test(v)||/^[^\s]+\.[^\s]+$/.test(v);
 
  if(looksUrl){
-   location.href =
-     v.startsWith("http") ? v : "https://"+v;
+   location.href=v.startsWith("http")?v:"https://"+v;
  }else{
+   location.href="https://www.google.com/search?q="+encodeURIComponent(v);
+ }
+ return false;
+}
+</script>
+</body>
+</html>
+""".trimIndent()
+
+    addressBar.setText("OLIKH")
+    webView.loadDataWithBaseURL(
+        "https://olikh.local/start",
+        html,
+        "text/html",
+        "UTF-8",
+        null
+    )
+}else{
    location.href =
      "https://www.google.com/search?q="+encodeURIComponent(v);
  }
