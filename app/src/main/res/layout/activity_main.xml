@@ -2,90 +2,106 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0F1115">
+    android:background="#0B0D12">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#0F1115">
+        android:background="#0B0D12">
 
+        <!-- Compact browser chrome -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="46dp"
             android:gravity="center_vertical"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp">
+            android:paddingStart="16dp"
+            android:paddingEnd="12dp">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/olikhChromeBrand"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="center_vertical"
-                android:background="@drawable/bg_modern_omnibox"
-                android:paddingStart="14dp"
-                android:paddingEnd="5dp">
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:src="@drawable/ic_reload"
-                    android:tint="#8E96A6"
-                    android:contentDescription="Browser" />
-
-                <EditText
-                    android:id="@+id/addressBar"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="7dp"
-                    android:background="@android:color/transparent"
-                    android:hint="Search or enter address"
-                    android:inputType="textUri"
-                    android:imeOptions="actionGo"
-                    android:singleLine="true"
-                    android:textColor="#F5F7FA"
-                    android:textColorHint="#858D9C"
-                    android:textSize="14sp"
-                    android:padding="0dp"
-                    android:selectAllOnFocus="true" />
-
-                <ImageButton
-                    android:id="@+id/btnReload"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="@drawable/bg_modern_icon"
-                    android:src="@drawable/ic_reload"
-                    android:tint="#DDE2EA"
-                    android:padding="9dp"
-                    android:contentDescription="Reload" />
-            </LinearLayout>
+                android:text="OLIKH"
+                android:textColor="#F4F6FA"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.12"
+                android:fontFamily="sans" />
 
             <Button
                 android:id="@+id/btnTabs"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="8dp"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:padding="0dp"
                 android:background="@drawable/bg_modern_icon"
                 android:text="1"
-                android:textColor="#DDE2EA"
-                android:textSize="12sp"
+                android:textColor="#E7EAF0"
+                android:textSize="11sp"
                 android:textStyle="bold"
                 android:contentDescription="Tabs" />
 
             <ImageButton
                 android:id="@+id/btnMenu"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_modern_icon"
+                android:src="@drawable/ic_modern_more"
+                android:tint="#C9CFDA"
+                android:padding="8dp"
+                android:contentDescription="Menu" />
+        </LinearLayout>
+
+        <!-- Slim omnibox -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_modern_omnibox"
+            android:paddingStart="12dp"
+            android:paddingEnd="5dp">
+
+            <ImageView
+                android:layout_width="17dp"
+                android:layout_height="17dp"
+                android:src="@drawable/ic_search"
+                android:tint="#8D96A6"
+                android:contentDescription="Search" />
+
+            <EditText
+                android:id="@+id/addressBar"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:background="@android:color/transparent"
+                android:hint="Search or enter address"
+                android:inputType="textUri"
+                android:imeOptions="actionGo"
+                android:singleLine="true"
+                android:ellipsize="middle"
+                android:scrollHorizontally="true"
+                android:textColor="#F3F5F8"
+                android:textColorHint="#7D8696"
+                android:textSize="14sp"
+                android:padding="0dp"
+                android:selectAllOnFocus="true" />
+
+            <ImageButton
+                android:id="@+id/btnReload"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
-                android:layout_marginStart="3dp"
                 android:background="@drawable/bg_modern_icon"
-                android:src="@drawable/ic_olikh_chevron_down"
-                android:tint="#DDE2EA"
-                android:padding="10dp"
-                android:contentDescription="Menu" />
+                android:src="@drawable/ic_reload"
+                android:tint="#DCE1E9"
+                android:padding="9dp"
+                android:contentDescription="Reload" />
         </LinearLayout>
 
         <ProgressBar
@@ -93,8 +109,9 @@
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="2dp"
+            android:layout_marginTop="5dp"
             android:max="100"
-            android:progressTint="#7C8CFF"
+            android:progressTint="#7187FF"
             android:visibility="gone" />
 
         <FrameLayout
@@ -102,7 +119,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#0F1115">
+            android:layout_marginTop="2dp"
+            android:background="#0B0D12">
 
             <WebView
                 android:id="@+id/webView"
@@ -110,15 +128,16 @@
                 android:layout_height="match_parent" />
         </FrameLayout>
 
+        <!-- Floating navigation dock -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="68dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="62dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="7dp"
             android:gravity="center_vertical"
-            android:paddingStart="5dp"
-            android:paddingEnd="5dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
             android:background="@drawable/bg_modern_bottom">
 
             <ImageButton
@@ -127,7 +146,7 @@
                 android:layout_height="44dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_back"
-                android:tint="#DDE2EA"
+                android:tint="#D8DDE6"
                 android:padding="10dp"
                 android:contentDescription="Back" />
 
@@ -137,7 +156,7 @@
                 android:layout_height="44dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_forward"
-                android:tint="#DDE2EA"
+                android:tint="#D8DDE6"
                 android:padding="10dp"
                 android:contentDescription="Forward" />
 
@@ -147,11 +166,11 @@
                 android:layout_height="44dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_home"
-                android:tint="#DDE2EA"
+                android:tint="#D8DDE6"
                 android:padding="10dp"
                 android:contentDescription="Home" />
 
-            <View
+            <Space
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1" />
@@ -162,7 +181,7 @@
                 android:layout_height="44dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_history"
-                android:tint="#DDE2EA"
+                android:tint="#D8DDE6"
                 android:padding="10dp"
                 android:contentDescription="History" />
 
@@ -172,7 +191,7 @@
                 android:layout_height="44dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_bookmark"
-                android:tint="#DDE2EA"
+                android:tint="#D8DDE6"
                 android:padding="10dp"
                 android:contentDescription="Bookmarks" />
 
@@ -180,7 +199,7 @@
                 android:id="@+id/btnNewTab"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
-                android:layout_marginStart="3dp"
+                android:layout_marginStart="2dp"
                 android:background="@drawable/bg_modern_accent"
                 android:src="@drawable/ic_add"
                 android:tint="#FFFFFF"
