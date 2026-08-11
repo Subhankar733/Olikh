@@ -653,27 +653,6 @@ function go(){
         "UTF-8",
         null
     )
-}else{
-   location.href =
-     "https://www.google.com/search?q="+encodeURIComponent(v);
- }
- return false;
-}
-</script>
-</body>
-</html>
-""".trimIndent()
-
-    addressBar.setText("OLIKH")
-
-    webView.loadDataWithBaseURL(
-        "https://olikh.local/start",
-        html,
-        "text/html",
-        "UTF-8",
-        null
-    )
-}
 
 
 
