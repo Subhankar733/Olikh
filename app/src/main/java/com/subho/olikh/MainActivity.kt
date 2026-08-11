@@ -277,6 +277,7 @@ private fun showOlikhStartPage() {
         val initial = escapeHtml(
             item.name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "•"
         )
+
         """<a class="site" href="$url">
             <span class="site-icon">$initial</span>
             <span class="site-name">$name</span>
@@ -287,22 +288,37 @@ private fun showOlikhStartPage() {
 
     val recent = historyManager.getAll()
         .asSequence()
-        .filter { it.url.startsWith("http://") || it.url.startsWith("https://") }
+        .filter {
+            it.url.startsWith("http://") ||
+                it.url.startsWith("https://")
+        }
         .distinctBy { it.url }
-        .take(4)
+        .take(5)
         .joinToString("") { entry ->
-            val title = escapeHtml(entry.title.trim().ifBlank { entry.url }.take(52))
+            val title = escapeHtml(
+                entry.title.trim()
+                    .ifBlank { entry.url }
+                    .take(56)
+            )
+
             val host = escapeHtml(
-                runCatching { Uri.parse(entry.url).host.orEmpty() }
+                runCatching {
+                    Uri.parse(entry.url).host.orEmpty()
+                }
                     .getOrDefault("")
                     .removePrefix("www.")
                     .ifBlank { entry.url }
-                    .take(38)
+                    .take(40)
             )
+
             val url = escapeHtml(entry.url)
+
             """<a class="recent" href="$url">
                 <span class="recent-icon">↗</span>
-                <span class="recent-copy"><b>$title</b><small>$host</small></span>
+                <span class="recent-copy">
+                    <b>$title</b>
+                    <small>$host</small>
+                </span>
                 <span class="arrow">›</span>
             </a>"""
         }.ifBlank {
@@ -317,46 +333,249 @@ private fun showOlikhStartPage() {
 <meta name="theme-color" content="#090B10">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:#090b10;color:#f5f7fb;font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+html,body{
+ margin:0;
+ background:#090b10;
+ color:#f5f7fb;
+ font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif
+}
 body{min-height:100vh}
 a{text-decoration:none;color:inherit}
-.page{max-width:680px;margin:auto;padding:20px 16px 42px}
-.hero{position:relative;margin-top:8px;padding:2px 0 0}
-.hero:after{content:"";position:absolute;right:3px;top:4px;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle,rgba(113,135,255,.12),rgba(113,135,255,0) 70%);pointer-events:none}
-.eyebrow{font-size:9px;letter-spacing:.18em;color:#737d8e;text-transform:uppercase;margin-bottom:8px}
-h1{font-size:30px;line-height:1.02;letter-spacing:-.045em;font-weight:700;margin:0}
+.page{
+ max-width:680px;
+ margin:auto;
+ padding:22px 16px 42px
+}
+.hero{position:relative;padding:4px 0 0}
+.hero:after{
+ content:"";
+ position:absolute;
+ right:-20px;
+ top:-20px;
+ width:150px;
+ height:150px;
+ border-radius:50%;
+ background:radial-gradient(circle,rgba(113,135,255,.14),rgba(113,135,255,0) 68%);
+ pointer-events:none
+}
+.eyebrow{
+ font-size:9px;
+ letter-spacing:.19em;
+ color:#747e90;
+ text-transform:uppercase;
+ margin-bottom:9px
+}
+h1{
+ font-size:31px;
+ line-height:1.02;
+ letter-spacing:-.048em;
+ font-weight:750;
+ margin:0
+}
 h1 span{color:#7187ff}
-.sub{font-size:11px;color:#778193;margin-top:8px}
-.search{height:54px;margin-top:18px;background:#12161d;border:1px solid #242b36;border-radius:17px;display:flex;align-items:center;padding:5px 5px 5px 14px;transition:.18s}
-.search:focus-within{border-color:#5869c5;box-shadow:0 0 0 3px rgba(113,135,255,.09),0 8px 28px rgba(0,0,0,.18)}
-.search-icon{font-size:21px;color:#9099aa;width:24px;line-height:1}
-input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f4f6fa;font-size:14px}
+.sub{
+ font-size:11px;
+ color:#778193;
+ margin-top:8px
+}
+.search{
+ height:56px;
+ margin-top:19px;
+ background:#12161d;
+ border:1px solid #252d39;
+ border-radius:18px;
+ display:flex;
+ align-items:center;
+ padding:5px 5px 5px 14px;
+ box-shadow:0 8px 26px rgba(0,0,0,.12);
+ transition:.18s
+}
+.search:focus-within{
+ border-color:#5c6dcc;
+ box-shadow:0 0 0 3px rgba(113,135,255,.08),0 10px 30px rgba(0,0,0,.20)
+}
+.search-icon{
+ font-size:21px;
+ color:#919aab;
+ width:24px;
+ line-height:1
+}
+input{
+ flex:1;
+ min-width:0;
+ border:0;
+ outline:0;
+ background:transparent;
+ color:#f4f6fa;
+ font-size:14px
+}
 input::placeholder{color:#737e8f}
-.go{height:44px;min-width:58px;border:0;border-radius:13px;background:#7187ff;color:#fff;font-size:10px;font-weight:800;letter-spacing:.03em}
-.section{margin-top:23px}
-.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-.title{font-size:12px;font-weight:700;color:#e2e6ed;letter-spacing:-.01em}
-.meta{font-size:9px;color:#6f798a}
-.sites{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.site{height:70px;background:linear-gradient(180deg,#131820,#10141a);border:1px solid #232a35;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;transition:.15s}
-.site:active{transform:scale(.98);background:#181e27}
-.site-icon{width:29px;height:29px;border-radius:10px;background:#202732;display:grid;place-items:center;color:#e0e5ed;font-size:11px;font-weight:700}
-.site-name{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aeb7c5;font-size:9px}
-.recent-wrap{background:#11151c;border:1px solid #222934;border-radius:15px;overflow:hidden;box-shadow:0 7px 24px rgba(0,0,0,.10)}
-.recent{min-height:57px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid #1d242e}
+.go{
+ height:44px;
+ min-width:58px;
+ border:0;
+ border-radius:13px;
+ background:#7187ff;
+ color:#fff;
+ font-size:10px;
+ font-weight:800;
+ letter-spacing:.04em
+}
+.section{margin-top:25px}
+.head{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ margin-bottom:10px
+}
+.title{
+ font-size:12px;
+ font-weight:700;
+ color:#e3e7ee
+}
+.meta{
+ font-size:9px;
+ color:#6f798a
+}
+.sites{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:8px
+}
+.site{
+ min-height:72px;
+ background:linear-gradient(180deg,#141a22,#10151b);
+ border:1px solid #242c37;
+ border-radius:16px;
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ gap:7px;
+ transition:.15s
+}
+.site:active{
+ transform:scale(.97);
+ background:#191f29
+}
+.site-icon{
+ width:30px;
+ height:30px;
+ border-radius:10px;
+ background:#202833;
+ display:grid;
+ place-items:center;
+ color:#e3e7ee;
+ font-size:11px;
+ font-weight:750
+}
+.site-name{
+ max-width:72px;
+ overflow:hidden;
+ text-overflow:ellipsis;
+ white-space:nowrap;
+ color:#aeb7c5;
+ font-size:9px
+}
+.recent-wrap{
+ background:#11161d;
+ border:1px solid #232b36;
+ border-radius:16px;
+ overflow:hidden;
+ box-shadow:0 8px 26px rgba(0,0,0,.12)
+}
+.recent{
+ min-height:59px;
+ display:flex;
+ align-items:center;
+ padding:0 12px;
+ border-bottom:1px solid #1d252f
+}
 .recent:last-child{border-bottom:0}
-.recent-icon{width:29px;height:29px;border-radius:10px;background:#1b212a;display:grid;place-items:center;color:#8f99aa;font-size:13px;margin-right:10px}
+.recent:active{background:#171d26}
+.recent-icon{
+ width:30px;
+ height:30px;
+ border-radius:10px;
+ background:#1b222b;
+ display:grid;
+ place-items:center;
+ color:#929cad;
+ font-size:13px;
+ margin-right:10px
+}
 .recent-copy{min-width:0;flex:1}
-.recent-copy b,.recent-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.recent-copy b{font-size:10px;font-weight:650;color:#e2e6ed}
-.recent-copy small{font-size:8px;color:#707a8b;margin-top:3px}
-.arrow{font-size:20px;color:#657082;padding-left:8px}
-.protection{margin-top:16px;display:flex;align-items:center;padding:11px 12px;border:1px solid #222934;background:linear-gradient(180deg,#111820,#10141a);border-radius:15px}
-.shield{width:30px;height:30px;border-radius:10px;background:#15241e;display:grid;place-items:center;color:#67d6a4;font-size:13px}
-.ptext{flex:1;padding-left:10px}.ptext b{font-size:10px;font-weight:700}.ptext small{display:block;color:#6f798a;font-size:8px;margin-top:3px}
-.pcount{text-align:right}.pcount b{font-size:11px;color:#7187ff}.pcount small{display:block;color:#6f798a;font-size:8px;margin-top:2px}
-.empty{padding:17px 12px;color:#737d8e;font-size:9px}
-@media(max-width:370px){.page{padding-left:13px;padding-right:13px}.site{height:66px}.site-name{font-size:8px}h1{font-size:27px}}
+.recent-copy b,.recent-copy small{
+ display:block;
+ overflow:hidden;
+ text-overflow:ellipsis;
+ white-space:nowrap
+}
+.recent-copy b{
+ font-size:10px;
+ font-weight:650;
+ color:#e3e7ee
+}
+.recent-copy small{
+ font-size:8px;
+ color:#707a8b;
+ margin-top:3px
+}
+.arrow{
+ font-size:21px;
+ color:#667183;
+ padding-left:8px
+}
+.protection{
+ margin-top:17px;
+ display:flex;
+ align-items:center;
+ padding:12px;
+ border:1px solid #232b36;
+ background:linear-gradient(180deg,#121920,#10151b);
+ border-radius:16px;
+ box-shadow:0 8px 24px rgba(0,0,0,.10)
+}
+.shield{
+ width:31px;
+ height:31px;
+ border-radius:10px;
+ background:#15251f;
+ display:grid;
+ place-items:center;
+ color:#67d6a4;
+ font-size:13px
+}
+.ptext{flex:1;padding-left:10px}
+.ptext b{font-size:10px;font-weight:700}
+.ptext small{
+ display:block;
+ color:#6f798a;
+ font-size:8px;
+ margin-top:3px
+}
+.pcount{text-align:right}
+.pcount b{
+ font-size:11px;
+ color:#7187ff
+}
+.pcount small{
+ display:block;
+ color:#6f798a;
+ font-size:8px;
+ margin-top:2px
+}
+.empty{
+ padding:18px 12px;
+ color:#737d8e;
+ font-size:9px
+}
+@media(max-width:370px){
+ .page{padding-left:13px;padding-right:13px}
+ .site{min-height:67px}
+ .site-name{font-size:8px}
+ h1{font-size:28px}
+}
 </style>
 </head>
 <body>
@@ -365,35 +584,63 @@ input::placeholder{color:#737e8f}
 <div class="eyebrow">Private browser</div>
 <h1>Browse <span>simply.</span></h1>
 <div class="sub">Fast, focused, and private.</div>
+
 <form class="search" onsubmit="return go()">
 <span class="search-icon">⌕</span>
-<input id="q" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Search or enter an address">
-<button class="go">GO</button>
+<input id="q"
+ autocomplete="off"
+ autocapitalize="none"
+ spellcheck="false"
+ placeholder="Search or enter an address">
+<button class="go" type="submit">GO</button>
 </form>
 </section>
 
 <section class="section">
-<div class="head"><div class="title">Quick access</div><div class="meta">Favorites</div></div>
+<div class="head">
+<div class="title">Quick access</div>
+<div class="meta">Favorites</div>
+</div>
 <div class="sites">$shortcuts</div>
 </section>
 
 <section class="section">
-<div class="head"><div class="title">Recent</div><div class="meta">History</div></div>
+<div class="head">
+<div class="title">Recent</div>
+<div class="meta">History</div>
+</div>
 <div class="recent-wrap">$recent</div>
 </section>
 
 <div class="protection">
 <div class="shield">✓</div>
-<div class="ptext"><b>Protection $protection</b><small>OLIKH privacy shield</small></div>
-<div class="pcount"><b>$blocked</b><small>blocked</small></div>
+<div class="ptext">
+<b>Protection $protection</b>
+<small>OLIKH privacy shield</small>
+</div>
+<div class="pcount">
+<b>$blocked</b>
+<small>blocked</small>
+</div>
 </div>
 </main>
+
 <script>
 function go(){
  const v=document.getElementById("q").value.trim();
  if(!v)return false;
- const looksUrl=/^(https?:\/\/|www\.)/i.test(v)||/^[^\s]+\.[^\s]+$/.test(v);
- location.href=looksUrl?(v.startsWith("http")?v:"https://"+v):"https://www.google.com/search?q="+encodeURIComponent(v);
+
+ const looksUrl =
+   /^(https?:\/\/|www\.)/i.test(v) ||
+   /^[^\s]+\.[^\s]+$/.test(v);
+
+ if(looksUrl){
+   location.href =
+     v.startsWith("http") ? v : "https://"+v;
+ }else{
+   location.href =
+     "https://www.google.com/search?q="+encodeURIComponent(v);
+ }
  return false;
 }
 </script>
@@ -402,6 +649,7 @@ function go(){
 """.trimIndent()
 
     addressBar.setText("OLIKH")
+
     webView.loadDataWithBaseURL(
         "https://olikh.local/start",
         html,
@@ -410,6 +658,7 @@ function go(){
         null
     )
 }
+
 
 
     private fun isJavaScriptEnabled(): Boolean {
