@@ -264,91 +264,99 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun showOlikhStartPage() {
-        showingErrorPage = false
-        failedUrl = null
+private fun showOlikhStartPage() {
+    showingErrorPage = false
+    failedUrl = null
 
-        val protection = if (olikhBlocker.isEnabled()) "ON" else "OFF"
-        val blocked = olikhBlocker.blockedRequests()
+    val protection = if (olikhBlocker.isEnabled()) "ON" else "OFF"
+    val blocked = olikhBlocker.blockedRequests()
 
-        val shortcuts = getQuickAccessItems().take(6).joinToString("") { item ->
-            val name = escapeHtml(item.name)
-            val url = escapeHtml(item.url)
-            val initial = escapeHtml(
-                item.name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "•"
+    val shortcuts = getQuickAccessItems().take(6).joinToString("") { item ->
+        val name = escapeHtml(item.name)
+        val url = escapeHtml(item.url)
+        val initial = escapeHtml(
+            item.name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "•"
+        )
+        """<a class="site" href="$url">
+            <span class="site-icon">$initial</span>
+            <span class="site-name">$name</span>
+        </a>"""
+    }.ifBlank {
+        """<div class="empty">Add your favorite destinations here</div>"""
+    }
+
+    val recent = historyManager.getAll()
+        .asSequence()
+        .filter { it.url.startsWith("http://") || it.url.startsWith("https://") }
+        .distinctBy { it.url }
+        .take(4)
+        .joinToString("") { entry ->
+            val title = escapeHtml(entry.title.trim().ifBlank { entry.url }.take(52))
+            val host = escapeHtml(
+                runCatching { Uri.parse(entry.url).host.orEmpty() }
+                    .getOrDefault("")
+                    .removePrefix("www.")
+                    .ifBlank { entry.url }
+                    .take(38)
             )
-            """<a class="site" href="$url"><span class="site-icon">$initial</span><span class="site-name">$name</span></a>"""
+            val url = escapeHtml(entry.url)
+            """<a class="recent" href="$url">
+                <span class="recent-icon">↗</span>
+                <span class="recent-copy"><b>$title</b><small>$host</small></span>
+                <span class="arrow">›</span>
+            </a>"""
         }.ifBlank {
-            """<div class="empty">No favorites yet</div>"""
+            """<div class="empty">Your recent pages will appear here</div>"""
         }
 
-        val recent = historyManager.getAll()
-            .asSequence()
-            .filter { it.url.startsWith("http://") || it.url.startsWith("https://") }
-            .distinctBy { it.url }
-            .take(4)
-            .joinToString("") { entry ->
-                val title = escapeHtml(
-                    entry.title.trim().ifBlank { entry.url }.take(52)
-                )
-                val host = escapeHtml(
-                    runCatching { Uri.parse(entry.url).host.orEmpty() }
-                        .getOrDefault("")
-                        .removePrefix("www.")
-                        .ifBlank { entry.url }
-                        .take(38)
-                )
-                val url = escapeHtml(entry.url)
-                """<a class="recent" href="$url"><span class="recent-icon">↗</span><span class="recent-copy"><b>$title</b><small>$host</small></span><span class="arrow">›</span></a>"""
-            }.ifBlank {
-                """<div class="empty">Your recent pages will appear here</div>"""
-            }
-
-        val html = """
+    val html = """
 <!doctype html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0B0D12">
+<meta name="theme-color" content="#090B10">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:#0b0d12;color:#f3f5f8;font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+html,body{margin:0;background:#090b10;color:#f5f7fb;font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{min-height:100vh}
 a{text-decoration:none;color:inherit}
-.page{max-width:650px;margin:auto;padding:26px 16px 54px}
-.hero{margin-top:28px}
-.eyebrow{font-size:10px;letter-spacing:.13em;color:#788293;text-transform:uppercase;margin-bottom:9px}
-h1{font-size:28px;line-height:1.08;letter-spacing:-.035em;font-weight:650;margin:0}
+.page{max-width:680px;margin:auto;padding:20px 16px 42px}
+.hero{position:relative;margin-top:8px;padding:2px 0 0}
+.hero:after{content:"";position:absolute;right:3px;top:4px;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle,rgba(113,135,255,.12),rgba(113,135,255,0) 70%);pointer-events:none}
+.eyebrow{font-size:9px;letter-spacing:.18em;color:#737d8e;text-transform:uppercase;margin-bottom:8px}
+h1{font-size:30px;line-height:1.02;letter-spacing:-.045em;font-weight:700;margin:0}
 h1 span{color:#7187ff}
-.sub{font-size:11px;color:#737d8d;margin-top:8px}
-.search{height:52px;margin-top:20px;background:#141820;border:1px solid #242a34;border-radius:16px;display:flex;align-items:center;padding:4px 5px 4px 14px;transition:.15s}
-.search:focus-within{border-color:#5969bd;box-shadow:0 0 0 3px rgba(113,135,255,.10)}
-.search-icon{font-size:20px;color:#8b95a6;width:24px}
-input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f3f5f8;font-size:14px}
-input::placeholder{color:#737d8d}
-.go{height:42px;min-width:56px;border:0;border-radius:12px;background:#7187ff;color:#fff;font-size:10px;font-weight:800}
-.section{margin-top:28px}
-.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.title{font-size:12px;font-weight:650;color:#dfe3ea}
-.meta{font-size:9px;color:#687282}
-.sites{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}.sites::-webkit-scrollbar{display:none}
-.site{min-width:78px;height:66px;background:#12161d;border:1px solid #222832;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
-.site:active{background:#191e28}
-.site-icon{width:28px;height:28px;border-radius:9px;background:#202631;display:grid;place-items:center;color:#d5dae3;font-size:11px;font-weight:700}
-.site-name{max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aeb6c4;font-size:9px}
-.recent-wrap{background:#11151b;border:1px solid #222832;border-radius:15px;overflow:hidden}
-.recent{min-height:56px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid #1d232c}
+.sub{font-size:11px;color:#778193;margin-top:8px}
+.search{height:54px;margin-top:18px;background:#12161d;border:1px solid #242b36;border-radius:17px;display:flex;align-items:center;padding:5px 5px 5px 14px;transition:.18s}
+.search:focus-within{border-color:#5869c5;box-shadow:0 0 0 3px rgba(113,135,255,.09),0 8px 28px rgba(0,0,0,.18)}
+.search-icon{font-size:21px;color:#9099aa;width:24px;line-height:1}
+input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f4f6fa;font-size:14px}
+input::placeholder{color:#737e8f}
+.go{height:44px;min-width:58px;border:0;border-radius:13px;background:#7187ff;color:#fff;font-size:10px;font-weight:800;letter-spacing:.03em}
+.section{margin-top:23px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.title{font-size:12px;font-weight:700;color:#e2e6ed;letter-spacing:-.01em}
+.meta{font-size:9px;color:#6f798a}
+.sites{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.site{height:70px;background:linear-gradient(180deg,#131820,#10141a);border:1px solid #232a35;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;transition:.15s}
+.site:active{transform:scale(.98);background:#181e27}
+.site-icon{width:29px;height:29px;border-radius:10px;background:#202732;display:grid;place-items:center;color:#e0e5ed;font-size:11px;font-weight:700}
+.site-name{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aeb7c5;font-size:9px}
+.recent-wrap{background:#11151c;border:1px solid #222934;border-radius:15px;overflow:hidden;box-shadow:0 7px 24px rgba(0,0,0,.10)}
+.recent{min-height:57px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid #1d242e}
 .recent:last-child{border-bottom:0}
-.recent-icon{width:28px;height:28px;border-radius:9px;background:#1b2029;display:grid;place-items:center;color:#8e99ab;font-size:13px;margin-right:10px}
+.recent-icon{width:29px;height:29px;border-radius:10px;background:#1b212a;display:grid;place-items:center;color:#8f99aa;font-size:13px;margin-right:10px}
 .recent-copy{min-width:0;flex:1}
 .recent-copy b,.recent-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.recent-copy b{font-size:10px;font-weight:600;color:#e1e5eb}
-.recent-copy small{font-size:8px;color:#6f7888;margin-top:3px}
+.recent-copy b{font-size:10px;font-weight:650;color:#e2e6ed}
+.recent-copy small{font-size:8px;color:#707a8b;margin-top:3px}
 .arrow{font-size:20px;color:#657082;padding-left:8px}
-.protection{margin-top:18px;display:flex;align-items:center;padding:11px 12px;border:1px solid #222832;background:#11151b;border-radius:14px}
-.shield{width:30px;height:30px;border-radius:9px;background:#15231d;display:grid;place-items:center;color:#65d5a1;font-size:13px}
-.ptext{flex:1;padding-left:10px}.ptext b{font-size:10px;font-weight:650}.ptext small{display:block;color:#6f7888;font-size:8px;margin-top:3px}
-.pcount{text-align:right}.pcount b{font-size:11px;color:#7187ff}.pcount small{display:block;color:#6f7888;font-size:8px;margin-top:2px}
-.empty{padding:17px 12px;color:#70798a;font-size:9px}
+.protection{margin-top:16px;display:flex;align-items:center;padding:11px 12px;border:1px solid #222934;background:linear-gradient(180deg,#111820,#10141a);border-radius:15px}
+.shield{width:30px;height:30px;border-radius:10px;background:#15241e;display:grid;place-items:center;color:#67d6a4;font-size:13px}
+.ptext{flex:1;padding-left:10px}.ptext b{font-size:10px;font-weight:700}.ptext small{display:block;color:#6f798a;font-size:8px;margin-top:3px}
+.pcount{text-align:right}.pcount b{font-size:11px;color:#7187ff}.pcount small{display:block;color:#6f798a;font-size:8px;margin-top:2px}
+.empty{padding:17px 12px;color:#737d8e;font-size:9px}
+@media(max-width:370px){.page{padding-left:13px;padding-right:13px}.site{height:66px}.site-name{font-size:8px}h1{font-size:27px}}
 </style>
 </head>
 <body>
@@ -357,7 +365,6 @@ input::placeholder{color:#737d8d}
 <div class="eyebrow">Private browser</div>
 <h1>Browse <span>simply.</span></h1>
 <div class="sub">Fast, focused, and private.</div>
-
 <form class="search" onsubmit="return go()">
 <span class="search-icon">⌕</span>
 <input id="q" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Search or enter an address">
@@ -394,20 +401,15 @@ function go(){
 </html>
 """.trimIndent()
 
-        addressBar.setText("OLIKH")
-        webView.loadDataWithBaseURL(
-            "https://olikh.local/start",
-            html,
-            "text/html",
-            "UTF-8",
-            null
-        )
-    }
-
-
-
-
-
+    addressBar.setText("OLIKH")
+    webView.loadDataWithBaseURL(
+        "https://olikh.local/start",
+        html,
+        "text/html",
+        "UTF-8",
+        null
+    )
+}
 
 
     private fun isJavaScriptEnabled(): Boolean {
