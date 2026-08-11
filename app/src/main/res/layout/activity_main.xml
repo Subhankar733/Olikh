@@ -1,24 +1,191 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#202124">
-<LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#202124">
-<LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:gravity="center_vertical" android:paddingStart="12dp" android:paddingEnd="8dp">
-<TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center_vertical" android:text="OLIKH" android:textColor="#F1F3F4" android:textSize="18sp" android:textStyle="bold" android:letterSpacing="0.08"/>
-<Button android:id="@+id/btnTabs" android:layout_width="38dp" android:layout_height="38dp" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" android:background="@drawable/bg_chrome_tab" android:gravity="center" android:text="1" android:textColor="#E8EAED" android:textSize="12sp" android:textStyle="bold" android:contentDescription="Tabs"/>
-<ImageButton android:id="@+id/btnMenu" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="5dp" android:background="@drawable/bg_chrome_icon" android:src="@drawable/ic_olikh_chevron_down" android:tint="#E8EAED" android:padding="10dp" android:contentDescription="Menu"/>
-</LinearLayout>
-<LinearLayout android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginStart="12dp" android:layout_marginEnd="12dp" android:layout_marginBottom="8dp" android:gravity="center_vertical" android:orientation="horizontal" android:background="@drawable/bg_chrome_omnibox" android:paddingStart="12dp" android:paddingEnd="5dp">
-<TextView android:layout_width="25dp" android:layout_height="match_parent" android:gravity="center" android:text="◉" android:textColor="#9AA0A6" android:textSize="12sp"/>
-<EditText android:id="@+id/addressBar" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@android:color/transparent" android:hint="Search or type web address" android:inputType="textUri" android:imeOptions="actionGo" android:singleLine="true" android:paddingStart="5dp" android:paddingEnd="5dp" android:textColor="#E8EAED" android:textColorHint="#9AA0A6" android:textSize="14sp" android:selectAllOnFocus="true"/>
-<ImageButton android:id="@+id/btnReload" android:layout_width="42dp" android:layout_height="42dp" android:background="@drawable/bg_chrome_icon" android:src="@drawable/ic_reload" android:tint="#E8EAED" android:padding="10dp" android:contentDescription="Reload"/>
-</LinearLayout>
-<ProgressBar android:id="@+id/progressBar" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="2dp" android:max="100" android:progressTint="#8AB4F8" android:visibility="gone"/>
-<FrameLayout android:id="@+id/browserContainer" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:background="#202124"><WebView android:id="@+id/webView" android:layout_width="match_parent" android:layout_height="match_parent"/></FrameLayout>
-<LinearLayout android:layout_width="match_parent" android:layout_height="62dp" android:gravity="center_vertical" android:paddingStart="9dp" android:paddingEnd="9dp">
-<ImageButton android:id="@+id/btnBack" android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/bg_chrome_icon" android:src="@drawable/ic_back" android:tint="#E8EAED" android:padding="10dp" android:contentDescription="Back"/>
-<ImageButton android:id="@+id/btnForward" android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/bg_chrome_icon" android:src="@drawable/ic_forward" android:tint="#E8EAED" android:padding="10dp" android:contentDescription="Forward"/>
-<ImageButton android:id="@+id/btnHome" android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/bg_chrome_icon" android:src="@drawable/ic_home" android:tint="#E8EAED" android:padding="10dp" android:contentDescription="Home"/>
-<View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
-<ImageButton android:id="@+id/btnHistory" android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/bg_chrome_icon" android:src="@drawable/ic_history" android:tint="#E8EAED" android:padding="10dp" android:contentDescription="History"/>
-<ImageButton android:id="@+id/btnBookmark" android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/bg_chrome_icon" android:src="@drawable/ic_bookmark" android:tint="#E8EAED" android:padding="10dp" android:contentDescription="Bookmarks"/>
-<ImageButton android:id="@+id/btnNewTab" android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/bg_chrome_plus" android:src="@drawable/ic_add" android:tint="#202124" android:padding="10dp" android:contentDescription="New tab"/>
-</LinearLayout></LinearLayout></FrameLayout>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F1115">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#0F1115">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_modern_omnibox"
+                android:paddingStart="14dp"
+                android:paddingEnd="5dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_reload"
+                    android:tint="#8E96A6"
+                    android:contentDescription="Browser" />
+
+                <EditText
+                    android:id="@+id/addressBar"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="7dp"
+                    android:background="@android:color/transparent"
+                    android:hint="Search or enter address"
+                    android:inputType="textUri"
+                    android:imeOptions="actionGo"
+                    android:singleLine="true"
+                    android:textColor="#F5F7FA"
+                    android:textColorHint="#858D9C"
+                    android:textSize="14sp"
+                    android:padding="0dp"
+                    android:selectAllOnFocus="true" />
+
+                <ImageButton
+                    android:id="@+id/btnReload"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_modern_icon"
+                    android:src="@drawable/ic_reload"
+                    android:tint="#DDE2EA"
+                    android:padding="9dp"
+                    android:contentDescription="Reload" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnTabs"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="@drawable/bg_modern_icon"
+                android:text="1"
+                android:textColor="#DDE2EA"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:contentDescription="Tabs" />
+
+            <ImageButton
+                android:id="@+id/btnMenu"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="3dp"
+                android:background="@drawable/bg_modern_icon"
+                android:src="@drawable/ic_olikh_chevron_down"
+                android:tint="#DDE2EA"
+                android:padding="10dp"
+                android:contentDescription="Menu" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:max="100"
+            android:progressTint="#7C8CFF"
+            android:visibility="gone" />
+
+        <FrameLayout
+            android:id="@+id/browserContainer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#0F1115">
+
+            <WebView
+                android:id="@+id/webView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
+            android:background="@drawable/bg_modern_bottom">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_modern_icon"
+                android:src="@drawable/ic_back"
+                android:tint="#DDE2EA"
+                android:padding="10dp"
+                android:contentDescription="Back" />
+
+            <ImageButton
+                android:id="@+id/btnForward"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_modern_icon"
+                android:src="@drawable/ic_forward"
+                android:tint="#DDE2EA"
+                android:padding="10dp"
+                android:contentDescription="Forward" />
+
+            <ImageButton
+                android:id="@+id/btnHome"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_modern_icon"
+                android:src="@drawable/ic_home"
+                android:tint="#DDE2EA"
+                android:padding="10dp"
+                android:contentDescription="Home" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/btnHistory"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_modern_icon"
+                android:src="@drawable/ic_history"
+                android:tint="#DDE2EA"
+                android:padding="10dp"
+                android:contentDescription="History" />
+
+            <ImageButton
+                android:id="@+id/btnBookmark"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_modern_icon"
+                android:src="@drawable/ic_bookmark"
+                android:tint="#DDE2EA"
+                android:padding="10dp"
+                android:contentDescription="Bookmarks" />
+
+            <ImageButton
+                android:id="@+id/btnNewTab"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="3dp"
+                android:background="@drawable/bg_modern_accent"
+                android:src="@drawable/ic_add"
+                android:tint="#FFFFFF"
+                android:padding="10dp"
+                android:contentDescription="New tab" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

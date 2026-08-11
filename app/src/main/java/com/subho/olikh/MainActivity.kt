@@ -268,46 +268,130 @@ class MainActivity : AppCompatActivity() {
         showingErrorPage = false
         failedUrl = null
 
-        val blockedRequests = olikhBlocker.blockedRequests()
-        val protectionLabel = if (olikhBlocker.isEnabled()) "ON" else "OFF"
-        val searchEngine = escapeHtml(currentSearchEngine())
+        val protection = if (olikhBlocker.isEnabled()) "Protected" else "Protection off"
+        val blocked = olikhBlocker.blockedRequests()
 
-        val shortcuts = getQuickAccessItems().take(8).joinToString("\n") { item ->
+        val shortcuts = getQuickAccessItems().take(6).joinToString("") { item ->
             val name = escapeHtml(item.name)
             val url = escapeHtml(item.url)
             val initial = escapeHtml(item.name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "•")
-            """<a class="shortcut" href="$url"><span class="shortcut-icon">$initial</span><span class="shortcut-name">$name</span></a>"""
-        }.ifBlank { """<div class="empty">Add shortcuts from the browser menu.</div>""" }
+            """<a class="site" href="$url"><span class="site-icon">$initial</span><span>$name</span></a>"""
+        }.ifBlank {
+            """<div class="empty">Add a favorite from the browser menu.</div>"""
+        }
 
-        val recent = historyManager.getAll().asSequence()
+        val recent = historyManager.getAll()
+            .asSequence()
             .filter { it.url.startsWith("http://") || it.url.startsWith("https://") }
-            .distinctBy { it.url }.take(4).joinToString("\n") { entry ->
-                val title = escapeHtml(entry.title.trim().ifBlank { entry.url }.take(60))
-                val host = escapeHtml(runCatching { Uri.parse(entry.url).host.orEmpty() }.getOrDefault("").removePrefix("www.").ifBlank { entry.url }.take(48))
+            .distinctBy { it.url }
+            .take(5)
+            .joinToString("") { entry ->
+                val title = escapeHtml(entry.title.trim().ifBlank { entry.url }.take(55))
+                val host = escapeHtml(
+                    runCatching { Uri.parse(entry.url).host.orEmpty() }
+                        .getOrDefault("")
+                        .removePrefix("www.")
+                        .ifBlank { entry.url }
+                        .take(42)
+                )
                 val url = escapeHtml(entry.url)
-                """<a class="continue-card" href="$url"><div class="thumb">${escapeHtml(title.take(1).uppercase())}</div><div class="continue-copy"><b>$title</b><small>$host</small></div><span class="open">›</span></a>"""
-            }.ifBlank { """<div class="empty">Pages you visit will appear here.</div>""" }
+                """<a class="recent" href="$url"><span class="recent-dot"></span><span class="recent-text"><b>$title</b><small>$host</small></span><span class="arrow">›</span></a>"""
+            }.ifBlank {
+                """<div class="empty">Your recent pages will show up here.</div>"""
+            }
 
         val html = """
-<!doctype html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#202124">
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F1115">
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;background:#202124;color:#e8eaed;font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}a{text-decoration:none;color:inherit}
-.page{max-width:680px;margin:auto;padding:30px 18px 70px}.top{text-align:center}.logo{font-size:34px;font-weight:500;letter-spacing:-.04em;color:#f1f3f4}.logo span{color:#8ab4f8}.sub{margin-top:7px;font-size:11px;color:#9aa0a6}
-.search{margin-top:28px;display:flex;align-items:center;height:56px;background:#303134;border:1px solid #3c4043;border-radius:28px;padding:4px 7px 4px 18px}.search-icon{font-size:21px;color:#bdc1c6;width:30px}input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f1f3f4;font-size:16px}input::placeholder{color:#9aa0a6}.go{width:46px;height:46px;border:0;border-radius:50%;background:#8ab4f8;color:#202124;font-size:10px;font-weight:800}
-.shortcuts{display:flex;gap:12px;overflow-x:auto;margin:25px -3px 0;padding:2px 3px 9px}.shortcuts::-webkit-scrollbar{display:none}.shortcut{width:68px;min-width:68px;text-align:center}.shortcut-icon{width:50px;height:50px;margin:auto;border-radius:50%;background:#303134;display:grid;place-items:center;color:#e8eaed;font-size:16px;font-weight:600}.shortcut-name{display:block;margin-top:8px;font-size:11px;color:#bdc1c6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.section{margin-top:26px}.section-title{font-size:14px;color:#e8eaed;margin:0 0 10px 4px}.continue{display:flex;gap:10px;overflow-x:auto;padding:2px 1px 8px}.continue::-webkit-scrollbar{display:none}.continue-card{min-width:235px;max-width:275px;background:#292a2d;border:1px solid #3c4043;border-radius:14px;padding:9px;display:flex;align-items:center}.thumb{width:58px;height:58px;border-radius:9px;background:#3c4043;display:grid;place-items:center;color:#8ab4f8;font-weight:800;font-size:18px}.continue-copy{min-width:0;flex:1;padding:0 10px}.continue-copy b,.continue-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.continue-copy b{font-size:12px}.continue-copy small{margin-top:5px;font-size:10px;color:#9aa0a6}.open{font-size:27px;color:#9aa0a6}.info{margin-top:25px;border-top:1px solid #3c4043;padding-top:16px;display:flex;justify-content:space-between}.info-left{font-size:10px;color:#9aa0a6}.info-left b{color:#bdc1c6}.info-right{text-align:right}.info-right b{font-size:13px;color:#8ab4f8}.info-right small{display:block;font-size:8px;color:#9aa0a6;margin-top:2px}.empty{padding:18px 10px;color:#9aa0a6;font-size:11px}
-</style></head><body><main class="page"><div class="top"><div class="logo">OLIK<span>H</span></div><div class="sub">Private browsing</div></div>
-<form class="search" onsubmit="return go()"><span class="search-icon">⌕</span><input id="q" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Search or type web address"><button class="go">GO</button></form>
-<div class="shortcuts">$shortcuts</div><section class="section"><h2 class="section-title">Continue browsing</h2><div class="continue">$recent</div></section>
-<div class="info"><div class="info-left">Search · <b>$searchEngine</b><br>Protection · <b>$protectionLabel</b></div><div class="info-right"><b>$blockedRequests</b><small>blocked requests</small></div></div></main>
-<script>function go(){const v=document.getElementById("q").value.trim();if(!v)return false;const u=/^(https?:\/\/|www\.)/i.test(v)||/^[^\s]+\.[^\s]+$/.test(v);location.href=u?(v.startsWith("http")?v:"https://"+v):"https://www.google.com/search?q="+encodeURIComponent(v);return false}document.getElementById("q").focus();</script>
-</body></html>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#0f1115;color:#f5f7fa;font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{text-decoration:none;color:inherit}
+.page{max-width:650px;margin:auto;padding:34px 18px 72px}
+.brand{font-size:13px;font-weight:700;letter-spacing:.16em;color:#f5f7fa}
+.brand span{color:#7c8cff}
+.welcome{margin-top:58px}
+.eyebrow{font-size:11px;color:#858d9c;margin-bottom:10px}
+h1{font-size:31px;line-height:1.08;letter-spacing:-.035em;margin:0;font-weight:650}
+h1 span{color:#7c8cff}
+.search{height:54px;margin-top:24px;border:1px solid #2a2f39;background:#171a20;border-radius:17px;display:flex;align-items:center;padding:4px 5px 4px 16px;box-shadow:0 8px 30px rgba(0,0,0,.16)}
+.search-icon{color:#858d9c;font-size:20px;width:27px}
+input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#f5f7fa;font-size:15px}
+input::placeholder{color:#737b89}
+.go{height:44px;width:58px;border:0;border-radius:13px;background:#7c8cff;color:#fff;font-size:11px;font-weight:800}
+.section{margin-top:34px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.section-title{font-size:13px;font-weight:650;color:#dfe3ea}
+.section-meta{font-size:10px;color:#6f7785}
+.sites{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px}.sites::-webkit-scrollbar{display:none}
+.site{min-width:92px;height:76px;border:1px solid #262c35;background:#15181e;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.site-icon{width:29px;height:29px;border-radius:9px;background:#242a34;display:grid;place-items:center;color:#cfd5df;font-size:11px;font-weight:700}
+.site span:last-child{font-size:10px;color:#aeb5c1;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent-wrap{border:1px solid #252b34;background:#14171c;border-radius:16px;overflow:hidden}
+.recent{min-height:61px;display:flex;align-items:center;padding:0 13px;border-bottom:1px solid #222832}
+.recent:last-child{border-bottom:0}.recent-dot{width:8px;height:8px;border-radius:50%;background:#596171;margin-right:12px}
+.recent-text{min-width:0;flex:1}.recent-text b,.recent-text small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent-text b{font-size:11px;font-weight:600;color:#e6e9ee}.recent-text small{font-size:9px;color:#777f8d;margin-top:4px}
+.arrow{font-size:22px;color:#6f7785;padding-left:8px}
+.protection{margin-top:22px;border:1px solid #252b34;background:#14171c;border-radius:15px;padding:13px 14px;display:flex;align-items:center}
+.shield{width:34px;height:34px;border-radius:10px;background:#18231f;display:grid;place-items:center;color:#62d6a1;font-size:14px}
+.ptext{flex:1;padding-left:11px}.ptext b{display:block;font-size:11px}.ptext small{display:block;color:#747d8b;font-size:9px;margin-top:3px}
+.pcount{text-align:right}.pcount b{font-size:12px;color:#7c8cff}.pcount small{display:block;color:#747d8b;font-size:8px;margin-top:2px}
+.empty{padding:18px 13px;color:#747d8b;font-size:10px}
+</style>
+</head>
+<body>
+<main class="page">
+<div class="brand">OLIK<span>H</span></div>
+
+<section class="welcome">
+<div class="eyebrow">PRIVATE BROWSING</div>
+<h1>What are you<br><span>looking for?</span></h1>
+
+<form class="search" onsubmit="return go()">
+<span class="search-icon">⌕</span>
+<input id="q" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Search or enter an address">
+<button class="go">SEARCH</button>
+</form>
+</section>
+
+<section class="section">
+<div class="section-head"><div class="section-title">Quick access</div><div class="section-meta">Favorites</div></div>
+<div class="sites">$shortcuts</div>
+</section>
+
+<section class="section">
+<div class="section-head"><div class="section-title">Recent</div><div class="section-meta">History</div></div>
+<div class="recent-wrap">$recent</div>
+</section>
+
+<div class="protection">
+<div class="shield">✓</div>
+<div class="ptext"><b>OLIKH $protection</b><small>Private browsing protection</small></div>
+<div class="pcount"><b>$blocked</b><small>blocked</small></div>
+</div>
+</main>
+<script>
+function go(){
+ const v=document.getElementById("q").value.trim();
+ if(!v)return false;
+ const u=/^(https?:\/\/|www\.)/i.test(v)||/^[^\s]+\.[^\s]+$/.test(v);
+ location.href=u?(v.startsWith("http")?v:"https://"+v):"https://www.google.com/search?q="+encodeURIComponent(v);
+ return false;
+}
+document.getElementById("q").focus();
+</script>
+</body>
+</html>
 """.trimIndent()
 
         addressBar.setText("OLIKH")
         webView.loadDataWithBaseURL("https://olikh.local/start", html, "text/html", "UTF-8", null)
     }
+
 
 
 
