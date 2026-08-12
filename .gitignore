@@ -15,3 +15,5 @@ local.properties
 olikh_*.sh
 
 *.bak-*
+
+.tmp/

@@ -1,0 +1,152 @@
+name: OLIKH Quality Gate
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: olikh-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Validate Kotlin structure
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          root = Path(".")
+          files = sorted(root.rglob("*.kt"))
+          failed = False
+
+          for path in files:
+              text = path.read_text(encoding="utf-8")
+              stack = []
+              state = "code"
+              i = 0
+              line = 1
+
+              while i < len(text):
+                  c = text[i]
+                  n = text[i + 1] if i + 1 < len(text) else ""
+
+                  if c == "\n":
+                      line += 1
+
+                  if state == "code":
+                      if c == "/" and n == "/":
+                          state = "line"
+                          i += 2
+                          continue
+                      if c == "/" and n == "*":
+                          state = "comment"
+                          i += 2
+                          continue
+                      if text[i:i+3] == '"""':
+                          state = "triple"
+                          i += 3
+                          continue
+                      if c == '"':
+                          state = "string"
+                          i += 1
+                          continue
+                      if c == "'":
+                          state = "char"
+                          i += 1
+                          continue
+                      if c == "{":
+                          stack.append(("{", line))
+                      elif c == "}":
+                          if not stack or stack[-1][0] != "{":
+                              print(f"ERROR: {path}:{line}: unmatched }}")
+                              failed = True
+                              break
+                          stack.pop()
+                      i += 1
+                      continue
+
+                  if state == "line":
+                      if c == "\n":
+                          state = "code"
+                      i += 1
+                      continue
+
+                  if state == "comment":
+                      if c == "*" and n == "/":
+                          state = "code"
+                          i += 2
+                      else:
+                          i += 1
+                      continue
+
+                  if state == "triple":
+                      if text[i:i+3] == '"""':
+                          state = "code"
+                          i += 3
+                      else:
+                          i += 1
+                      continue
+
+                  if state == "string":
+                      if c == "\\":
+                          i += 2
+                      elif c == '"':
+                          state = "code"
+                          i += 1
+                      else:
+                          i += 1
+                      continue
+
+                  if state == "char":
+                      if c == "\\":
+                          i += 2
+                      elif c == "'":
+                          state = "code"
+                          i += 1
+                      else:
+                          i += 1
+
+              if state != "code":
+                  print(f"ERROR: {path}: parser ended in {state}")
+                  failed = True
+              if stack:
+                  print(f"ERROR: {path}: {len(stack)} unmatched opening brace(s)")
+                  failed = True
+              if not failed:
+                  print(f"OK: {path}")
+
+          if failed:
+              sys.exit(1)
+
+          print(f"Kotlin structure validation PASSED ({len(files)} files).")
+          PY
+
+      - name: Gradle compile check
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Gradle lint
+        run: ./gradlew lintDebug --stacktrace
+
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace
