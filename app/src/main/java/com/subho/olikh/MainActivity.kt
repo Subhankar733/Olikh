@@ -656,6 +656,8 @@ function go(){
 
 
 
+    }
+
     private fun isJavaScriptEnabled(): Boolean {
         return browserPrefs.getBoolean("javascript_enabled", true)
     }
@@ -10137,5 +10139,4 @@ Blocker: ${olikhBlocker.isEnabled()}"""
     private fun Int.dp(): Int =
         (this * resources.displayMetrics.density).toInt()
 
-}
 }
