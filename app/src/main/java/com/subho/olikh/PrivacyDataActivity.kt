@@ -263,7 +263,7 @@ class PrivacyDataActivity : AppCompatActivity() {
             })
 
             card.addView(TextView(this).apply {
-                text = decisions.entries.joinToString("\\n") {
+                text = decisions.entries.joinToString("\n") {
                     "• ${it.key}: ${it.value.name}"
                 }
                 textSize = 10f
