@@ -1225,10 +1225,6 @@ function go(){
             }
         }
 
-        btnHistory.setOnClickListener {
-            showLibrary()
-        }
-
         btnBookmark.setOnClickListener {
             toggleCurrentBookmark()
         }
