@@ -938,7 +938,6 @@ function go(){
 
         progressBar = findViewById(R.id.progressBar)
         browserContainer = findViewById(R.id.browserContainer)
-        installAdvancedHubLauncher()
         btnTabs = findViewById(R.id.btnTabs)
         btnNewTab = findViewById(R.id.btnNewTab)
         val btnMenu = findViewById<ImageButton>(R.id.btnMenu)
@@ -10088,54 +10087,6 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         tabs.clear()
 
         super.onDestroy()
-    }
-
-    private fun installAdvancedHubLauncher() {
-        if (!::browserContainer.isInitialized) return
-
-        val existing =
-            browserContainer.findViewWithTag<View>("olikh_advanced_hub_launcher")
-
-        if (existing != null) return
-
-        val button = Button(this).apply {
-            tag = "olikh_advanced_hub_launcher"
-            text = "⚡"
-            textSize = 18f
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.rgb(17, 19, 24))
-            contentDescription = "OLIKH Power Center"
-
-            setOnClickListener {
-                startActivity(
-                    Intent(
-                        this@MainActivity,
-                        AdvancedBrowserHubActivity::class.java
-                    ).apply {
-                        putExtra(
-                            "current_url",
-                            webView.url.orEmpty()
-                        )
-                        putExtra(
-                            "current_title",
-                            webView.title.orEmpty()
-                        )
-                    }
-                )
-            }
-        }
-
-        browserContainer.addView(
-            button,
-            FrameLayout.LayoutParams(
-                52.dp(),
-                52.dp(),
-                Gravity.TOP or Gravity.END
-            ).apply {
-                topMargin = 82.dp()
-                marginEnd = 12.dp()
-            }
-        )
     }
 
     private fun Int.dp(): Int =
