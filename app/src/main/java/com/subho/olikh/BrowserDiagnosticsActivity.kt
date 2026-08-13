@@ -59,12 +59,8 @@ class BrowserDiagnosticsActivity : AppCompatActivity() {
         content.addView(section("RUNTIME"))
         addInfo(content, "Android", "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
         addInfo(content, "Device", "${Build.MANUFACTURER} ${Build.MODEL}")
-        addInfo(content, "WebView provider", runCatching {
-            WebView.getCurrentWebViewPackage()?.packageName ?: "Unknown"
-        }.getOrDefault("Unknown"))
-        addInfo(content, "WebView version", runCatching {
-            WebView.getCurrentWebViewPackage()?.versionName ?: "Unknown"
-        }.getOrDefault("Unknown"))
+        addInfo(content, "WebView provider", webViewProviderPackage())
+        addInfo(content, "WebView version", webViewProviderVersion())
 
         content.addView(section("PROTECTION"))
         addInfo(content, "Protection", if (blocker.isEnabled()) "ON" else "OFF")
@@ -222,8 +218,8 @@ class BrowserDiagnosticsActivity : AppCompatActivity() {
         appendLine()
         appendLine("Android = ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
         appendLine("Device = ${Build.MANUFACTURER} ${Build.MODEL}")
-        appendLine("WebView provider = ${runCatching { WebView.getCurrentWebViewPackage()?.packageName ?: "Unknown" }.getOrDefault("Unknown")}")
-        appendLine("WebView version = ${runCatching { WebView.getCurrentWebViewPackage()?.versionName ?: "Unknown" }.getOrDefault("Unknown")}")
+        appendLine("WebView provider = ${webViewProviderPackage()}")
+        appendLine("WebView version = ${webViewProviderVersion()}")
         appendLine("Protection = ${blocker.isEnabled()}")
         appendLine("Blocked requests = ${blocker.blockedRequests()}")
         appendLine("Blocked domains = ${blocker.blockedHostCount()}")
@@ -233,6 +229,24 @@ class BrowserDiagnosticsActivity : AppCompatActivity() {
         browserPrefs.all.filterKeys { it.endsWith("_enabled") }.toSortedMap()
             .forEach { (k, v) -> appendLine("$k = $v") }
     }
+
+    private fun webViewProviderPackage(): String =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            runCatching {
+                WebView.getCurrentWebViewPackage()?.packageName ?: "Unknown"
+            }.getOrDefault("Unknown")
+        } else {
+            "Unavailable (API < 26)"
+        }
+
+    private fun webViewProviderVersion(): String =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            runCatching {
+                WebView.getCurrentWebViewPackage()?.versionName ?: "Unknown"
+            }.getOrDefault("Unknown")
+        } else {
+            "Unavailable (API < 26)"
+        }
 
     private fun copyReport() {
         val clipboard = getSystemService(android.content.ClipboardManager::class.java)

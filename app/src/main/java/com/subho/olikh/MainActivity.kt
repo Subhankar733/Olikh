@@ -6975,7 +6975,9 @@ Blocker: ${olikhBlocker.isEnabled()}"""
     private fun applyAdvancedSettings(target: WebView) {
         syncPowerCenterPreferences()
         target.settings.apply {
-            safeBrowsingEnabled = isSafeBrowsingEnabled()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                safeBrowsingEnabled = isSafeBrowsingEnabled()
+            }
 
             mixedContentMode =
                 if (isMixedContentAllowed()) {
