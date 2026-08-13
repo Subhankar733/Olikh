@@ -946,8 +946,6 @@ function go(){
         val btnForward = findViewById<ImageButton>(R.id.btnForward)
         val btnHome = findViewById<ImageButton>(R.id.btnHome)
         val btnReload = findViewById<ImageButton>(R.id.btnReload)
-        val btnHistory = findViewById<ImageButton>(R.id.btnHistory)
-        btnBookmark = findViewById(R.id.btnBookmark)
 
         tabs.add(
             BrowserTab(
@@ -2910,8 +2908,6 @@ function go(){
             R.id.btnBack,
             R.id.btnForward,
             R.id.btnHome,
-            R.id.btnHistory,
-            R.id.btnBookmark,
             R.id.btnReload
         )
 
