@@ -198,7 +198,7 @@ class ReaderModeActivity : AppCompatActivity() {
             })();
         """.trimIndent()
 
-        webView.evaluateJavascript($js, null)
+        webView.evaluateJavascript(js, null)
     }
 
     private fun toggleTheme() {
