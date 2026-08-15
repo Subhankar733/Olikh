@@ -34,7 +34,10 @@ class DownloadManagerActivity : AppCompatActivity() {
     private lateinit var listContainer: LinearLayout
     private lateinit var downloadManager: DownloadManager
 
-    private val refreshIntervalMs = 1200L
+    // Speed tracking cache: ID -> Pair(lastBytes, lastTimestamp)
+    private val speedTracker = mutableMapOf<Long, Pair<Long, Long>>()
+
+    private val refreshIntervalMs = 1000L
     private val refreshRunnable = object : Runnable {
         override fun run() {
             refreshDownloads()
@@ -64,7 +67,7 @@ class DownloadManagerActivity : AppCompatActivity() {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), dp(14), dp(14), dp(14))
+            setPadding(dp(16), dp(16), dp(16), dp(16))
             background = panel(Color.parseColor("#0F172A"), 0)
         }
 
@@ -79,17 +82,17 @@ class DownloadManagerActivity : AppCompatActivity() {
 
         val titleBox = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(12), 0, 0, 0)
+            setPadding(dp(14), 0, 0, 0)
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
         titleBox.addView(TextView(this).apply {
             text = "Downloads"
-            textSize = 18f
+            textSize = 19f
             setTextColor(Color.parseColor("#F8FAFC"))
             setTypeface(null, android.graphics.Typeface.BOLD)
         })
         summary = TextView(this).apply {
-            text = "Tracking downloads..."
+            text = "Scanning..."
             textSize = 11f
             setTextColor(Color.parseColor("#94A3B8"))
         }
@@ -107,14 +110,14 @@ class DownloadManagerActivity : AppCompatActivity() {
         header.addView(clearBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)))
         root.addView(header)
 
-        // Scrollable Card List
+        // Scrollable List
         val scroll = ScrollView(this).apply {
             isVerticalScrollBarEnabled = false
             overScrollMode = View.OVER_SCROLL_NEVER
         }
         listContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(14), dp(14), dp(32))
+            setPadding(dp(14), dp(14), dp(14), dp(36))
         }
         scroll.addView(listContainer)
         root.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
@@ -142,13 +145,14 @@ class DownloadManagerActivity : AppCompatActivity() {
 
         if (cursor == null) {
             summary.text = "Downloads unavailable"
-            addEmpty("Android Download Manager is unavailable on this device.")
+            addEmpty("Android Download Manager is unavailable.")
             return
         }
 
         var total = 0
         var active = 0
         var completed = 0
+        val now = System.currentTimeMillis()
 
         cursor.use {
             val idIndex = it.getColumnIndex(DownloadManager.COLUMN_ID)
@@ -163,7 +167,7 @@ class DownloadManagerActivity : AppCompatActivity() {
 
             if (idIndex < 0 || titleIndex < 0 || statusIndex < 0 || bytesIndex < 0 || totalBytesIndex < 0) {
                 summary.text = "Downloads unavailable"
-                addEmpty("Download details could not be retrieved.")
+                addEmpty("Details unavailable.")
                 return
             }
 
@@ -179,15 +183,46 @@ class DownloadManagerActivity : AppCompatActivity() {
                 val localUri = if (localUriIndex >= 0) it.getString(localUriIndex) else null
                 val mediaType = if (mediaIndex >= 0) it.getString(mediaIndex) else null
 
+                // Speed calculation
+                var speedString = ""
+                if (status == DownloadManager.STATUS_RUNNING) {
+                    val prev = speedTracker[id]
+                    if (prev != null) {
+                        val timeDiff = (now - prev.second) / 1000.0
+                        if (timeDiff > 0.4) {
+                            val byteDiff = bytes - prev.first
+                            if (byteDiff > 0) {
+                                val speedBps = (byteDiff / timeDiff).toLong()
+                                speedString = " • " + formatBytes(speedBps) + "/s"
+                            }
+                        }
+                    }
+                    speedTracker[id] = Pair(bytes, now)
+                } else {
+                    speedTracker.remove(id)
+                }
+
                 if (status == DownloadManager.STATUS_SUCCESSFUL) completed++
                 if (status == DownloadManager.STATUS_RUNNING || status == DownloadManager.STATUS_PENDING) active++
 
-                addDownloadCard(id, title, status, bytes, totalBytes, timestamp, sourceUri, localUri, mediaType)
+                addDownloadCard(id, title, status, bytes, totalBytes, timestamp, sourceUri, localUri, mediaType, speedString)
             }
         }
 
-        summary.text = "$total files • $active active • $completed completed"
-        if (total == 0) addEmpty("No active or completed downloads.")
+        summary.text = "$total items • $active active • $completed done"
+        if (total == 0) addEmpty("No downloads found.")
+    }
+
+    private fun getFileCategoryIcon(fileName: String, mimeType: String?): String {
+        val ext = fileName.substringAfterLast('.', "").lowercase()
+        return when {
+            ext in listOf("mp4", "mkv", "avi", "mov", "webm", "3gp") || mimeType?.startsWith("video/") == true -> "🎬"
+            ext in listOf("mp3", "wav", "m4a", "flac", "ogg", "aac") || mimeType?.startsWith("audio/") == true -> "🎵"
+            ext in listOf("jpg", "jpeg", "png", "webp", "gif", "svg") || mimeType?.startsWith("image/") == true -> "🖼️"
+            ext in listOf("zip", "rar", "7z", "tar", "gz", "apk", "bin") -> "📦"
+            ext in listOf("pdf", "doc", "docx", "txt", "epub") -> "📄"
+            else -> "📁"
+        }
     }
 
     private fun addDownloadCard(
@@ -199,7 +234,8 @@ class DownloadManagerActivity : AppCompatActivity() {
         timestamp: Long,
         sourceUri: String?,
         localUri: String?,
-        mediaType: String?
+        mediaType: String?,
+        speedString: String
     ) {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -207,18 +243,27 @@ class DownloadManagerActivity : AppCompatActivity() {
             background = panel(Color.parseColor("#111827"), 16, Color.parseColor("#1F2937"))
         }
 
-        // Header Row: Title & Action
+        // Top Row: Icon + Title + Status Pill
         val topRow = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
             orientation = LinearLayout.HORIZONTAL
         }
 
+        val iconBadge = TextView(this).apply {
+            text = getFileCategoryIcon(title, mediaType)
+            textSize = 15f
+            gravity = Gravity.CENTER
+            background = panel(Color.parseColor("#1E293B"), 10)
+        }
+        topRow.addView(iconBadge, LinearLayout.LayoutParams(dp(36), dp(36)))
+
         val titleView = TextView(this).apply {
             text = title
-            textSize = 14f
+            textSize = 13f
             setTextColor(Color.parseColor("#F8FAFC"))
             setTypeface(null, android.graphics.Typeface.BOLD)
             setSingleLine(true)
+            setPadding(dp(10), 0, dp(10), 0)
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
         topRow.addView(titleView)
@@ -226,6 +271,7 @@ class DownloadManagerActivity : AppCompatActivity() {
         val statusBadge = TextView(this).apply {
             text = statusLabel(status)
             textSize = 10f
+            setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(dp(8), dp(3), dp(8), dp(3))
             setTextColor(statusColor(status))
             background = panel(statusBgColor(status), 8)
@@ -233,24 +279,24 @@ class DownloadManagerActivity : AppCompatActivity() {
         topRow.addView(statusBadge)
         card.addView(topRow)
 
-        // Progress or File Size Info
+        // Progress Details / Sub-Info
         val progressPercent = if (totalBytes > 0L) ((bytes * 100) / totalBytes).toInt() else 0
         val sizeText = if (totalBytes > 0L) {
-            "${formatBytes(bytes)} / ${formatBytes(totalBytes)} ($progressPercent%)"
+            "${formatBytes(bytes)} / ${formatBytes(totalBytes)} ($progressPercent%)$speedString"
         } else {
-            formatBytes(bytes)
+            "${formatBytes(bytes)}$speedString"
         }
 
-        val dateText = if (timestamp > 0L) DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(timestamp)) else ""
+        val dateText = if (timestamp > 0L) " • " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(timestamp)) else ""
         val subInfo = TextView(this).apply {
-            text = listOf(sizeText, dateText).filter { it.isNotBlank() }.joinToString(" • ")
+            text = "$sizeText$dateText"
             textSize = 11f
             setTextColor(Color.parseColor("#94A3B8"))
-            setPadding(0, dp(6), 0, dp(8))
+            setPadding(0, dp(8), 0, dp(8))
         }
         card.addView(subInfo)
 
-        // Progress Bar for Running Status
+        // Progress Bar
         if (status == DownloadManager.STATUS_RUNNING || status == DownloadManager.STATUS_PENDING) {
             val pBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
                 isIndeterminate = totalBytes <= 0L
@@ -258,7 +304,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 max = 100
                 progressDrawable = panel(Color.parseColor("#3B82F6"), 4)
             }
-            card.addView(pBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(6)).apply {
+            card.addView(pBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(5)).apply {
                 bottomMargin = dp(10)
             })
         }
@@ -278,7 +324,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 background = panel(Color.parseColor("#2563EB"), 8)
                 setOnClickListener { openDownloadedFile(localUri, mediaType) }
             }
-            btnRow.addView(openBtn, LinearLayout.LayoutParams(dp(64), dp(34)).apply {
+            btnRow.addView(openBtn, LinearLayout.LayoutParams(dp(68), dp(32)).apply {
                 marginEnd = dp(8)
             })
         }
@@ -293,10 +339,10 @@ class DownloadManagerActivity : AppCompatActivity() {
                 setOnClickListener {
                     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     clipboard.setPrimaryClip(ClipData.newPlainText("URL", sourceUri))
-                    Toast.makeText(this@DownloadManagerActivity, "Download link copied", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@DownloadManagerActivity, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
                 }
             }
-            btnRow.addView(copyLinkBtn, LinearLayout.LayoutParams(dp(56), dp(34)).apply {
+            btnRow.addView(copyLinkBtn, LinearLayout.LayoutParams(dp(58), dp(32)).apply {
                 marginEnd = dp(8)
             })
         }
@@ -312,7 +358,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 refreshDownloads()
             }
         }
-        btnRow.addView(deleteBtn, LinearLayout.LayoutParams(dp(64), dp(34)))
+        btnRow.addView(deleteBtn, LinearLayout.LayoutParams(dp(68), dp(32)))
         card.addView(btnRow)
 
         listContainer.addView(
@@ -368,7 +414,7 @@ class DownloadManagerActivity : AppCompatActivity() {
         runCatching {
             startActivity(intent)
         }.onFailure {
-            Toast.makeText(this, "No app found to open this file format", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No app found to open this file", Toast.LENGTH_SHORT).show()
         }
     }
 
