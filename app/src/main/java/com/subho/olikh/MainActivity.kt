@@ -550,12 +550,13 @@ a{text-decoration:none;color:inherit}
 </html>
 """.trimIndent()
 
-                webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        val startHtml: String = html
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         webView.isVerticalScrollBarEnabled = false
         webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.addJavascriptInterface(StartPageInterface(), "OlikhNative")
         addressBar.setText("OLIKH")
-        webView.loadDataWithBaseURL("https://olikh.local/start", html, "text/html", "UTF-8", null)
+        webView.loadDataWithBaseURL("https://olikh.local/start", startHtml, "text/html", "UTF-8", null)
     }
 
     
