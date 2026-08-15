@@ -532,6 +532,48 @@ a{text-decoration:none;color:inherit}
         webView.loadDataWithBaseURL("https://olikh.local/start", html, "text/html", "UTF-8", null)
     }
 
+    
+    private fun injectYouTubeAdBlocker(view: WebView?) {
+        val currentUrl = view?.url.orEmpty()
+        if (!currentUrl.contains("youtube.com") && !currentUrl.contains("youtu.be")) return
+
+        val script = """
+        (function() {
+            if (window._olikh_yt_injected) return;
+            window._olikh_yt_injected = true;
+
+            // 1. Hide ad elements via CSS
+            const style = document.createElement("style");
+            style.textContent = `
+                .ad-showing, .ad-container, .ytp-ad-module, .ytp-ad-overlay-container,
+                ytd-promoted-video-renderer, ytd-display-ad-renderer, ytd-statement-banner-renderer,
+                ytd-banner-promo-renderer, ytm-promoted-sparkles-web-renderer,
+                ytm-companion-ad-renderer, ytm-promoted-sparkles-text-search-renderer,
+                ytm-promoted-video-renderer, ytm-inline-ad-renderer,
+                #player-ads, #masthead-ad, .video-ads, .ytp-ad-preview-container {
+                    display: none !important;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // 2. Auto skip video ads & fast-forward
+            setInterval(() => {
+                const video = document.querySelector("video");
+                const skipBtn = document.querySelector(".ytp-ad-skip-button, .ytp-ad-skip-button-modern, .videoAdUiSkipButton");
+                if (skipBtn) {
+                    skipBtn.click();
+                }
+                const adShowing = document.querySelector(".ad-showing, .ad-interrupting");
+                if (adShowing && video && !isNaN(video.duration)) {
+                    video.currentTime = video.duration;
+                }
+            }, 500);
+        })();
+        """.trimIndent()
+
+        view.evaluateJavascript(script, null)
+    }
+
     private fun isJavaScriptEnabled(): Boolean {
         return browserPrefs.getBoolean("javascript_enabled", true)
     }
@@ -943,6 +985,7 @@ a{text-decoration:none;color:inherit}
 
                 if (view != null) {
                     applyDoNotTrack(view)
+                    injectYouTubeAdBlocker(view)
                 }
 
                 progressBar.visibility = View.GONE
