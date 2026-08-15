@@ -264,6 +264,26 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    
+    inner class StartPageInterface {
+        @android.webkit.JavascriptInterface
+        fun openUrl(targetUrl: String) {
+            runOnUiThread {
+                loadUrl(targetUrl)
+            }
+        }
+        @android.webkit.JavascriptInterface
+        fun openInternal(target: String) {
+            runOnUiThread {
+                when (target) {
+                    "bookmarks" -> showBookmarks()
+                    "history" -> showHistory()
+                    "downloads" -> showDownloads()
+                }
+            }
+        }
+    }
+
     private fun showOlikhStartPage() {
         showingErrorPage = false
         failedUrl = null
@@ -277,10 +297,10 @@ class MainActivity : AppCompatActivity() {
             val url = item.url.trim()
             val initial = name.firstOrNull()?.uppercaseChar()?.toString() ?: "•"
             shortcutsHtml.append("""
-                <a class="shortcut" href="$url">
+                <div class="shortcut" onclick="OlikhNative.openUrl('$url')">
                     <div class="shortcut-icon">$initial</div>
                     <div class="shortcut-label">$name</div>
-                </a>
+                </div>
             """.trimIndent())
         }
         val finalShortcuts = if (shortcutsHtml.isNotEmpty()) shortcutsHtml.toString() else "<div class=\"empty\">No shortcuts added</div>"
@@ -297,14 +317,14 @@ class MainActivity : AppCompatActivity() {
             val host = runCatching { Uri.parse(entry.url).host.orEmpty() }.getOrDefault("").removePrefix("www.").ifBlank { entry.url }.take(25)
             val initial = host.firstOrNull()?.uppercaseChar()?.toString() ?: "•"
             recentHtml.append("""
-                <a class="recent-item" href="${entry.url}">
+                <div class="recent-item" onclick="OlikhNative.openUrl('${entry.url}')">
                     <div class="recent-icon">$initial</div>
                     <div class="recent-text">
                         <div class="recent-title">$title</div>
                         <div class="recent-host">$host</div>
                     </div>
                     <div class="recent-arrow">↗</div>
-                </a>
+                </div>
             """.trimIndent())
         }
         val finalRecent = if (recentHtml.isNotEmpty()) recentHtml.toString() else "<div class=\"empty\">No recent activity</div>"
@@ -373,15 +393,16 @@ a{text-decoration:none;color:inherit;touch-action:manipulation}
   </div>
 
   <div class="tools-grid">
-    <a class="tool-btn" href="olikh://bookmarks">Bookmarks</a>
-    <a class="tool-btn" href="olikh://history">History</a>
-    <a class="tool-btn" href="olikh://downloads">Downloads</a>
+    <div class="tool-btn" onclick="OlikhNative.openInternal('bookmarks')">Bookmarks</div>
+    <div class="tool-btn" onclick="OlikhNative.openInternal('history')">History</div>
+    <div class="tool-btn" onclick="OlikhNative.openInternal('downloads')">Downloads</div>
   </div>
 </div>
 </body>
 </html>
 """.trimIndent()
 
+        webView.addJavascriptInterface(StartPageInterface(), "OlikhNative")
         addressBar.setText("OLIKH")
         webView.loadDataWithBaseURL("https://olikh.local/start", html, "text/html", "UTF-8", null)
     }
@@ -4919,7 +4940,10 @@ Blocker: ${olikhBlocker.isEnabled()}"""
             .setTitle("Site controls")
             .setMultiChoiceItems(labels, values) { _, which, checked ->
                 when (which) {
-                    0 -> webView.settings.javaScriptEnabled = checked
+                    0 -> webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        webView.isVerticalScrollBarEnabled = false
+        webView.overScrollMode = View.OVER_SCROLL_NEVER
+        webView.settings.javaScriptEnabled = checked
                     1 -> { webView.settings.loadsImagesAutomatically = checked; webView.settings.blockNetworkImage = !checked }
                     2 -> webView.settings.domStorageEnabled = checked
                     3 -> webView.settings.databaseEnabled = checked
@@ -5411,6 +5435,9 @@ Blocker: ${olikhBlocker.isEnabled()}"""
     }
 
     private fun togglePageJavaScript(enabled: Boolean) {
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        webView.isVerticalScrollBarEnabled = false
+        webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.settings.javaScriptEnabled = enabled
         webView.reload()
         Toast.makeText(this, if (enabled) "JavaScript enabled" else "JavaScript disabled", Toast.LENGTH_SHORT).show()
@@ -8485,7 +8512,10 @@ Blocker: ${olikhBlocker.isEnabled()}"""
                     .apply()
 
                 tabs.forEach { tab ->
-                    tab.webView.settings.javaScriptEnabled = enabled
+                    tab.webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        webView.isVerticalScrollBarEnabled = false
+        webView.overScrollMode = View.OVER_SCROLL_NEVER
+        webView.settings.javaScriptEnabled = enabled
                 }
 
                 Toast.makeText(
