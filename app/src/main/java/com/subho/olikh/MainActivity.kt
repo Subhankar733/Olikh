@@ -1380,69 +1380,126 @@ a{text-decoration:none;color:inherit}
             }
     }
 
-    private fun showBookmarks() {
+        private fun showBookmarks() {
         val bookmarks = bookmarkManager.getAll()
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
+
+        val root = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(18), dp(16), dp(18), dp(20))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.parseColor("#0F172A"))
+                cornerRadii = floatArrayOf(dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), 0f, 0f, 0f, 0f)
+            }
+        }
+
+        // Header
+        val header = android.widget.LinearLayout(this).apply {
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            orientation = android.widget.LinearLayout.HORIZONTAL
+        }
+        val titleView = android.widget.TextView(this).apply {
+            text = "Bookmarks (${bookmarks.size})"
+            textSize = 18f
+            setTextColor(android.graphics.Color.parseColor("#F8FAFC"))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            layoutParams = android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        header.addView(titleView)
+
+        if (bookmarks.isNotEmpty()) {
+            val clearBtn = android.widget.Button(this).apply {
+                text = "Clear All"
+                isAllCaps = false
+                textSize = 11f
+                setTextColor(android.graphics.Color.parseColor("#EF4444"))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.parseColor("#1E293B"))
+                    cornerRadius = dp(10).toFloat()
+                }
+                setOnClickListener {
+                    dialog.dismiss()
+                    confirmClearBookmarks()
+                }
+            }
+            header.addView(clearBtn)
+        }
+        root.addView(header)
+
+        // List
+        val scroll = android.widget.ScrollView(this).apply {
+            isVerticalScrollBarEnabled = false
+            overScrollMode = android.view.View.OVER_SCROLL_NEVER
+        }
+        val listContainer = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(0, dp(10), 0, 0)
+        }
 
         if (bookmarks.isEmpty()) {
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Bookmarks")
-                .setMessage("No bookmarks saved yet.")
-                .setPositiveButton("Close", null)
-                .show()
-
-            return
-        }
-
-        val items = bookmarks.map { entry ->
-            val cleanTitle = entry.title
-                .replace("\n", " ")
-                .trim()
-                .ifBlank { entry.url }
-                .take(60)
-
-            "$cleanTitle\n${entry.url}"
-        }.toTypedArray()
-
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Bookmarks · ${bookmarks.size}")
-            .setItems(items) { _, index ->
-                val entry =
-                    bookmarks.getOrNull(index)
-                        ?: return@setItems
-
-                showingErrorPage = false
-                failedUrl = null
-
-                activeTab?.apply {
-                    showingError = false
-                    failedUrl = null
+            val emptyText = android.widget.TextView(this).apply {
+                text = "No saved bookmarks yet."
+                textSize = 13f
+                setTextColor(android.graphics.Color.parseColor("#64748B"))
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, dp(40), 0, dp(40))
+            }
+            listContainer.addView(emptyText)
+        } else {
+            bookmarks.forEach { entry ->
+                val row = android.widget.LinearLayout(this).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    setPadding(dp(12), dp(10), dp(12), dp(10))
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(android.graphics.Color.parseColor("#1E293B"))
+                        cornerRadius = dp(12).toFloat()
+                    }
+                    setOnClickListener {
+                        dialog.dismiss()
+                        showingErrorPage = false
+                        failedUrl = null
+                        activeTab?.apply {
+                            showingError = false
+                            failedUrl = null
+                        }
+                        webView.loadUrl(entry.url)
+                    }
                 }
 
-                webView.loadUrl(entry.url)
-            }
-            .setNegativeButton("Clear") { _, _ ->
-                confirmClearBookmarks()
-            }
-            .setPositiveButton("Close", null)
-            .create()
+                val rowTitle = android.widget.TextView(this).apply {
+                    text = entry.title.ifBlank { entry.url }.take(50)
+                    textSize = 13f
+                    setTextColor(android.graphics.Color.parseColor("#F1F5F9"))
+                    setSingleLine(true)
+                }
+                val rowUrl = android.widget.TextView(this).apply {
+                    text = entry.url.take(65)
+                    textSize = 10f
+                    setTextColor(android.graphics.Color.parseColor("#94A3B8"))
+                    setSingleLine(true)
+                    setPadding(0, dp(2), 0, 0)
+                }
+                row.addView(rowTitle)
+                row.addView(rowUrl)
 
-        dialog.setOnShowListener {
-            animateDialogEntrance(dialog)
+                listContainer.addView(
+                    row,
+                    android.widget.LinearLayout.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { bottomMargin = dp(8) }
+                )
+            }
         }
 
-        dialog.show()
-    }
+        scroll.addView(listContainer)
+        root.addView(scroll, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, dp(340)))
 
-    private fun confirmClearBookmarks() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Clear bookmarks?")
-            .setMessage("All saved bookmarks will be removed.")
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Clear") { _, _ ->
-                bookmarkManager.clear()
-                updateBookmarkButton()
-            }
-            .show()
+        dialog.setContentView(root)
+        (root.parent as? android.view.View)?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        dialog.show()
     }
 
     private fun showLibrary() {
