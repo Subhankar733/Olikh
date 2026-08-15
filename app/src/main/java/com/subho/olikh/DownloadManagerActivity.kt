@@ -2,19 +2,28 @@ package com.subho.olikh
 
 import android.app.DownloadManager
 import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
-import android.webkit.MimeTypeMap
 import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.MimeTypeMap
 import android.widget.Button
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import java.io.File
 import java.text.DateFormat
 import java.util.Date
 
@@ -22,9 +31,10 @@ class DownloadManagerActivity : AppCompatActivity() {
 
     private lateinit var root: LinearLayout
     private lateinit var summary: TextView
+    private lateinit var listContainer: LinearLayout
     private lateinit var downloadManager: DownloadManager
 
-    private val refreshIntervalMs = 1500L
+    private val refreshIntervalMs = 1200L
     private val refreshRunnable = object : Runnable {
         override fun run() {
             refreshDownloads()
@@ -32,60 +42,82 @@ class DownloadManagerActivity : AppCompatActivity() {
         }
     }
 
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    private fun panel(color: Int, radius: Int = 14, strokeColor: Int? = null, strokeWidth: Int = 1) =
+        GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = dp(radius).toFloat()
+            strokeColor?.let { setStroke(dp(strokeWidth), it) }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         downloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
         root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(android.graphics.Color.rgb(243, 244, 246))
+            setBackgroundColor(Color.parseColor("#090D16"))
         }
 
+        // Top App Bar
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), dp(12), dp(14), dp(12))
-            setBackgroundColor(android.graphics.Color.rgb(17, 19, 24))
+            setPadding(dp(14), dp(14), dp(14), dp(14))
+            background = panel(Color.parseColor("#0F172A"), 0)
         }
 
-        header.addView(Button(this).apply {
-            text = "‹"
-            textSize = 24f
-            setTextColor(android.graphics.Color.WHITE)
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        val backBtn = ImageButton(this).apply {
+            setImageResource(android.R.drawable.ic_menu_revert)
+            setColorFilter(Color.WHITE)
+            background = panel(Color.parseColor("#1E293B"), 10)
+            setPadding(dp(8), dp(8), dp(8), dp(8))
             setOnClickListener { finish() }
-        }, LinearLayout.LayoutParams(dp(48), dp(48)))
+        }
+        header.addView(backBtn, LinearLayout.LayoutParams(dp(38), dp(38)))
 
-        header.addView(TextView(this).apply {
+        val titleBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), 0, 0, 0)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        titleBox.addView(TextView(this).apply {
             text = "Downloads"
-            textSize = 20f
-            setTextColor(android.graphics.Color.WHITE)
-            setPadding(dp(8), 0, 0, 0)
-        }, LinearLayout.LayoutParams(0, -1, 1f))
+            textSize = 18f
+            setTextColor(Color.parseColor("#F8FAFC"))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        })
+        summary = TextView(this).apply {
+            text = "Tracking downloads..."
+            textSize = 11f
+            setTextColor(Color.parseColor("#94A3B8"))
+        }
+        titleBox.addView(summary)
+        header.addView(titleBox)
 
-        header.addView(Button(this).apply {
-            text = "CLEAR"
-            textSize = 10f
+        val clearBtn = Button(this).apply {
+            text = "Clear"
+            isAllCaps = false
+            textSize = 12f
+            setTextColor(Color.parseColor("#EF4444"))
+            background = panel(Color.parseColor("#1E293B"), 10, Color.parseColor("#334155"))
             setOnClickListener { confirmClearCompleted() }
-        }, LinearLayout.LayoutParams(-2, dp(44)))
-
+        }
+        header.addView(clearBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)))
         root.addView(header)
 
-        summary = TextView(this).apply {
-            textSize = 11f
-            setTextColor(android.graphics.Color.DKGRAY)
-            setPadding(dp(16), dp(10), dp(16), dp(8))
+        // Scrollable Card List
+        val scroll = ScrollView(this).apply {
+            isVerticalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_NEVER
         }
-        root.addView(summary)
-
-        val scroll = ScrollView(this)
-        val list = LinearLayout(this).apply {
+        listContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(12), 0, dp(12), dp(24))
+            setPadding(dp(14), dp(14), dp(14), dp(32))
         }
-        scroll.addView(list)
-        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        root.tag = list
+        scroll.addView(listContainer)
+        root.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
         setContentView(root)
     }
@@ -102,8 +134,7 @@ class DownloadManagerActivity : AppCompatActivity() {
     }
 
     private fun refreshDownloads() {
-        val list = root.tag as? LinearLayout ?: return
-        list.removeAllViews()
+        listContainer.removeAllViews()
 
         val cursor = runCatching {
             downloadManager.query(DownloadManager.Query())
@@ -111,7 +142,7 @@ class DownloadManagerActivity : AppCompatActivity() {
 
         if (cursor == null) {
             summary.text = "Downloads unavailable"
-            addEmpty(list, "Android DownloadManager is unavailable on this device.")
+            addEmpty("Android Download Manager is unavailable on this device.")
             return
         }
 
@@ -125,18 +156,16 @@ class DownloadManagerActivity : AppCompatActivity() {
             val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
             val bytesIndex = it.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
             val totalBytesIndex = it.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
-
-            if (idIndex < 0 || titleIndex < 0 || statusIndex < 0 ||
-                bytesIndex < 0 || totalBytesIndex < 0) {
-                summary.text = "Downloads unavailable"
-                addEmpty(list, "Download information is unavailable.")
-                return
-            }
-
             val dateIndex = it.getColumnIndex(DownloadManager.COLUMN_LAST_MODIFIED_TIMESTAMP)
             val uriIndex = it.getColumnIndex(DownloadManager.COLUMN_URI)
             val localUriIndex = it.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
             val mediaIndex = it.getColumnIndex(DownloadManager.COLUMN_MEDIA_TYPE)
+
+            if (idIndex < 0 || titleIndex < 0 || statusIndex < 0 || bytesIndex < 0 || totalBytesIndex < 0) {
+                summary.text = "Downloads unavailable"
+                addEmpty("Download details could not be retrieved.")
+                return
+            }
 
             while (it.moveToNext()) {
                 total++
@@ -151,22 +180,17 @@ class DownloadManagerActivity : AppCompatActivity() {
                 val mediaType = if (mediaIndex >= 0) it.getString(mediaIndex) else null
 
                 if (status == DownloadManager.STATUS_SUCCESSFUL) completed++
-                if (status == DownloadManager.STATUS_RUNNING ||
-                    status == DownloadManager.STATUS_PENDING) active++
+                if (status == DownloadManager.STATUS_RUNNING || status == DownloadManager.STATUS_PENDING) active++
 
-                addDownloadCard(
-                    list, id, title, status, bytes, totalBytes,
-                    timestamp, sourceUri, localUri, mediaType
-                )
+                addDownloadCard(id, title, status, bytes, totalBytes, timestamp, sourceUri, localUri, mediaType)
             }
         }
 
-        summary.text = "$total downloads • $active active • $completed completed"
-        if (total == 0) addEmpty(list, "No downloads yet.")
+        summary.text = "$total files • $active active • $completed completed"
+        if (total == 0) addEmpty("No active or completed downloads.")
     }
 
     private fun addDownloadCard(
-        list: LinearLayout,
         id: Long,
         title: String,
         status: Int,
@@ -179,237 +203,238 @@ class DownloadManagerActivity : AppCompatActivity() {
     ) {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(15), dp(13), dp(15), dp(13))
-            setBackgroundColor(android.graphics.Color.WHITE)
+            setPadding(dp(14), dp(14), dp(14), dp(14))
+            background = panel(Color.parseColor("#111827"), 16, Color.parseColor("#1F2937"))
         }
 
-        card.addView(TextView(this).apply {
+        // Header Row: Title & Action
+        val topRow = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            orientation = LinearLayout.HORIZONTAL
+        }
+
+        val titleView = TextView(this).apply {
             text = title
             textSize = 14f
-            setTextColor(android.graphics.Color.rgb(20, 22, 27))
-        })
+            setTextColor(Color.parseColor("#F8FAFC"))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setSingleLine(true)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        topRow.addView(titleView)
 
+        val statusBadge = TextView(this).apply {
+            text = statusLabel(status)
+            textSize = 10f
+            setPadding(dp(8), dp(3), dp(8), dp(3))
+            setTextColor(statusColor(status))
+            background = panel(statusBgColor(status), 8)
+        }
+        topRow.addView(statusBadge)
+        card.addView(topRow)
+
+        // Progress or File Size Info
+        val progressPercent = if (totalBytes > 0L) ((bytes * 100) / totalBytes).toInt() else 0
         val sizeText = if (totalBytes > 0L) {
-            "${formatBytes(bytes)} / ${formatBytes(totalBytes)}"
+            "${formatBytes(bytes)} / ${formatBytes(totalBytes)} ($progressPercent%)"
         } else {
             formatBytes(bytes)
         }
 
-        val dateText = if (timestamp > 0L) {
-            DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-                .format(Date(timestamp))
-        } else ""
+        val dateText = if (timestamp > 0L) DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(timestamp)) else ""
+        val subInfo = TextView(this).apply {
+            text = listOf(sizeText, dateText).filter { it.isNotBlank() }.joinToString(" • ")
+            textSize = 11f
+            setTextColor(Color.parseColor("#94A3B8"))
+            setPadding(0, dp(6), 0, dp(8))
+        }
+        card.addView(subInfo)
 
-        card.addView(TextView(this).apply {
-            text = listOf(statusLabel(status), sizeText, dateText)
-                .filter { it.isNotBlank() }
-                .joinToString(" • ")
-            textSize = 10f
-            setTextColor(android.graphics.Color.GRAY)
-            setPadding(0, dp(4), 0, dp(8))
-        })
-
-        if (status == DownloadManager.STATUS_RUNNING ||
-            status == DownloadManager.STATUS_PENDING) {
-
-            val progress = ProgressBar(
-                this, null, android.R.attr.progressBarStyleHorizontal
-            ).apply {
-                max = 1000
-                progress = if (totalBytes > 0L) {
-                    ((bytes.coerceAtLeast(0L).toDouble() * max.toDouble()) /
-                        totalBytes.toDouble())
-                        .coerceIn(0.0, max.toDouble())
-                        .toInt()
-                } else {
-                    0
-                }
+        // Progress Bar for Running Status
+        if (status == DownloadManager.STATUS_RUNNING || status == DownloadManager.STATUS_PENDING) {
+            val pBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+                isIndeterminate = totalBytes <= 0L
+                progress = progressPercent
+                max = 100
+                progressDrawable = panel(Color.parseColor("#3B82F6"), 4)
             }
-            card.addView(progress, LinearLayout.LayoutParams(-1, dp(5)))
+            card.addView(pBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(6)).apply {
+                bottomMargin = dp(10)
+            })
         }
 
-        val buttons = LinearLayout(this).apply {
+        // Action Buttons Row
+        val btnRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.END
         }
 
         if (status == DownloadManager.STATUS_SUCCESSFUL) {
-            buttons.addView(actionButton("OPEN") {
-                openDownloadedFile(id, localUri, mediaType)
-            })
-            buttons.addView(actionButton("SHARE") {
-                shareDownloadedFile(id, localUri, mediaType)
-            })
-        }
-
-        if (status == DownloadManager.STATUS_RUNNING ||
-            status == DownloadManager.STATUS_PENDING) {
-            buttons.addView(actionButton("CANCEL") {
-                downloadManager.remove(id)
-                refreshDownloads()
-                toast("Download cancelled")
-            })
-        }
-
-        if (status == DownloadManager.STATUS_FAILED) {
-            buttons.addView(actionButton("REMOVE") {
-                downloadManager.remove(id)
-                refreshDownloads()
+            val openBtn = Button(this).apply {
+                text = "Open"
+                isAllCaps = false
+                textSize = 11f
+                setTextColor(Color.WHITE)
+                background = panel(Color.parseColor("#2563EB"), 8)
+                setOnClickListener { openDownloadedFile(localUri, mediaType) }
+            }
+            btnRow.addView(openBtn, LinearLayout.LayoutParams(dp(64), dp(34)).apply {
+                marginEnd = dp(8)
             })
         }
 
         if (!sourceUri.isNullOrBlank()) {
-            buttons.addView(actionButton("COPY URL") {
-                copyText("Download URL", sourceUri)
+            val copyLinkBtn = Button(this).apply {
+                text = "Link"
+                isAllCaps = false
+                textSize = 11f
+                setTextColor(Color.parseColor("#94A3B8"))
+                background = panel(Color.parseColor("#1E293B"), 8, Color.parseColor("#334155"))
+                setOnClickListener {
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("URL", sourceUri))
+                    Toast.makeText(this@DownloadManagerActivity, "Download link copied", Toast.LENGTH_SHORT).show()
+                }
+            }
+            btnRow.addView(copyLinkBtn, LinearLayout.LayoutParams(dp(56), dp(34)).apply {
+                marginEnd = dp(8)
             })
         }
 
-        buttons.addView(actionButton("DELETE") {
-            downloadManager.remove(id)
-            refreshDownloads()
-        })
-
-        card.addView(buttons)
-        list.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
-            setMargins(0, dp(4), 0, dp(4))
-        })
-    }
-
-    private fun confirmClearCompleted() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Clear completed downloads?")
-            .setMessage("Completed download records will be removed from the Android DownloadManager list.")
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Clear") { _, _ ->
-                clearCompleted()
-            }
-            .show()
-    }
-
-    private fun clearCompleted() {
-        val cursor = runCatching {
-            downloadManager.query(DownloadManager.Query())
-        }.getOrNull() ?: return
-
-        var removed = 0
-        cursor.use {
-            val idIndex = it.getColumnIndex(DownloadManager.COLUMN_ID)
-            val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
-
-            if (idIndex < 0 || statusIndex < 0) {
+        val deleteBtn = Button(this).apply {
+            text = "Delete"
+            isAllCaps = false
+            textSize = 11f
+            setTextColor(Color.parseColor("#EF4444"))
+            background = panel(Color.parseColor("#1E293B"), 8, Color.parseColor("#334155"))
+            setOnClickListener {
+                downloadManager.remove(id)
                 refreshDownloads()
-                toast("Download information is unavailable")
-                return
-            }
-
-            while (it.moveToNext()) {
-                if (it.getInt(statusIndex) == DownloadManager.STATUS_SUCCESSFUL) {
-                    if (downloadManager.remove(it.getLong(idIndex)) > 0) removed++
-                }
             }
         }
+        btnRow.addView(deleteBtn, LinearLayout.LayoutParams(dp(64), dp(34)))
+        card.addView(btnRow)
 
-        refreshDownloads()
-        toast(if (removed == 0) "No completed downloads"
-              else "$removed completed downloads cleared")
+        listContainer.addView(
+            card,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = dp(10)
+            }
+        )
     }
 
-    private fun openDownloadedFile(id: Long, localUri: String?, mediaType: String?) {
-        val uri = runCatching {
-            downloadManager.getUriForDownloadedFile(id)
-        }.getOrNull() ?: localUri?.let(Uri::parse)
+    private fun addEmpty(message: String) {
+        val emptyView = TextView(this).apply {
+            text = message
+            textSize = 13f
+            setTextColor(Color.parseColor("#64748B"))
+            gravity = Gravity.CENTER
+            setPadding(0, dp(48), 0, dp(48))
+        }
+        listContainer.addView(emptyView)
+    }
 
-        if (uri == null) {
-            toast("Downloaded file is unavailable")
+    private fun openDownloadedFile(localUri: String?, mediaType: String?) {
+        if (localUri.isNullOrBlank()) {
+            Toast.makeText(this, "File path unavailable", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val mime = mediaType?.takeIf { it.isNotBlank() } ?: guessMime(uri)
+        val uri = Uri.parse(localUri)
+        val file = if (uri.scheme == "file") File(uri.path ?: "") else File(localUri)
+        val resolvedMime = mediaType?.takeIf { it.isNotBlank() }
+            ?: MimeTypeMap.getFileExtensionFromUrl(localUri)?.let {
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(it.lowercase())
+            } ?: "*/*"
+
+        val targetUri = if (file.exists()) {
+            runCatching {
+                androidx.core.content.FileProvider.getUriForFile(
+                    this,
+                    "${applicationContext.packageName}.provider",
+                    file
+                )
+            }.getOrNull() ?: uri
+        } else {
+            uri
+        }
+
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, mime)
+            setDataAndType(targetUri, resolvedMime)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        runCatching { startActivity(intent) }
-            .onFailure { toast("No app can open this file") }
-    }
-
-    private fun shareDownloadedFile(id: Long, localUri: String?, mediaType: String?) {
-        val uri = runCatching {
-            downloadManager.getUriForDownloadedFile(id)
-        }.getOrNull() ?: localUri?.let(Uri::parse)
-
-        if (uri == null) {
-            toast("Downloaded file is unavailable")
-            return
-        }
-
-        val mime = mediaType?.takeIf { it.isNotBlank() } ?: guessMime(uri)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = mime
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            clipData = ClipData.newRawUri("OLIKH download", uri)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
         runCatching {
-            startActivity(Intent.createChooser(intent, "Share download"))
+            startActivity(intent)
         }.onFailure {
-            toast("Unable to share this file")
+            Toast.makeText(this, "No app found to open this file format", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun guessMime(uri: Uri): String {
-        val extension = MimeTypeMap.getFileExtensionFromUrl(uri.toString())
-        return MimeTypeMap.getSingleton()
-            .getMimeTypeFromExtension(extension.lowercase())
-            ?: "application/octet-stream"
+    private fun confirmClearCompleted() {
+        AlertDialog.Builder(this)
+            .setTitle("Clear Completed")
+            .setMessage("Remove all finished downloads from the list?")
+            .setPositiveButton("Clear") { _, _ ->
+                val cursor = runCatching { downloadManager.query(DownloadManager.Query()) }.getOrNull() ?: return@setPositiveButton
+                val idsToRemove = mutableListOf<Long>()
+                cursor.use {
+                    val idIdx = it.getColumnIndex(DownloadManager.COLUMN_ID)
+                    val statusIdx = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                    if (idIdx >= 0 && statusIdx >= 0) {
+                        while (it.moveToNext()) {
+                            val st = it.getInt(statusIdx)
+                            if (st == DownloadManager.STATUS_SUCCESSFUL || st == DownloadManager.STATUS_FAILED) {
+                                idsToRemove.add(it.getLong(idIdx))
+                            }
+                        }
+                    }
+                }
+                if (idsToRemove.isNotEmpty()) {
+                    downloadManager.remove(*idsToRemove.toLongArray())
+                }
+                refreshDownloads()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun statusLabel(status: Int): String = when (status) {
         DownloadManager.STATUS_PENDING -> "Pending"
         DownloadManager.STATUS_RUNNING -> "Downloading"
-        DownloadManager.STATUS_PAUSED -> "Paused by Android"
+        DownloadManager.STATUS_PAUSED -> "Paused"
         DownloadManager.STATUS_SUCCESSFUL -> "Completed"
         DownloadManager.STATUS_FAILED -> "Failed"
         else -> "Unknown"
     }
 
-    private fun actionButton(label: String, action: () -> Unit): Button =
-        Button(this).apply {
-            text = label
-            textSize = 9f
-            setOnClickListener { action() }
-        }
-
-    private fun addEmpty(list: LinearLayout, text: String) {
-        list.addView(TextView(this).apply {
-            this.text = text
-            textSize = 12f
-            setTextColor(android.graphics.Color.GRAY)
-            gravity = Gravity.CENTER
-            setPadding(dp(20), dp(60), dp(20), dp(60))
-        })
+    private fun statusColor(status: Int): Int = when (status) {
+        DownloadManager.STATUS_SUCCESSFUL -> Color.parseColor("#4ADE80")
+        DownloadManager.STATUS_RUNNING -> Color.parseColor("#60A5FA")
+        DownloadManager.STATUS_PAUSED -> Color.parseColor("#FBBF24")
+        DownloadManager.STATUS_FAILED -> Color.parseColor("#F87171")
+        else -> Color.parseColor("#94A3B8")
     }
 
-    private fun copyText(label: String, value: String) {
-        val clipboard = getSystemService(android.content.ClipboardManager::class.java)
-        clipboard.setPrimaryClip(ClipData.newPlainText(label, value))
-        toast("Copied")
+    private fun statusBgColor(status: Int): Int = when (status) {
+        DownloadManager.STATUS_SUCCESSFUL -> Color.parseColor("#064E3B")
+        DownloadManager.STATUS_RUNNING -> Color.parseColor("#1E3A5F")
+        DownloadManager.STATUS_PAUSED -> Color.parseColor("#451A03")
+        DownloadManager.STATUS_FAILED -> Color.parseColor("#450A0A")
+        else -> Color.parseColor("#1E293B")
     }
 
     private fun formatBytes(bytes: Long): String {
-        if (bytes < 1024L) return "$bytes B"
-        if (bytes < 1024L * 1024L) return "%.1f KB".format(bytes / 1024.0)
-        if (bytes < 1024L * 1024L * 1024L) {
-            return "%.1f MB".format(bytes / (1024.0 * 1024.0))
+        if (bytes <= 0L) return "0 B"
+        val kb = bytes / 1024.0
+        val mb = kb / 1024.0
+        val gb = mb / 1024.0
+        return when {
+            gb >= 1.0 -> String.format("%.2f GB", gb)
+            mb >= 1.0 -> String.format("%.1f MB", mb)
+            kb >= 1.0 -> String.format("%.1f KB", kb)
+            else -> "$bytes B"
         }
-        return "%.2f GB".format(bytes / (1024.0 * 1024.0 * 1024.0))
     }
-
-    private fun toast(message: String) =
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density).toInt()
 }
