@@ -268,7 +268,7 @@ private fun showOlikhStartPage() {
     showingErrorPage = false
     failedUrl = null
 
-    val protection = if (olikhBlocker.isEnabled()) "Shield Active" else "Shield Off"
+    val protection = if (olikhBlocker.isEnabled()) "Active" else "Inactive"
     val blocked = olikhBlocker.blockedRequests()
 
     val shortcuts = getQuickAccessItems()
@@ -285,9 +285,9 @@ private fun showOlikhStartPage() {
             )
 
             """
-            <a class="shortcut" href="$url">
-                <div class="shortcut-icon">$initial</div>
-                <div class="shortcut-label">$name</div>
+            <a class="shortcut" href="\$url">
+                <div class="shortcut-icon">\$initial</div>
+                <div class="shortcut-label">\$name</div>
             </a>
             """.trimIndent()
         }
@@ -302,12 +302,12 @@ private fun showOlikhStartPage() {
                 it.url.startsWith("https://")
         }
         .distinctBy { it.url }
-        .take(4)
+        .take(5)
         .joinToString("") { entry ->
             val title = escapeHtml(
                 entry.title.trim()
                     .ifBlank { entry.url }
-                    .take(40)
+                    .take(50)
             )
 
             val host = escapeHtml(
@@ -317,28 +317,23 @@ private fun showOlikhStartPage() {
                     .getOrDefault("")
                     .removePrefix("www.")
                     .ifBlank { entry.url }
-                    .take(28)
-            )
-
-            val initial = escapeHtml(
-                host.firstOrNull()?.uppercaseChar()?.toString() ?: "•"
+                    .take(30)
             )
 
             val url = escapeHtml(entry.url)
 
             """
-            <a class="recent-item" href="$url">
-                <div class="recent-icon">$initial</div>
+            <a class="recent-item" href="\$url">
+                <div class="recent-icon">↗</div>
                 <div class="recent-text">
-                    <div class="recent-title">$title</div>
-                    <div class="recent-host">$host</div>
+                    <div class="recent-title">\$title</div>
+                    <div class="recent-host">\$host</div>
                 </div>
-                <div class="recent-arrow">↗</div>
             </a>
             """.trimIndent()
         }
         .ifBlank {
-            """<div class="empty">No recent pages yet</div>"""
+            """<div class="empty">No recent activity</div>"""
         }
 
     val html = """
@@ -351,83 +346,69 @@ private fun showOlikhStartPage() {
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{
   margin:0;
-  padding:0;
   background:#07090E;
   color:#F4F6FA;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  user-select:none;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
-body{
-  padding:28px 16px 40px;
-}
+body{min-height:100vh;padding:24px 16px 40px}
 a{text-decoration:none;color:inherit}
 
-.container{
-  max-width:480px;
-  margin:0 auto;
-  display:flex;
-  flex-direction:column;
-  gap:26px;
-}
+.container{max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
 
-/* Hero Section */
-.hero{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:12px;
-  padding:10px 0 6px;
-}
-.hero-logo{
-  font-size:32px;
-  font-weight:900;
-  letter-spacing:-0.04em;
-  color:#FFFFFF;
-}
-.hero-logo span{
-  color:#8FA3FF;
-}
-.shield-pill{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  background:rgba(143,163,255,0.08);
-  border:1px solid rgba(143,163,255,0.2);
-  padding:5px 12px;
-  border-radius:20px;
+/* Brand Header */
+.brand{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.brand-logo{font-size:22px;font-weight:900;letter-spacing:-0.03em;color:#FFF}
+.brand-logo span{color:#8FA3FF}
+.badge{
   font-size:11px;
   font-weight:700;
+  padding:4px 10px;
+  border-radius:20px;
+  background:#171B23;
   color:#8FA3FF;
-  letter-spacing:0.02em;
-}
-.shield-dot{
-  width:6px;
-  height:6px;
-  border-radius:50%;
-  background:#8FA3FF;
-  box-shadow:0 0 8px #8FA3FF;
+  border:1px solid #2D3442;
 }
 
-/* Sections */
-.section{
+/* Search Box */
+.search-card{
+  background:#0D1016;
+  border:1px solid #2D3442;
+  border-radius:18px;
   display:flex;
-  flex-direction:column;
-  gap:12px;
+  align-items:center;
+  padding:6px 6px 6px 16px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);
 }
-.section-header{
-  font-size:11px;
-  font-weight:800;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:#667085;
-  padding-left:4px;
+.search-card input{
+  flex:1;
+  border:none;
+  background:none;
+  outline:none;
+  color:#F4F6FA;
+  font-size:15px;
+  font-weight:500;
+}
+.search-card input::placeholder{color:#737D8E}
+.search-btn{
+  background:#8FA3FF;
+  border:none;
+  width:40px;
+  height:40px;
+  border-radius:14px;
+  color:#0B0D12;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
 }
 
 /* Shortcuts Grid */
+.section-title{font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#737D8E;margin:0 0 12px 4px}
 .shortcuts-grid{
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:14px 10px;
+  gap:12px;
 }
 .shortcut{
   display:flex;
@@ -435,145 +416,124 @@ a{text-decoration:none;color:inherit}
   align-items:center;
   gap:8px;
 }
-.shortcut:active{
-  transform:scale(0.95);
-}
 .shortcut-icon{
-  width:54px;
-  height:54px;
-  border-radius:18px;
-  background:linear-gradient(145deg,#161B26,#10141C);
-  border:1px solid #232A38;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:20px;
+  width:52px;
+  height:52px;
+  border-radius:16px;
+  background:#171B23;
+  border:1px solid #2D3442;
+  display:grid;
+  place-items:center;
+  font-size:18px;
   font-weight:800;
   color:#8FA3FF;
-  box-shadow:0 6px 16px rgba(0,0,0,0.3);
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
 }
 .shortcut-label{
-  font-size:11px;
-  color:#A2ACB9;
+  font-size:12px;
+  color:#B8C1D1;
   font-weight:600;
-  max-width:68px;
+  max-width:64px;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
   text-align:center;
 }
 
-/* Recent Card */
-.card-group{
-  background:#0D111A;
-  border:1px solid #1C2331;
-  border-radius:20px;
-  overflow:hidden;
-  padding:4px;
+/* Card Lists */
+.card-panel{
+  background:#0D1016;
+  border:1px solid #2D3442;
+  border-radius:18px;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
 }
 .recent-item{
   display:flex;
   align-items:center;
   gap:12px;
-  padding:12px 14px;
-  border-radius:14px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:transparent;
   transition:background 0.15s;
 }
-.recent-item:active{
-  background:#161D2B;
-}
+.recent-item:active{background:#171B23}
 .recent-icon{
-  width:32px;
-  height:32px;
-  border-radius:10px;
-  background:#181F2E;
-  color:#8FA3FF;
-  border:1px solid #242D3F;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:13px;
-  font-weight:800;
-  flex-shrink:0;
-}
-.recent-text{
-  flex:1;
-  min-width:0;
-}
-.recent-title{
-  font-size:13px;
-  font-weight:600;
-  color:#F4F6FA;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.recent-host{
-  font-size:11px;
-  color:#667085;
-  margin-top:2px;
-}
-.recent-arrow{
   font-size:14px;
-  color:#4E596C;
-  padding-left:4px;
-}
-
-/* Quick Tools */
-.tools-grid{
+  color:#8FA3FF;
+  background:#171B23;
+  width:28px;
+  height:28px;
+  border-radius:8px;
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
+  place-items:center;
 }
-.tool-btn{
-  background:#0D111A;
-  border:1px solid #1C2331;
+.recent-text{flex:1;min-width:0}
+.recent-title{font-size:13px;font-weight:600;color:#F4F6FA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-host{font-size:11px;color:#737D8E;margin-top:2px}
+
+/* Quick Actions */
+.quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.quick-btn{
+  background:#171B23;
+  border:1px solid #2D3442;
   border-radius:14px;
-  padding:14px 8px;
+  padding:12px;
   text-align:center;
   font-size:12px;
   font-weight:700;
-  color:#C5CEE0;
-}
-.tool-btn:active{
-  background:#161D2B;
-  color:#8FA3FF;
+  color:#F4F6FA;
 }
 
-.empty{
-  font-size:12px;
-  color:#667085;
-  padding:16px;
-  text-align:center;
-}
+.empty{font-size:12px;color:#737D8E;padding:8px 12px;text-align:center}
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="hero">
-    <div class="hero-logo">OLIKH<span>.</span></div>
-    <div class="shield-pill">
-      <span class="shield-dot"></span>
-      <span>$protection • $blocked Blocked</span>
-    </div>
+  <div class="brand">
+    <div class="brand-logo">OLIKH<span>.</span></div>
+    <div class="badge">Shield: \$protection (\$blocked)</div>
   </div>
 
-  <div class="section">
-    <div class="section-header">Quick Access</div>
-    <div class="shortcuts-grid">$shortcuts</div>
+  <form class="search-card" onsubmit="return handleSearch(event)">
+    <input id="q" type="text" placeholder="Search Google or type URL..." autocomplete="off" />
+    <button type="submit" class="search-btn">➔</button>
+  </form>
+
+  <div>
+    <div class="section-title">Quick Access</div>
+    <div class="shortcuts-grid">\$shortcuts</div>
   </div>
 
-  <div class="section">
-    <div class="section-header">Recent Activity</div>
-    <div class="card-group">$recent</div>
+  <div>
+    <div class="section-title">Recent Pages</div>
+    <div class="card-panel">\$recent</div>
   </div>
 
-  <div class="tools-grid">
-    <a class="tool-btn" href="olikh://bookmarks">Bookmarks</a>
-    <a class="tool-btn" href="olikh://history">History</a>
-    <a class="tool-btn" href="olikh://downloads">Downloads</a>
+  <div class="quick-row">
+    <a class="quick-btn" href="olikh://bookmarks">Bookmarks</a>
+    <a class="quick-btn" href="olikh://history">History</a>
+    <a class="quick-btn" href="olikh://downloads">Downloads</a>
   </div>
 </div>
+
+<script>
+function handleSearch(e){
+  e.preventDefault();
+  var query = document.getElementById("q").value.trim();
+  if(!query) return false;
+  if(query.startsWith("http://") || query.startsWith("https://") || query.startsWith("olikh://")){
+    window.location.href = query;
+  } else if(query.indexOf(".") !== -1 && query.indexOf(" ") === -1){
+    window.location.href = "https://" + query;
+  } else {
+    window.location.href = "https://www.google.com/search?q=" + encodeURIComponent(query);
+  }
+  return false;
+}
+</script>
 </body>
 </html>
 """.trimIndent()
@@ -6358,27 +6318,16 @@ Blocker: ${olikhBlocker.isEnabled()}"""
     }
 
     private fun handleOlikhUri(uri: Uri): Boolean {
-        if (!uri.scheme.equals("olikh", ignoreCase = true)) {
+        if (!uri.scheme.equals("olikh", ignoreCase = true)) return false
+        val cleanHost = (uri.host ?: uri.authority ?: uri.schemeSpecificPart.orEmpty()).trimStart("/".toCharArray()).lowercase()
+        when (cleanHost) {
+            "downloads" -> { showDownloads(); return true }
+            "bookmarks" -> { showBookmarks(); return true }
+            "history" -> { showHistory(); return true }
+            "settings" -> { showSettings(); return true }
+        }
             return false
         }
-        val target = (uri.host ?: uri.authority ?: uri.schemeSpecificPart.orEmpty()).trimStart("/".toCharArray()).lowercase()
-        when (target) {
-            "downloads" -> {
-                showDownloads()
-                return true
-            }
-            "bookmarks" -> {
-                showBookmarks()
-                return true
-            }
-            "history" -> {
-                showHistory()
-                return true
-            }
-            "settings" -> {
-                showSettings()
-                return true
-            }
 
         when (uri.host?.lowercase()) {
             "advanced" -> {
