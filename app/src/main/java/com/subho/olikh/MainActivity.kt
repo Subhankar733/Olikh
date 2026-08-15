@@ -6361,6 +6361,24 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         if (!uri.scheme.equals("olikh", ignoreCase = true)) {
             return false
         }
+        val target = (uri.host ?: uri.authority ?: uri.schemeSpecificPart.orEmpty()).trimStart("/".toCharArray()).lowercase()
+        when (target) {
+            "downloads" -> {
+                showDownloads()
+                return true
+            }
+            "bookmarks" -> {
+                showBookmarks()
+                return true
+            }
+            "history" -> {
+                showHistory()
+                return true
+            }
+            "settings" -> {
+                showSettings()
+                return true
+            }
 
         when (uri.host?.lowercase()) {
             "advanced" -> {
