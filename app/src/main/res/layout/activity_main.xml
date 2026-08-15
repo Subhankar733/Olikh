@@ -125,14 +125,14 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:gravity="center_vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             android:background="@drawable/bg_modern_bottom">
 
             <ImageButton
                 android:id="@+id/btnBack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_back"
                 app:tint="#D8DEE8"
@@ -146,8 +146,8 @@
 
             <ImageButton
                 android:id="@+id/btnForward"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_forward"
                 app:tint="#D8DEE8"
@@ -160,9 +160,24 @@
                 android:layout_weight="1" />
 
             <ImageButton
+                android:id="@+id/btnBookmark"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_modern_icon"
+                android:src="@drawable/ic_bookmark"
+                app:tint="#D8DEE8"
+                android:padding="9dp"
+                android:contentDescription="Bookmark" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageButton
                 android:id="@+id/btnHome"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_home"
                 app:tint="#D8DEE8"
@@ -176,12 +191,12 @@
 
             <ImageButton
                 android:id="@+id/btnNewTab"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:background="@drawable/bg_modern_accent"
                 android:src="@drawable/ic_add"
                 app:tint="#FFFFFF"
-                android:padding="9dp"
+                android:padding="8dp"
                 android:contentDescription="New tab" />
         </LinearLayout>
     </LinearLayout>

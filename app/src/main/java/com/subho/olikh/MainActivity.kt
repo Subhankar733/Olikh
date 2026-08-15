@@ -836,6 +836,7 @@ function handleSearch(e){
         val btnForward = findViewById<ImageButton>(R.id.btnForward)
         val btnHome = findViewById<ImageButton>(R.id.btnHome)
         val btnReload = findViewById<ImageButton>(R.id.btnReload)
+        btnBookmark = findViewById(R.id.btnBookmark)
 
         tabs.add(
             BrowserTab(
