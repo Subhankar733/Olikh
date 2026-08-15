@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#07090E">
+    android:background="@color/background">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -34,7 +34,7 @@
                     android:layout_width="18dp"
                     android:layout_height="18dp"
                     android:src="@drawable/ic_search"
-                    app:tint="#8E98A9"
+                    app:tint="#9CA3AF"
                     android:contentDescription="Search" />
 
                 <EditText
@@ -50,8 +50,8 @@
                     android:singleLine="true"
                     android:ellipsize="middle"
                     android:scrollHorizontally="true"
-                    android:textColor="#F5F7FB"
-                    android:textColorHint="#737D8E"
+                    android:textColor="#F3F4F6"
+                    android:textColorHint="#6B7280"
                     android:textSize="14sp"
                     android:padding="0dp"
                     android:selectAllOnFocus="true" />
@@ -62,7 +62,7 @@
                     android:layout_height="32dp"
                     android:background="@drawable/bg_modern_icon"
                     android:src="@drawable/ic_reload"
-                    app:tint="#DDE2EA"
+                    app:tint="#D1D5DB"
                     android:padding="7dp"
                     android:contentDescription="Reload" />
             </LinearLayout>
@@ -78,7 +78,7 @@
                 android:padding="0dp"
                 android:background="@drawable/bg_modern_icon"
                 android:text="1"
-                android:textColor="#E8ECF4"
+                android:textColor="#F3F4F6"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:contentDescription="Tabs" />
@@ -91,7 +91,7 @@
                 android:layout_marginStart="6dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_more_vertical"
-                app:tint="#D7DDE8"
+                app:tint="#D1D5DB"
                 android:padding="8dp"
                 android:contentDescription="Menu" />
         </LinearLayout>
@@ -103,7 +103,7 @@
             android:layout_width="match_parent"
             android:layout_height="2dp"
             android:max="100"
-            android:progressTint="#7187FF"
+            android:progressTint="#60A5FA"
             android:visibility="gone" />
 
         <!-- Web Content Surface -->
@@ -112,7 +112,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#07090E">
+            android:background="@color/background">
 
             <WebView
                 android:id="@+id/webView"
@@ -135,7 +135,7 @@
                 android:layout_height="38dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_back"
-                app:tint="#D8DEE8"
+                app:tint="#D1D5DB"
                 android:padding="9dp"
                 android:contentDescription="Back" />
 
@@ -150,7 +150,7 @@
                 android:layout_height="38dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_forward"
-                app:tint="#D8DEE8"
+                app:tint="#D1D5DB"
                 android:padding="9dp"
                 android:contentDescription="Forward" />
 
@@ -165,7 +165,7 @@
                 android:layout_height="38dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_bookmark"
-                app:tint="#D8DEE8"
+                app:tint="#D1D5DB"
                 android:padding="9dp"
                 android:contentDescription="Bookmark" />
 
@@ -180,7 +180,7 @@
                 android:layout_height="38dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_home"
-                app:tint="#D8DEE8"
+                app:tint="#D1D5DB"
                 android:padding="9dp"
                 android:contentDescription="Home" />
 
