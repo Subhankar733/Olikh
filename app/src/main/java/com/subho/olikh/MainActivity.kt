@@ -265,108 +265,288 @@ class MainActivity : AppCompatActivity() {
 
 
 private fun showOlikhStartPage() {
-        showingErrorPage = false
-        failedUrl = null
+    showingErrorPage = false
+    failedUrl = null
 
-        val protection = if (olikhBlocker.isEnabled()) "Shield Active" else "Shield Off"
-        val blocked = olikhBlocker.blockedRequests()
+    val protection = if (olikhBlocker.isEnabled()) "Active" else "Inactive"
+    val blocked = olikhBlocker.blockedRequests()
 
-        val shortcutsHtml = StringBuilder()
-        for (item in getQuickAccessItems().take(8)) {
-            val name = item.name.trim()
-            val url = item.url.trim()
-            val initial = name.firstOrNull()?.uppercaseChar()?.toString() ?: "•"
-            shortcutsHtml.append("<a class=\"shortcut\" href=\"").append(url).append("\">")
-                .append("<div class=\"shortcut-icon\">").append(initial).append("</div>")
-                .append("<div class=\"shortcut-label\">").append(name).append("</div>")
-                .append("</a>")
+    val shortcuts = getQuickAccessItems()
+        .take(8)
+        .joinToString("") { item ->
+            val name = escapeHtml(item.name)
+            val url = escapeHtml(item.url)
+            val initial = escapeHtml(
+                item.name.trim()
+                    .firstOrNull()
+                    ?.uppercaseChar()
+                    ?.toString()
+                    ?: "•"
+            )
+
+            """
+            <a class="shortcut" href="\$url">
+                <div class="shortcut-icon">\$initial</div>
+                <div class="shortcut-label">\$name</div>
+            </a>
+            """.trimIndent()
         }
-        val finalShortcuts = if (shortcutsHtml.isNotEmpty()) shortcutsHtml.toString() else "<div class=\"empty\">No shortcuts</div>"
-
-        val recentHtml = StringBuilder()
-        val recentList = historyManager.getAll().asSequence()
-            .filter { it.url.startsWith("http://") || it.url.startsWith("https://") }
-            .distinctBy { it.url }
-            .take(4)
-            .toList()
-
-        for (entry in recentList) {
-            val title = entry.title.trim().ifBlank { entry.url }.take(35)
-            val host = runCatching { Uri.parse(entry.url).host.orEmpty() }.getOrDefault("").removePrefix("www.").ifBlank { entry.url }.take(25)
-            val initial = host.firstOrNull()?.uppercaseChar()?.toString() ?: "•"
-            recentHtml.append("<a class=\"recent-item\" href=\"").append(entry.url).append("\">")
-                .append("<div class=\"recent-icon\">").append(initial).append("</div>")
-                .append("<div class=\"recent-text\">")
-                .append("<div class=\"recent-title\">").append(title).append("</div>")
-                .append("<div class=\"recent-host\">").append(host).append("</div>")
-                .append("</div><div class=\"recent-arrow\">↗</div></a>")
+        .ifBlank {
+            """<div class="empty">No shortcuts added</div>"""
         }
-        val finalRecent = if (recentHtml.isNotEmpty()) recentHtml.toString() else "<div class=\"empty\">No recent activity</div>"
 
-        val html = """<!doctype html>
+    val recent = historyManager.getAll()
+        .asSequence()
+        .filter {
+            it.url.startsWith("http://") ||
+                it.url.startsWith("https://")
+        }
+        .distinctBy { it.url }
+        .take(5)
+        .joinToString("") { entry ->
+            val title = escapeHtml(
+                entry.title.trim()
+                    .ifBlank { entry.url }
+                    .take(50)
+            )
+
+            val host = escapeHtml(
+                runCatching {
+                    Uri.parse(entry.url).host.orEmpty()
+                }
+                    .getOrDefault("")
+                    .removePrefix("www.")
+                    .ifBlank { entry.url }
+                    .take(30)
+            )
+
+            val url = escapeHtml(entry.url)
+
+            """
+            <a class="recent-item" href="\$url">
+                <div class="recent-icon">↗</div>
+                <div class="recent-text">
+                    <div class="recent-title">\$title</div>
+                    <div class="recent-host">\$host</div>
+                </div>
+            </a>
+            """.trimIndent()
+        }
+        .ifBlank {
+            """<div class="empty">No recent activity</div>"""
+        }
+
+    val html = """
+<!doctype html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07090E">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;background:#0E1013;color:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;user-select:none}
-body{padding:24px 16px 36px}
+html,body{
+  margin:0;
+  background:#07090E;
+  color:#F4F6FA;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+body{min-height:100vh;padding:24px 16px 40px}
 a{text-decoration:none;color:inherit}
-.container{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
-.hero{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0}
-.hero-logo{font-size:30px;font-weight:900;letter-spacing:-0.03em;color:#FFFFFF}
-.hero-logo span{color:#3B82F6}
-.shield-pill{display:inline-flex;align-items:center;gap:6px;background:#161920;border:1px solid #262C38;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;color:#9CA3AF}
-.shield-dot{width:6px;height:6px;border-radius:50%;background:#10B981;box-shadow:0 0 6px #10B981}
-.section{display:flex;flex-direction:column;gap:10px}
-.section-header{font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#6B7280;padding-left:2px}
-.shortcuts-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 8px}
-.shortcut{display:flex;flex-direction:column;align-items:center;gap:8px}
-.shortcut-icon{width:52px;height:52px;border-radius:16px;background:#161920;border:1px solid #262C38;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#F3F4F6}
-.shortcut-label{font-size:11px;color:#9CA3AF;font-weight:600;max-width:64px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
-.card-group{background:#14171C;border:1px solid #22262E;border-radius:18px;overflow:hidden;padding:4px}
-.recent-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px}
-.recent-item:active{background:#1E222A}
-.recent-icon{width:32px;height:32px;border-radius:8px;background:#1E222A;color:#9CA3AF;border:1px solid #2A303C;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+
+.container{max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+/* Brand Header */
+.brand{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.brand-logo{font-size:22px;font-weight:900;letter-spacing:-0.03em;color:#FFF}
+.brand-logo span{color:#8FA3FF}
+.badge{
+  font-size:11px;
+  font-weight:700;
+  padding:4px 10px;
+  border-radius:20px;
+  background:#171B23;
+  color:#8FA3FF;
+  border:1px solid #2D3442;
+}
+
+/* Search Box */
+.search-card{
+  background:#0D1016;
+  border:1px solid #2D3442;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  padding:6px 6px 6px 16px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);
+}
+.search-card input{
+  flex:1;
+  border:none;
+  background:none;
+  outline:none;
+  color:#F4F6FA;
+  font-size:15px;
+  font-weight:500;
+}
+.search-card input::placeholder{color:#737D8E}
+.search-btn{
+  background:#8FA3FF;
+  border:none;
+  width:40px;
+  height:40px;
+  border-radius:14px;
+  color:#0B0D12;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+}
+
+/* Shortcuts Grid */
+.section-title{font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#737D8E;margin:0 0 12px 4px}
+.shortcuts-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.shortcut{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+.shortcut-icon{
+  width:52px;
+  height:52px;
+  border-radius:16px;
+  background:#171B23;
+  border:1px solid #2D3442;
+  display:grid;
+  place-items:center;
+  font-size:18px;
+  font-weight:800;
+  color:#8FA3FF;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+}
+.shortcut-label{
+  font-size:12px;
+  color:#B8C1D1;
+  font-weight:600;
+  max-width:64px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-align:center;
+}
+
+/* Card Lists */
+.card-panel{
+  background:#0D1016;
+  border:1px solid #2D3442;
+  border-radius:18px;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.recent-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:transparent;
+  transition:background 0.15s;
+}
+.recent-item:active{background:#171B23}
+.recent-icon{
+  font-size:14px;
+  color:#8FA3FF;
+  background:#171B23;
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+}
 .recent-text{flex:1;min-width:0}
-.recent-title{font-size:13px;font-weight:600;color:#F3F4F6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.recent-host{font-size:11px;color:#6B7280;margin-top:2px}
-.recent-arrow{font-size:13px;color:#4B5563}
-.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.tool-btn{background:#161920;border:1px solid #262C38;border-radius:12px;padding:12px 6px;text-align:center;font-size:12px;font-weight:700;color:#D1D5DB}
-.tool-btn:active{background:#22262E}
-.empty{font-size:12px;color:#6B7280;padding:14px;text-align:center}
+.recent-title{font-size:13px;font-weight:600;color:#F4F6FA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-host{font-size:11px;color:#737D8E;margin-top:2px}
+
+/* Quick Actions */
+.quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.quick-btn{
+  background:#171B23;
+  border:1px solid #2D3442;
+  border-radius:14px;
+  padding:12px;
+  text-align:center;
+  font-size:12px;
+  font-weight:700;
+  color:#F4F6FA;
+}
+
+.empty{font-size:12px;color:#737D8E;padding:8px 12px;text-align:center}
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="hero">
-    <div class="hero-logo">OLIKH<span>.</span></div>
-    <div class="shield-pill">
-      <span class="shield-dot"></span>
-      <span>""" + protection + " • """ + blocked + " Blocked</span>
-    </div>
+  <div class="brand">
+    <div class="brand-logo">OLIKH<span>.</span></div>
+    <div class="badge">Shield: \$protection (\$blocked)</div>
   </div>
-  <div class="section">
-    <div class="section-header">Quick Access</div>
-    <div class="shortcuts-grid">""" + finalShortcuts + """</div>
+
+  <form class="search-card" onsubmit="return handleSearch(event)">
+    <input id="q" type="text" placeholder="Search Google or type URL..." autocomplete="off" />
+    <button type="submit" class="search-btn">➔</button>
+  </form>
+
+  <div>
+    <div class="section-title">Quick Access</div>
+    <div class="shortcuts-grid">\$shortcuts</div>
   </div>
-  <div class="section">
-    <div class="section-header">Recent Pages</div>
-    <div class="card-group">""" + finalRecent + """</div>
+
+  <div>
+    <div class="section-title">Recent Pages</div>
+    <div class="card-panel">\$recent</div>
   </div>
-  <div class="tools-grid">
-    <a class="tool-btn" href="olikh://bookmarks">Bookmarks</a>
-    <a class="tool-btn" href="olikh://history">History</a>
-    <a class="tool-btn" href="olikh://downloads">Downloads</a>
+
+  <div class="quick-row">
+    <a class="quick-btn" href="olikh://bookmarks">Bookmarks</a>
+    <a class="quick-btn" href="olikh://history">History</a>
+    <a class="quick-btn" href="olikh://downloads">Downloads</a>
   </div>
 </div>
-</body>
-</html>""".trimIndent()
 
-        addressBar.setText("OLIKH")
-        webView.loadDataWithBaseURL("https://olikh.local/start", html, "text/html", "UTF-8", null)
-    }
+<script>
+function handleSearch(e){
+  e.preventDefault();
+  var query = document.getElementById("q").value.trim();
+  if(!query) return false;
+  if(query.startsWith("http://") || query.startsWith("https://") || query.startsWith("olikh://")){
+    window.location.href = query;
+  } else if(query.indexOf(".") !== -1 && query.indexOf(" ") === -1){
+    window.location.href = "https://" + query;
+  } else {
+    window.location.href = "https://www.google.com/search?q=" + encodeURIComponent(query);
+  }
+  return false;
+}
+</script>
+</body>
+</html>
+""".trimIndent()
+
+    addressBar.setText("OLIKH")
+    webView.loadDataWithBaseURL(
+        "https://olikh.local/start",
+        html,
+        "text/html",
+        "UTF-8",
+        null
+    )
+}
 
     private fun isJavaScriptEnabled(): Boolean {
         return browserPrefs.getBoolean("javascript_enabled", true)
@@ -1862,13 +2042,13 @@ a{text-decoration:none;color:inherit}
             ): Boolean {
 
                 val uri = request?.url ?: return false
-                val urlStr = request?.url?.toString() ?: return false
-                if (urlStr.startsWith("https://olikh.local/http://") || urlStr.startsWith("https://olikh.local/https://")) {
-                    val realUrl = urlStr.removePrefix("https://olikh.local/")
-                    view?.loadUrl(realUrl)
+
+                val fullUrl = uri.toString()
+                if (fullUrl.startsWith("https://olikh.local/http://") || fullUrl.startsWith("https://olikh.local/https://")) {
+                    val actual = fullUrl.removePrefix("https://olikh.local/")
+                    view?.loadUrl(actual)
                     return true
                 }
-
                 if (handleOlikhUri(uri)) {
                     return true
                 }
