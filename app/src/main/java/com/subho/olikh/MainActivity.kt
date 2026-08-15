@@ -1155,7 +1155,7 @@ a{text-decoration:none;color:inherit}
         btnHome.setOnClickListener {
             showingErrorPage = false
             failedUrl = null
-            webView.loadUrl(homePage)
+            showOlikhStartPage()
         }
 
         btnReload.setOnClickListener {
