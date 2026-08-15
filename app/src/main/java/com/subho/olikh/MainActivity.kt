@@ -1041,8 +1041,10 @@ a{text-decoration:none;color:inherit}
                 super.onReceivedError(view, request, error)
 
                 if (request?.isForMainFrame != true) return
+                val reqUrl = request.url?.toString() ?: ""
+                if (reqUrl.contains("olikh.local") || reqUrl.startsWith("data:") || reqUrl.startsWith("about:")) return
 
-                val url = request.url?.toString() ?: addressBar.text.toString()
+                val url = reqUrl.ifEmpty { addressBar.text.toString() }
 
                 showNetworkError(
                     url = url,
@@ -2597,8 +2599,10 @@ a{text-decoration:none;color:inherit}
                 super.onReceivedError(view, request, error)
 
                 if (request?.isForMainFrame != true) return
+                val reqUrl2 = request.url?.toString() ?: ""
+                if (reqUrl2.contains("olikh.local") || reqUrl2.startsWith("data:") || reqUrl2.startsWith("about:")) return
 
-                tab.failedUrl = request.url?.toString()
+                tab.failedUrl = reqUrl2
                 tab.showingError = true
 
                 if (activeTab === tab) {
@@ -9548,6 +9552,8 @@ Blocker: ${olikhBlocker.isEnabled()}"""
                 request: WebResourceRequest?,
                 error: WebResourceError?
             ) {
+                val reqUrl3 = request?.url?.toString() ?: ""
+                if (reqUrl3.contains("olikh.local") || reqUrl3.startsWith("data:") || reqUrl3.startsWith("about:")) return
                 if (request?.isForMainFrame == true &&
                     !showingErrorPage
                 ) {
@@ -9704,6 +9710,8 @@ Blocker: ${olikhBlocker.isEnabled()}"""
             ) {
                 super.onReceivedError(view, request, error)
 
+                val reqUrl4 = request?.url?.toString() ?: ""
+                if (reqUrl4.contains("olikh.local") || reqUrl4.startsWith("data:") || reqUrl4.startsWith("about:")) return
                 if (request?.isForMainFrame == true) {
                     showNetworkError(
                         request.url.toString(),
