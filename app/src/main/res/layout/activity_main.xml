@@ -3,44 +3,91 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#090B10">
+    android:background="#07090E">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="#090B10">
+        android:orientation="vertical">
 
+        <!-- Unified Top App Bar -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="56dp"
             android:gravity="center_vertical"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp">
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
 
-            <Space
+            <!-- Omnibox Container -->
+            <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_modern_omnibox"
+                android:paddingStart="12dp"
+                android:paddingEnd="6dp">
 
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_search"
+                    app:tint="#8E98A9"
+                    android:contentDescription="Search" />
+
+                <EditText
+                    android:id="@+id/addressBar"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:background="@android:color/transparent"
+                    android:hint="Search or type URL"
+                    android:inputType="textUri"
+                    android:imeOptions="actionGo"
+                    android:singleLine="true"
+                    android:ellipsize="middle"
+                    android:scrollHorizontally="true"
+                    android:textColor="#F5F7FB"
+                    android:textColorHint="#737D8E"
+                    android:textSize="14sp"
+                    android:padding="0dp"
+                    android:selectAllOnFocus="true" />
+
+                <ImageButton
+                    android:id="@+id/btnReload"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_modern_icon"
+                    android:src="@drawable/ic_reload"
+                    app:tint="#DDE2EA"
+                    android:padding="7dp"
+                    android:contentDescription="Reload" />
+            </LinearLayout>
+
+            <!-- Tab Switcher Button -->
             <Button
                 android:id="@+id/btnTabs"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:padding="0dp"
                 android:background="@drawable/bg_modern_icon"
                 android:text="1"
                 android:textColor="#E8ECF4"
-                android:textSize="10sp"
+                android:textSize="11sp"
                 android:textStyle="bold"
                 android:contentDescription="Tabs" />
 
+            <!-- Overflow Menu Button -->
             <ImageButton
                 android:id="@+id/btnMenu"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_marginStart="6dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_more_vertical"
@@ -49,69 +96,23 @@
                 android:contentDescription="Menu" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:gravity="center_vertical"
-            android:background="@drawable/bg_modern_omnibox"
-            android:paddingStart="12dp"
-            android:paddingEnd="5dp">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_search"
-                app:tint="#8E98A9"
-                android:contentDescription="Search" />
-
-            <EditText
-                android:id="@+id/addressBar"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:background="@android:color/transparent"
-                android:hint="Search or enter address"
-                android:inputType="textUri"
-                android:imeOptions="actionGo"
-                android:singleLine="true"
-                android:ellipsize="middle"
-                android:scrollHorizontally="true"
-                android:textColor="#F5F7FB"
-                android:textColorHint="#737D8E"
-                android:textSize="14sp"
-                android:padding="0dp"
-                android:selectAllOnFocus="true" />
-
-            <ImageButton
-                android:id="@+id/btnReload"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/bg_modern_icon"
-                android:src="@drawable/ic_reload"
-                app:tint="#DDE2EA"
-                android:padding="9dp"
-                android:contentDescription="Reload" />
-        </LinearLayout>
-
+        <!-- Progress Indicator -->
         <ProgressBar
             android:id="@+id/progressBar"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="2dp"
-            android:layout_marginTop="4dp"
             android:max="100"
             android:progressTint="#7187FF"
             android:visibility="gone" />
 
+        <!-- Web Content Surface -->
         <FrameLayout
             android:id="@+id/browserContainer"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#090B10">
+            android:background="#07090E">
 
             <WebView
                 android:id="@+id/webView"
@@ -119,45 +120,53 @@
                 android:layout_height="match_parent" />
         </FrameLayout>
 
+        <!-- Modern Bottom Navigation Dock -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="52dp"
             android:gravity="center_vertical"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:background="@drawable/bg_modern_bottom">
 
             <ImageButton
                 android:id="@+id/btnBack"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_back"
                 app:tint="#D8DEE8"
-                android:padding="10dp"
+                android:padding="9dp"
                 android:contentDescription="Back" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
             <ImageButton
                 android:id="@+id/btnForward"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_forward"
                 app:tint="#D8DEE8"
-                android:padding="10dp"
+                android:padding="9dp"
                 android:contentDescription="Forward" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
             <ImageButton
                 android:id="@+id/btnHome"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="@drawable/bg_modern_icon"
                 android:src="@drawable/ic_home"
                 app:tint="#D8DEE8"
-                android:padding="10dp"
+                android:padding="9dp"
                 android:contentDescription="Home" />
 
             <Space
@@ -167,13 +176,12 @@
 
             <ImageButton
                 android:id="@+id/btnNewTab"
-                android:layout_width="46dp"
-                android:layout_height="46dp"
-                android:layout_marginStart="3dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="@drawable/bg_modern_accent"
                 android:src="@drawable/ic_add"
                 app:tint="#FFFFFF"
-                android:padding="11dp"
+                android:padding="9dp"
                 android:contentDescription="New tab" />
         </LinearLayout>
     </LinearLayout>
