@@ -323,179 +323,33 @@ html,body{
   color:#F3F4F6;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   user-select:none;
+  -webkit-overflow-scrolling:touch;
+  transform:translateZ(0);
 }
-body{
-  padding:24px 16px 36px;
-}
-a{text-decoration:none;color:inherit}
-.container{
-  max-width:440px;
-  margin:0 auto;
-  display:flex;
-  flex-direction:column;
-  gap:22px;
-}
-.hero{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-  padding:6px 0;
-}
-.hero-logo{
-  font-size:30px;
-  font-weight:900;
-  letter-spacing:-0.03em;
-  color:#FFFFFF;
-}
-.hero-logo span{
-  color:#60A5FA;
-}
-.shield-pill{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  background:#161920;
-  border:1px solid #262C38;
-  padding:5px 12px;
-  border-radius:20px;
-  font-size:11px;
-  font-weight:700;
-  color:#9CA3AF;
-}
-.shield-dot{
-  width:6px;
-  height:6px;
-  border-radius:50%;
-  background:#10B981;
-  box-shadow:0 0 6px #10B981;
-}
-.section{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.section-header{
-  font-size:11px;
-  font-weight:800;
-  letter-spacing:0.08em;
-  text-transform:uppercase;
-  color:#6B7280;
-  padding-left:2px;
-}
-.shortcuts-grid{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:12px 8px;
-}
-.shortcut{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-}
-.shortcut:active{
-  transform:scale(0.96);
-}
-.shortcut-icon{
-  width:52px;
-  height:52px;
-  border-radius:16px;
-  background:#161920;
-  border:1px solid #262C38;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:18px;
-  font-weight:800;
-  color:#F3F4F6;
-}
-.shortcut-label{
-  font-size:11px;
-  color:#9CA3AF;
-  font-weight:600;
-  max-width:64px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  text-align:center;
-}
-.card-group{
-  background:#14171C;
-  border:1px solid #22262E;
-  border-radius:18px;
-  overflow:hidden;
-  padding:4px;
-}
-.recent-item{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:12px;
-  border-radius:12px;
-}
-.recent-item:active{
-  background:#1E222A;
-}
-.recent-icon{
-  width:32px;
-  height:32px;
-  border-radius:8px;
-  background:#1E222A;
-  color:#9CA3AF;
-  border:1px solid #2A303C;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:13px;
-  font-weight:800;
-  flex-shrink:0;
-}
-.recent-text{
-  flex:1;
-  min-width:0;
-}
-.recent-title{
-  font-size:13px;
-  font-weight:600;
-  color:#F3F4F6;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.recent-host{
-  font-size:11px;
-  color:#6B7280;
-  margin-top:2px;
-}
-.recent-arrow{
-  font-size:13px;
-  color:#4B5563;
-}
-.tools-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
-}
-.tool-btn{
-  background:#161920;
-  border:1px solid #262C38;
-  border-radius:12px;
-  padding:12px 6px;
-  text-align:center;
-  font-size:12px;
-  font-weight:700;
-  color:#D1D5DB;
-}
-.tool-btn:active{
-  background:#22262E;
-}
-.empty{
-  font-size:12px;
-  color:#6B7280;
-  padding:14px;
-  text-align:center;
-}
+body{padding:20px 16px 32px}
+a{text-decoration:none;color:inherit;touch-action:manipulation}
+.container{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.hero{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 0}
+.hero-logo{font-size:28px;font-weight:900;letter-spacing:-0.03em;color:#FFFFFF}
+.hero-logo span{color:#60A5FA}
+.shield-pill{display:inline-flex;align-items:center;gap:6px;background:#161920;border:1px solid #262C38;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#9CA3AF}
+.shield-dot{width:6px;height:6px;border-radius:50%;background:#10B981}
+.section{display:flex;flex-direction:column;gap:10px}
+.section-header{font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#6B7280;padding-left:2px}
+.shortcuts-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 8px}
+.shortcut{display:flex;flex-direction:column;align-items:center;gap:6px}
+.shortcut-icon{width:50px;height:50px;border-radius:14px;background:#161920;border:1px solid #262C38;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#F3F4F6}
+.shortcut-label{font-size:11px;color:#9CA3AF;font-weight:600;max-width:64px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.card-group{background:#14171C;border:1px solid #22262E;border-radius:16px;overflow:hidden;padding:2px}
+.recent-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px}
+.recent-icon{width:30px;height:30px;border-radius:8px;background:#1E222A;color:#9CA3AF;border:1px solid #2A303C;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.recent-text{flex:1;min-width:0}
+.recent-title{font-size:13px;font-weight:600;color:#F3F4F6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-host{font-size:11px;color:#6B7280;margin-top:1px}
+.recent-arrow{font-size:12px;color:#4B5563}
+.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tool-btn{background:#161920;border:1px solid #262C38;border-radius:10px;padding:10px 6px;text-align:center;font-size:12px;font-weight:700;color:#D1D5DB}
+.empty{font-size:12px;color:#6B7280;padding:12px;text-align:center}
 </style>
 </head>
 <body>
@@ -2073,8 +1927,16 @@ a{text-decoration:none;color:inherit}
                 val fullUrl = uri.toString()
                 if (fullUrl.startsWith("https://olikh.local/http://") || fullUrl.startsWith("https://olikh.local/https://")) {
                     val actual = fullUrl.removePrefix("https://olikh.local/")
+                    progressBar.visibility = View.VISIBLE
+                    progressBar.progress = 15
                     view?.loadUrl(actual)
                     return true
+                }
+                if (fullUrl.startsWith("http://") || fullUrl.startsWith("https://")) {
+                    if (fullUrl != "https://olikh.local/start") {
+                        progressBar.visibility = View.VISIBLE
+                        progressBar.progress = 15
+                    }
                 }
                 if (handleOlikhUri(uri)) {
                     return true
