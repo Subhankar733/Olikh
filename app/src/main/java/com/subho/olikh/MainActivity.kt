@@ -3049,8 +3049,556 @@ a{text-decoration:none;color:inherit}
         }
     }
 
-        private fun showDownloads() {
+    private fun showDownloads() {
         startActivity(android.content.Intent(this, DownloadManagerActivity::class.java))
+        return
+        val prefs = getSharedPreferences(
+            "olikh_downloads",
+            MODE_PRIVATE
+        )
+
+        val downloads = prefs.all
+            .mapNotNull { (key, value) ->
+                if (!key.startsWith("download_")) {
+                    return@mapNotNull null
+                }
+
+                val id = key
+                    .removePrefix("download_")
+                    .toLongOrNull()
+                    ?: return@mapNotNull null
+
+                val fileName = value as? String
+                    ?: return@mapNotNull null
+
+                id to fileName
+            }
+            .sortedByDescending { it.first }
+
+        if (downloads.isEmpty()) {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Downloads")
+                .setMessage("No downloads yet.")
+                .setPositiveButton("OK", null)
+                .show()
+
+            return
+        }
+
+        val manager =
+            getSystemService(Context.DOWNLOAD_SERVICE)
+                as DownloadManager
+
+        val labels = downloads.map { (id, fileName) ->
+            var statusText = "Unknown"
+
+            runCatching {
+                manager.query(
+                    DownloadManager.Query().setFilterById(id)
+                )?.use { cursor ->
+
+                    if (cursor.moveToFirst()) {
+                        val statusIndex =
+                            cursor.getColumnIndex(
+                                DownloadManager.COLUMN_STATUS
+                            )
+
+                        val downloadedIndex =
+                            cursor.getColumnIndex(
+                                DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR
+                            )
+
+                        val totalIndex =
+                            cursor.getColumnIndex(
+                                DownloadManager.COLUMN_TOTAL_SIZE_BYTES
+                            )
+
+                        val status =
+                            if (statusIndex >= 0) {
+                                cursor.getInt(statusIndex)
+                            } else {
+                                -1
+                            }
+
+                        val downloaded =
+                            if (downloadedIndex >= 0) {
+                                cursor.getLong(downloadedIndex)
+                            } else {
+                                0L
+                            }
+
+                        val total =
+                            if (totalIndex >= 0) {
+                                cursor.getLong(totalIndex)
+                            } else {
+                                -1L
+                            }
+
+                        statusText = when (status) {
+                            DownloadManager.STATUS_PENDING ->
+                                "Queued"
+
+                            DownloadManager.STATUS_RUNNING -> {
+                                if (total > 0L) {
+                                    val progress =
+                                        ((downloaded * 100L) / total)
+                                            .coerceIn(0L, 100L)
+
+                                    "Downloading • $progress%"
+                                } else {
+                                    "Downloading"
+                                }
+                            }
+
+                            DownloadManager.STATUS_PAUSED ->
+                                "Paused"
+
+                            DownloadManager.STATUS_SUCCESSFUL ->
+                                "Complete"
+
+                            DownloadManager.STATUS_FAILED ->
+                                "Failed"
+
+                            else ->
+                                "Unknown"
+                        }
+                    } else {
+                        statusText = "Not found"
+                    }
+                }
+            }
+
+            "$fileName\n$statusText"
+        }.toTypedArray()
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Downloads")
+            .setItems(labels) { _, which ->
+                val (id, fileName) = downloads[which]
+
+                runCatching {
+                    val uri =
+                        manager.getUriForDownloadedFile(id)
+
+                    if (uri == null) {
+                        Toast.makeText(
+                            this,
+                            "$fileName is not ready yet",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        return@runCatching
+                    }
+
+                    val mimeType =
+                        manager.getMimeTypeForDownloadedFile(id)
+                            ?: "*/*"
+
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, mimeType)
+
+                        addFlags(
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    }
+
+                    startActivity(intent)
+                }.onFailure {
+                    Toast.makeText(
+                        this,
+                        "Unable to open $fileName",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .setNeutralButton("Clear list") { _, _ ->
+                prefs.edit().clear().apply()
+
+                Toast.makeText(
+                    this,
+                    "Download list cleared",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+
+    private fun showBrowserMenu(anchor: View) {
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
+
+        fun panel() = GradientDrawable().apply {
+            setColor(Color.rgb(18, 20, 26))
+            setStroke(dp(1), Color.rgb(45, 49, 59))
+            cornerRadius = dp(22).toFloat()
+        }
+
+        fun label(text: String, size: Float = 15f, muted: Boolean = false) =
+            TextView(this).apply {
+                this.text = text
+                textSize = size
+                setTextColor(
+                    if (muted) Color.rgb(156, 164, 178)
+                    else Color.rgb(242, 245, 249)
+                )
+                gravity = Gravity.CENTER_VERTICAL
+                includeFontPadding = false
+            }
+
+        fun addItem(parent: LinearLayout, text: String, action: () -> Unit) {
+            parent.addView(label(text).apply {
+                setPadding(dp(16), 0, dp(14), 0)
+                minimumHeight = dp(50)
+                isClickable = true
+                setOnClickListener { action() }
+            })
+        }
+
+        var popup: PopupWindow? = null
+        var submenu: PopupWindow? = null
+
+        fun openSubmenu(title: String, items: List<Pair<String, () -> Unit>>, source: View) {
+            val body = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(8), dp(8), dp(8), dp(8))
+                background = panel()
+            }
+
+            body.addView(label(title.uppercase(), 11f, true).apply {
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                letterSpacing = 0.12f
+                setPadding(dp(16), dp(8), dp(16), dp(8))
+                minimumHeight = dp(36)
+            })
+
+            items.forEach { (name, action) ->
+                addItem(body, name) {
+                    action()
+                    submenu?.dismiss()
+                    popup?.dismiss()
+                }
+            }
+
+            val scroll = ScrollView(this).apply {
+                isVerticalScrollBarEnabled = false
+                addView(body)
+            }
+
+            submenu = PopupWindow(
+                scroll,
+                dp(310),
+                (resources.displayMetrics.heightPixels * 0.70f).toInt(),
+                true
+            ).apply {
+                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                elevation = dp(20).toFloat()
+                isOutsideTouchable = true
+            }
+
+            val pos = IntArray(2)
+            source.getLocationOnScreen(pos)
+            val x = (resources.displayMetrics.widthPixels - dp(318)).coerceAtLeast(dp(8))
+            submenu?.showAtLocation(window.decorView, Gravity.TOP or Gravity.START, x, pos[1])
+        }
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+            background = panel()
+        }
+
+        root.addView(label("OLIKH", 11f, true).apply {
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            letterSpacing = 0.16f
+            setPadding(dp(16), dp(7), dp(16), dp(5))
+            minimumHeight = dp(28)
+        })
+
+        fun category(title: String, subtitle: String, items: List<Pair<String, () -> Unit>>) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(14), 0, dp(8), 0)
+                minimumHeight = dp(58)
+                isClickable = true
+            }
+
+            val copy = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+            }
+
+            copy.addView(label(title, 15f).apply {
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            copy.addView(label(subtitle, 11f, true).apply {
+                minimumHeight = dp(18)
+            })
+
+            row.addView(copy)
+            row.addView(label("›", 25f, true).apply {
+                gravity = Gravity.CENTER
+                minimumWidth = dp(28)
+            })
+
+            row.setOnClickListener { openSubmenu(title, items, row) }
+            root.addView(row)
+        }
+
+        category("Browser", "Tabs & sessions", listOf(
+            "New incognito tab" to {
+                createNewTab(incognito = true)
+                Toast.makeText(this, "Incognito tab opened", Toast.LENGTH_SHORT).show()
+            },
+            "Reopen last closed tab" to { reopenLastClosedTab() },
+            "Recently closed" to { showRecentlyClosedTabs() },
+            "Duplicate tab" to { duplicateCurrentTab() },
+            "Close current tab" to { closeCurrentTab() }
+        ))
+
+        category("Page", "Find, share & page tools", listOf(
+            "Find in page" to { showFindInPage() },
+            "Share page" to { shareCurrentPage() },
+            "Copy URL" to { copyCurrentUrl() },
+            "Page tools" to { showPageToolsMenu() },
+            "Back to top" to { webView.evaluateJavascript("window.scrollTo(0,0);", null) },
+            "Scroll to bottom" to {
+                webView.evaluateJavascript("window.scrollTo(0,document.documentElement.scrollHeight);", null)
+            }
+        ))
+
+        category("Library", "Downloads, saved & history", listOf(
+            "Downloads" to { showDownloads() },
+            "Quick access" to { showQuickAccessManager() },
+            "Library & sessions" to { showLibrarySessionsV15() },
+            "Bookmarks & history" to { showBookmarksHistoryV25() }
+        ))
+
+        category("Privacy & security", "Protection & cleanup", listOf(
+            "Security center" to { showSecurityCenterV17() },
+            "Privacy dashboard" to { showPrivacyDashboardV20() },
+            "Clear browsing data" to { confirmClearBrowsingData() }
+        ))
+
+        category("Tools", "Productivity & browser tools", listOf(
+            "Productivity tools" to { showProductivityToolsV12() },
+            "Research tools" to { showResearchToolsV13() },
+            "Power controls" to { showPowerControlsV14() },
+            "Web app & media" to { showWebAppMediaV21() },
+            "Command center" to { showCommandCenterV22() }
+        ))
+
+        category("Advanced", "Navigation & developer", listOf(
+            "Navigation & tabs" to { showNavigationTabsV23() },
+            "Session controls" to { showSessionControlsV24() },
+            "Search & address" to { showSearchAddressV26() },
+            "Browser systems" to { showBrowserSystemsV11() },
+            "Developer" to { showDeveloperHubV27() }
+        ))
+
+        root.addView(View(this).apply {
+            setBackgroundColor(Color.rgb(43, 47, 57))
+            layoutParams = LinearLayout.LayoutParams(-1, dp(1)).apply {
+                setMargins(dp(16), dp(4), dp(16), dp(4))
+            }
+        })
+
+        addItem(root, "Open start page") { showOlikhStartPage(); popup?.dismiss() }
+        addItem(root, "Paste and go") { pasteAndGo(); popup?.dismiss() }
+        addItem(
+            root,
+            if (webView.settings.userAgentString?.contains("OLIKH_DESKTOP") == true)
+                "Mobile site" else "Desktop site"
+        ) { toggleDesktopSite(); popup?.dismiss() }
+        addItem(root, "Settings") { showSettings(); popup?.dismiss() }
+
+        val scroll = ScrollView(this).apply {
+            isVerticalScrollBarEnabled = false
+            addView(root)
+        }
+
+        popup = PopupWindow(
+            scroll,
+            dp(332),
+            (resources.displayMetrics.heightPixels * 0.82f).toInt(),
+            true
+        ).apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            elevation = dp(20).toFloat()
+            isOutsideTouchable = true
+            setOnDismissListener {
+                anchor.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(120L).start()
+            }
+        }
+
+        anchor.animate().cancel()
+        anchor.scaleX = 0.97f
+        anchor.scaleY = 0.97f
+        anchor.alpha = 0.92f
+        popup?.showAsDropDown(anchor, 0, dp(8))
+    }
+    private fun showDeveloperHubV27() {
+        fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+        fun card() = GradientDrawable().apply {
+            setColor(Color.rgb(21, 25, 34))
+            setStroke(dp(1), Color.rgb(48, 56, 72))
+            cornerRadius = dp(17).toFloat()
+        }
+
+        val dialog = android.app.Dialog(this)
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), dp(10), dp(10), dp(10))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(12, 15, 22))
+                setStroke(dp(1), Color.rgb(47, 55, 70))
+                cornerRadius = dp(26).toFloat()
+            }
+        }
+
+        root.addView(TextView(this).apply {
+            text = "Developer Hub"
+            textSize = 21f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(Color.rgb(246, 248, 252))
+            includeFontPadding = false
+            setPadding(dp(14), dp(9), dp(14), dp(2))
+        })
+
+        root.addView(TextView(this).apply {
+            text = "Inspect pages, source, cookies and WebView state"
+            textSize = 12f
+            setTextColor(Color.rgb(145, 155, 172))
+            includeFontPadding = false
+            setPadding(dp(14), dp(3), dp(14), dp(10))
+        })
+
+        fun tool(title: String, subtitle: String, action: () -> Unit) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(16), dp(9), dp(16), dp(9))
+                minimumHeight = dp(64)
+                background = card()
+                isClickable = true
+                isFocusable = true
+            }
+            row.addView(TextView(this).apply {
+                text = title
+                textSize = 15f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextColor(Color.rgb(239, 242, 247))
+                includeFontPadding = false
+            })
+            row.addView(TextView(this).apply {
+                text = subtitle
+                textSize = 11.5f
+                setTextColor(Color.rgb(145, 155, 172))
+                setPadding(0, dp(4), 0, 0)
+                includeFontPadding = false
+            })
+            row.setOnClickListener { dialog.dismiss(); action() }
+            root.addView(row, LinearLayout.LayoutParams(-1, dp(64)).apply {
+                setMargins(dp(2), dp(3), dp(2), dp(3))
+            })
+        }
+
+        tool("Page information", "Title, URL, navigation and WebView settings") {
+            val info = "Title: ${webView.title ?: "-"}\n\n" +
+                "URL: ${webView.url ?: "-"}\n\n" +
+                "Can go back: ${webView.canGoBack()}\n" +
+                "Can go forward: ${webView.canGoForward()}\n\n" +
+                "User-Agent: ${webView.settings.userAgentString ?: "-"}\n\n" +
+                "JavaScript: ${webView.settings.javaScriptEnabled}\n" +
+                "DOM Storage: ${webView.settings.domStorageEnabled}\n" +
+                "Database: ${webView.settings.databaseEnabled}"
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Page information").setMessage(info)
+                .setPositiveButton("Copy") { _, _ ->
+                    val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cb.setPrimaryClip(android.content.ClipData.newPlainText("Page information", info))
+                    Toast.makeText(this, "Page information copied", Toast.LENGTH_SHORT).show()
+                }.setNegativeButton("Close", null).show()
+        }
+
+        tool("HTML source", "Inspect the current page source") {
+            webView.evaluateJavascript("document.documentElement.outerHTML") { raw ->
+                val source = try { org.json.JSONTokener(raw).nextValue()?.toString() ?: raw } catch (_: Exception) { raw }
+                val editor = EditText(this).apply {
+                    setText(source); setTextIsSelectable(true); setSingleLine(false); isVerticalScrollBarEnabled = true
+                }
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("HTML source").setView(editor)
+                    .setPositiveButton("Copy") { _, _ ->
+                        val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        cb.setPrimaryClip(android.content.ClipData.newPlainText("HTML source", source))
+                        Toast.makeText(this, "HTML source copied", Toast.LENGTH_SHORT).show()
+                    }.setNegativeButton("Close", null).show()
+            }
+        }
+
+        tool("Cookies", "View cookies for the current URL") {
+            val url = webView.url ?: "-"
+            val cookies = android.webkit.CookieManager.getInstance().getCookie(url) ?: "No cookies available"
+            val text = "URL:\n$url\n\nCookies:\n$cookies"
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Cookies").setMessage(text)
+                .setPositiveButton("Copy") { _, _ ->
+                    val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cb.setPrimaryClip(android.content.ClipData.newPlainText("Cookies", text))
+                    Toast.makeText(this, "Cookies copied", Toast.LENGTH_SHORT).show()
+                }.setNegativeButton("Close", null).show()
+        }
+
+        tool("Web resources", "Inspect loaded network resources") {
+            webView.evaluateJavascript("JSON.stringify(performance.getEntriesByType('resource').map(function(r){return {name:r.name,duration:Math.round(r.duration),transferSize:r.transferSize||0};}))") { raw ->
+                val resources = try { org.json.JSONTokener(raw).nextValue()?.toString() ?: raw } catch (_: Exception) { raw }
+                val editor = EditText(this).apply {
+                    setText(resources); setTextIsSelectable(true); setSingleLine(false); isVerticalScrollBarEnabled = true
+                }
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Web resources").setView(editor)
+                    .setPositiveButton("Copy") { _, _ ->
+                        val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        cb.setPrimaryClip(android.content.ClipData.newPlainText("Web resources", resources))
+                        Toast.makeText(this, "Resources copied", Toast.LENGTH_SHORT).show()
+                    }.setNegativeButton("Close", null).show()
+            }
+        }
+
+        tool("WebView status", "Runtime engine, SDK and feature status") {
+            val s = webView.settings
+            val status = "WebView status\n\nAndroid: ${android.os.Build.VERSION.RELEASE}\nSDK: ${android.os.Build.VERSION.SDK_INT}\n\n" +
+                "JavaScript: ${s.javaScriptEnabled}\nDOM Storage: ${s.domStorageEnabled}\nDatabase: ${s.databaseEnabled}\nUser-Agent:\n${s.userAgentString ?: "-"}"
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("WebView status").setMessage(status)
+                .setPositiveButton("Copy") { _, _ ->
+                    val cb = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cb.setPrimaryClip(android.content.ClipData.newPlainText("WebView status", status))
+                    Toast.makeText(this, "Status copied", Toast.LENGTH_SHORT).show()
+                }.setNegativeButton("Close", null).show()
+        }
+
+        root.addView(TextView(this).apply {
+            text = "CLOSE"; textSize = 13f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(Color.rgb(154, 171, 255)); gravity = Gravity.CENTER
+            minimumHeight = dp(46); setOnClickListener { dialog.dismiss() }
+        })
+
+        dialog.setContentView(root)
+        dialog.setOnShowListener {
+            dialog.window?.let { w ->
+                w.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                w.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                w.attributes = w.attributes.apply { dimAmount = 0.58f }
+                w.setLayout(dp(348), android.view.WindowManager.LayoutParams.WRAP_CONTENT)
+            }
+        }
+        dialog.show()
     }
 
     private fun showSearchAddressV26() {
