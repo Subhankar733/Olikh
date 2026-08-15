@@ -1574,7 +1574,18 @@ a{text-decoration:none;color:inherit}
         ).show()
     }
 
-        private fun showHistory() {
+            private fun confirmClearHistory() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Clear History")
+            .setMessage("Are you sure you want to delete all browsing history?")
+            .setPositiveButton("Clear") { _, _ ->
+                historyManager.clear()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showHistory() {
         val historyItems = historyManager.getAll()
         val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         val density = resources.displayMetrics.density
