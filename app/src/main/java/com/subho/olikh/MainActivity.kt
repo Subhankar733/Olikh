@@ -1380,7 +1380,18 @@ a{text-decoration:none;color:inherit}
             }
     }
 
-        private fun showBookmarks() {
+            private fun confirmClearBookmarks() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Clear Bookmarks")
+            .setMessage("Are you sure you want to delete all bookmarks?")
+            .setPositiveButton("Clear") { _, _ ->
+                bookmarkManager.clear()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showBookmarks() {
         val bookmarks = bookmarkManager.getAll()
         val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         val density = resources.displayMetrics.density
