@@ -286,6 +286,111 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    
+    private fun showAdblockSheet() {
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
+
+        val root = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(24))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.parseColor("#0F172A"))
+                cornerRadii = floatArrayOf(dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), 0f, 0f, 0f, 0f)
+            }
+        }
+
+        // Header
+        val header = android.widget.LinearLayout(this).apply {
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            orientation = android.widget.LinearLayout.HORIZONTAL
+        }
+        val titleView = android.widget.TextView(this).apply {
+            text = "OLIKH Shield & Privacy"
+            textSize = 18f
+            setTextColor(android.graphics.Color.parseColor("#F8FAFC"))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            layoutParams = android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        header.addView(titleView)
+        root.addView(header)
+
+        // Status Card
+        val statusCard = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.parseColor("#1E293B"))
+                cornerRadius = dp(14).toFloat()
+            }
+        }
+
+        val totalBlocked = olikhBlocker.blockedRequests()
+        val isShieldOn = olikhBlocker.isEnabled()
+
+        val countText = android.widget.TextView(this).apply {
+            text = "$totalBlocked Ads & Trackers Blocked"
+            textSize = 15f
+            setTextColor(android.graphics.Color.parseColor(if (isShieldOn) "#4ADE80" else "#94A3B8"))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+        statusCard.addView(countText)
+
+        val descText = android.widget.TextView(this).apply {
+            text = if (isShieldOn) "Real-time protection and cosmetic filtering active." else "Protection is currently disabled."
+            textSize = 11f
+            setTextColor(android.graphics.Color.parseColor("#94A3B8"))
+            setPadding(0, dp(4), 0, 0)
+        }
+        statusCard.addView(descText)
+        root.addView(statusCard, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dp(14)
+            bottomMargin = dp(14)
+        })
+
+        // Action Buttons
+        val toggleBtn = android.widget.Button(this).apply {
+            text = if (isShieldOn) "Disable Shield" else "Enable Shield"
+            isAllCaps = false
+            textSize = 13f
+            setTextColor(android.graphics.Color.WHITE)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.parseColor(if (isShieldOn) "#EF4444" else "#2563EB"))
+                cornerRadius = dp(10).toFloat()
+            }
+            setOnClickListener {
+                olikhBlocker.setEnabled(!isShieldOn)
+                dialog.dismiss()
+                showOlikhStartPage()
+            }
+        }
+        root.addView(toggleBtn, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, dp(44)).apply {
+            bottomMargin = dp(8)
+        })
+
+        val resetBtn = android.widget.Button(this).apply {
+            text = "Reset Counter"
+            isAllCaps = false
+            textSize = 12f
+            setTextColor(android.graphics.Color.parseColor("#94A3B8"))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.parseColor("#1E293B"))
+                cornerRadius = dp(10).toFloat()
+            }
+            setOnClickListener {
+                olikhBlocker.resetCounter()
+                dialog.dismiss()
+                showOlikhStartPage()
+            }
+        }
+        root.addView(resetBtn, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, dp(40)))
+
+        dialog.setContentView(root)
+        (root.parent as? android.view.View)?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        dialog.show()
+    }
+
     private fun showOlikhStartPage() {
         showingErrorPage = false
         failedUrl = null
