@@ -571,7 +571,7 @@ a{text-decoration:none;color:inherit}
         })();
         """.trimIndent()
 
-        view.evaluateJavascript(script, null)
+        view?.evaluateJavascript(script, null)
     }
 
     private fun isJavaScriptEnabled(): Boolean {
