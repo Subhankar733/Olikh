@@ -4098,6 +4098,12 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         val shortcut=android.content.Intent("com.android.launcher.action.INSTALL_SHORTCUT").apply{
             putExtra(android.content.Intent.EXTRA_SHORTCUT_NAME,webView.title ?: "OLIKH Web App")
             putExtra(android.content.Intent.EXTRA_SHORTCUT_INTENT,android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(u)))
+        category("Pro Tools", "Reader, Translate & Capture", listOf(
+            "Reader Mode" to { handleReaderModeToggle() },
+            "Translate (BN)" to { handleTranslatePage() },
+            "Save as PDF" to { handleSavePdf() },
+            "Capture Screenshot" to { handleScreenshot() }
+        ))
             putExtra("duplicate",false)
         }
         try{sendBroadcast(shortcut);toastV21("Shortcut requested")}catch(e:Exception){toastV21("Shortcut unavailable")}
