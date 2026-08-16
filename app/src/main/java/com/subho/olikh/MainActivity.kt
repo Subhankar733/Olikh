@@ -3330,6 +3330,28 @@ a{text-decoration:none;color:inherit}
     }
 
 
+    
+    private var isReaderActive = false
+
+    private fun handleReaderModeToggle() {
+        isReaderActive = !isReaderActive
+        OlikhProTools.toggleReaderMode(webView, isReaderActive)
+        android.widget.Toast.makeText(this, if (isReaderActive) "Reader Mode Enabled" else "Reader Mode Disabled", android.widget.Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleTranslatePage() {
+        OlikhProTools.translatePage(webView, "bn")
+        android.widget.Toast.makeText(this, "Translating page...", android.widget.Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleSavePdf() {
+        OlikhProTools.printOrSavePdf(this, webView)
+    }
+
+    private fun handleScreenshot() {
+        OlikhProTools.capturePageScreenshot(this, webView)
+    }
+
     private fun showBrowserMenu(anchor: View) {
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
