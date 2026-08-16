@@ -1138,11 +1138,16 @@ a{text-decoration:none;color:inherit}
                 updateNavigationButtons()
             }
 
-            override fun onReceivedError(
+                        override fun onReceivedError(
                 view: WebView?,
                 request: WebResourceRequest?,
                 error: WebResourceError?
             ) {
+                val failingUrl = request?.url?.toString().orEmpty()
+                if (failingUrl.contains("olikh.local") || failingUrl.startsWith("olikh://")) {
+                    showOlikhStartPage()
+                    return
+                }
                 super.onReceivedError(view, request, error)
 
                 if (request?.isForMainFrame != true) return
