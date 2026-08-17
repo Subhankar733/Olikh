@@ -2191,7 +2191,7 @@ a{text-decoration:none;color:inherit}
 
         switchToTab(activeTabIndex)
 
-        if (!incognito && initialUrl == "about:blank") {
+        if (!incognito && (initialUrl == "about:blank" || isOlikhStartPageUrl(initialUrl))) {
             showOlikhStartPage()
         } else {
             newWebView.loadUrl(initialUrl)
