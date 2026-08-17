@@ -1419,43 +1419,10 @@ a{text-decoration:none;color:inherit}
         }
     }
 
-        overridde fun onResume() {
-        super.onResume()
-
-        if (!::webView.isInitialized) return
-
-        runCatching {
-            val cookieManager = android.webkit.CookieManager.getInstance()
-            cookieManager.setAcceptCookie(areCookiesEnabled())
-            cookieManager.setAcceptThirdPartyCookies(
-                webView,
-                areCookiesEnabled() && areThirdPartyCookiesEnabled()
-            )
-
-            webView.settings.apply {
-                javaScriptEnabled = isJavaScriptEnabled()
-                domStorageEnabled = isDomStorageEnabled()
-                databaseEnabled = isDatabaseStorageEnabled()
-                loadsImagesAutomatically = areImagesEnabled()
-                blockNetworkImage = !areImagesEnabled()
-                useWideViewPort = isDesktopViewportEnabled() || isWideViewportEnabled()
-                loadWithOverviewMode = isDesktopViewportEnabled() || isOverviewModeEnabled()
-                setSupportZoom(areZoomGesturesEnabled())
-                builtInZoomControls = areZoomGesturesEnabled()
-                mediaPlaybackRequiresUserGesture = !asAutoplayEnabled()
-                allowContentAccess = isContentAccessEnabled()
-                allowFileAccess = isFileAccessEnabled()
-                javaScriptCanOpenWindowsAutomatically = areJsPopupsEnabled()
-                setSupportMultipleWindows(areMultipleWindowsEnabled())
-                cacheMode = if (isCacheEnabled()) WebSettings.LOAD_DEFAULT else WebSettings.LOAD_NO_CACHE
-            }
-
-            applyReadingDisplaySettings(webView)
-        }
-    }
-
     override fun onPause() {
         persistTabSession()
+        super.onPause()
+    }
 
 
     private fun toggleCurrentBookmark() {
@@ -6293,11 +6260,41 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         )
     }
 
-        private fun showSettings() {
-        startActivity(android.content.Intent(this, BrowserSettingsActivity::class.java))
+    private fun showSettings() {
+        val options = arrayOf(
+            "Search engine",
+            "Homepage",
+            "Quick access",
+            "JavaScript",
+            "Privacy & security",
+            "Web page settings",
+            "Advanced browsing",
+            "Reading & display"
+        )
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Settings")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showSearchEngineSelector()
+                    1 -> showHomepageSettings()
+                    2 -> showQuickAccessManager()
+                    3 -> showJavaScriptSetting()
+                    4 -> showPrivacySecuritySettings()
+                    5 -> showWebPageSettings()
+                    6 -> showAdvancedBrowsingSettings()
+                    7 -> showReadingDisplaySettings()
+                }
+            }
+            .setNegativeButton("Close", null)
+            .create()
+
+        dialog.setOnShowListener {
+            animateDialogEntrance(dialog)
+        }
+
+        dialog.show()
     }
-
-
 
     private fun showQuickAccessManager() {
         val items = getQuickAccessItems()
