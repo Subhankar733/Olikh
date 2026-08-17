@@ -3454,6 +3454,46 @@ a{text-decoration:none;color:inherit}
         startActivity(android.content.Intent(this, DownloadManagerActivity::class.java))
     }
 
+    
+    private var isAmoledDarkEnabled: Boolean
+        get() = getSharedPreferences("olikh_pref", android.content.Context.MODE_PRIVATE).getBoolean("amoled_dark", false)
+        set(value) = getSharedPreferences("olikh_pref", android.content.Context.MODE_PRIVATE).edit().putBoolean("amoled_dark", value).apply()
+
+    private var isAutoClearOnExit: Boolean
+        get() = getSharedPreferences("olikh_pref", android.content.Context.MODE_PRIVATE).getBoolean("auto_clear_exit", false)
+        set(value) = getSharedPreferences("olikh_pref", android.content.Context.MODE_PRIVATE).edit().putBoolean("auto_clear_exit", value).apply()
+
+    private fun toggleAmoledDark() {
+        val next = !isAmoledDarkEnabled
+        isAmoledDarkEnabled = next
+        applyAmoledDark(webView)
+        android.widget.Toast.makeText(this, if (next) "True AMOLED Dark Enabled" else "AMOLED Dark Disabled", android.widget.Toast.LENGTH_SHORT).show()
+    }
+
+    private fun applyAmoledDark(view: android.webkit.WebView?) {
+        if (view == null || !isAmoledDarkEnabled) return
+        val js = """
+            (function() {
+                var css = 'html, body { background-color: #000000 !important; color: #e5e7eb !important; } * { border-color: #27272a !important; } img, video { filter: brightness(0.85) contrast(1.1) !important; }';
+                var style = document.getElementById('olikh-amoled-style');
+                if (!style) {
+                    style = document.createElement('style');
+                    style.id = 'olikh-amoled-style';
+                    style.type = 'text/css';
+                    style.innerHTML = css;
+                    (document.head || document.documentElement).appendChild(style);
+                }
+            })();
+        """.trimIndent()
+        view.evaluateJavascript(js, null)
+    }
+
+    private fun toggleAutoClearOnExit() {
+        val next = !isAutoClearOnExit
+        isAutoClearOnExit = next
+        android.widget.Toast.makeText(this, if (next) "Auto-Clear on Exit: ON" else "Auto-Clear on Exit: OFF", android.widget.Toast.LENGTH_SHORT).show()
+    }
+
     private fun showBrowserMenu(anchor: View) {
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
@@ -3589,6 +3629,7 @@ a{text-decoration:none;color:inherit}
         ))
 
         category("Pro Tools", "Reader, Translate & Capture", listOf(
+            "AMOLED True Dark" to { toggleAmoledDark() },
             "Reader View (Distraction Free)" to { launchReaderActivity() },
             "Quick Reader Mode" to { handleReaderModeToggle() },
             "Translate (BN)" to { handleTranslatePage() },
@@ -3620,6 +3661,7 @@ a{text-decoration:none;color:inherit}
         category("Privacy & security", "Protection & cleanup", listOf(
             "Security center" to { showSecurityCenterV17() },
             "Privacy dashboard" to { showPrivacyDashboardV20() },
+            "Auto-Clear on Exit (Toggle)" to { toggleAutoClearOnExit() },
             "DoH Network Security" to { showDnsSelectorSheet() },
             "Clear browsing data" to { confirmClearBrowsingData() }
         ))
@@ -10420,6 +10462,14 @@ Blocker: ${olikhBlocker.isEnabled()}"""
 
         tabs.clear()
 
+        if (isAutoClearOnExit) {
+            runCatching {
+                android.webkit.WebStorage.getInstance().deleteAllData()
+                android.webkit.CookieManager.getInstance().removeAllCookies(null)
+                webView.clearCache(true)
+                webView.clearHistory()
+            }
+        }
         super.onDestroy()
     }
 
