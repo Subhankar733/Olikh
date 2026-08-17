@@ -1,3 +1,4 @@
+# or micro / vim depending on your editor
 package com.subho.olikh
 
 import com.subho.olikh.OlikhNewBrowserFeatures
@@ -11,8 +12,6 @@ import android.view.MotionEvent
 import android.Manifest
 import android.content.pm.PackageManager
 import android.webkit.GeolocationPermissions
-import android.webkit.PermissionRequest
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.content.Intent
 import android.security.KeyChain
