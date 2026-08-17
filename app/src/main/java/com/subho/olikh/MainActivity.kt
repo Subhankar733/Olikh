@@ -3561,6 +3561,122 @@ a{text-decoration:none;color:inherit}
         }
     }
 
+    
+    private var ttsEngine: android.speech.tts.TextToSpeech? = null
+    private var autoScrollHandler: android.os.Handler? = null
+    private var isAutoScrolling = false
+
+    private fun handleTextToSpeech() {
+        if (ttsEngine == null) {
+            ttsEngine = android.speech.tts.TextToSpeech(this) { status ->
+                if (status == android.speech.tts.TextToSpeech.SUCCESS) {
+                    ttsEngine?.language = java.util.Locale.getDefault()
+                    extractAndSpeak()
+                } else {
+                    android.widget.Toast.makeText(this, "TTS Init Failed", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            if (ttsEngine?.isSpeaking == true) {
+                ttsEngine?.stop()
+                android.widget.Toast.makeText(this, "Speech Stopped", android.widget.Toast.LENGTH_SHORT).show()
+            } else {
+                extractAndSpeak()
+            }
+        }
+    }
+
+    private fun extractAndSpeak() {
+        val js = "(function() { return (document.querySelector('article') || document.body).innerText; })();"
+        webView.evaluateJavascript(js) { text ->
+            val clean = text?.replace(""", "")?.replace("\n", " ")?.take(3500).orEmpty()
+            if (clean.isNotBlank()) {
+                ttsEngine?.speak(clean, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "OLIKH_TTS")
+                android.widget.Toast.makeText(this, "Reading Article...", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun toggleAutoScroll() {
+        isAutoScrolling = !isAutoScrolling
+        if (isAutoScrolling) {
+            if (autoScrollHandler == null) autoScrollHandler = android.os.Handler(android.os.Looper.getMainLooper())
+            val runnable = object : Runnable {
+                override fun run() {
+                    if (isAutoScrolling) {
+                        webView.scrollBy(0, 3)
+                        autoScrollHandler?.postDelayed(this, 40)
+                    }
+                }
+            }
+            autoScrollHandler?.post(runnable)
+            android.widget.Toast.makeText(this, "Auto Scroll: ON", android.widget.Toast.LENGTH_SHORT).show()
+        } else {
+            android.widget.Toast.makeText(this, "Auto Scroll: OFF", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showSearchEngineDialog() {
+        val engines = listOf(
+            "Google" to "https://www.google.com/search?q=",
+            "DuckDuckGo (Privacy)" to "https://duckduckgo.com/?q=",
+            "Brave Search" to "https://search.brave.com/search?q=",
+            "Bing" to "https://www.bing.com/search?q=",
+            "Ecosia (Eco)" to "https://www.ecosia.org/search?q="
+        )
+
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
+
+        val root = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(24))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.parseColor("#0F172A"))
+                cornerRadii = floatArrayOf(dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), 0f, 0f, 0f, 0f)
+            }
+        }
+
+        val titleView = android.widget.TextView(this).apply {
+            text = "Select Default Search Engine"
+            textSize = 18f
+            setTextColor(android.graphics.Color.parseColor("#F8FAFC"))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, dp(12))
+        }
+        root.addView(titleView)
+
+        val prefs = getSharedPreferences("olikh_pref", android.content.Context.MODE_PRIVATE)
+        val currentEngine = prefs.getString("search_engine", "https://www.google.com/search?q=")
+
+        engines.forEach { (name, url) ->
+            val isSelected = currentEngine == url
+            val btn = android.widget.Button(this).apply {
+                text = if (isSelected) "$name ✓" else name
+                isAllCaps = false
+                textSize = 14f
+                setTextColor(android.graphics.Color.parseColor(if (isSelected) "#4ADE80" else "#F8FAFC"))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.parseColor(if (isSelected) "#1E293B" else "#141E33"))
+                    cornerRadius = dp(10).toFloat()
+                }
+                setOnClickListener {
+                    prefs.edit().putString("search_engine", url).apply()
+                    android.widget.Toast.makeText(this@MainActivity, "Default Engine: $name", android.widget.Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+            }
+            root.addView(btn, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, dp(46)).apply {
+                bottomMargin = dp(8)
+            })
+        }
+
+        dialog.setContentView(root)
+        (root.parent as? android.view.View)?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        dialog.show()
+    }
+
     private fun showBrowserMenu(anchor: View) {
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
@@ -3696,6 +3812,8 @@ a{text-decoration:none;color:inherit}
         ))
 
         category("Pro Tools", "Reader, Translate & Capture", listOf(
+            "Read Page Aloud (TTS)" to { handleTextToSpeech() },
+            "Auto-Scroll Mode" to { toggleAutoScroll() },
             "AMOLED True Dark" to { toggleAmoledDark() },
             "Reader View (Distraction Free)" to { launchReaderActivity() },
             "Quick Reader Mode" to { handleReaderModeToggle() },
