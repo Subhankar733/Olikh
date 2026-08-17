@@ -45,11 +45,12 @@ class TabSessionStore(context: Context) {
         activeIndex: Int
     ) {
         val normal = JSONArray()
-        val seenUrls = HashSet<String>()
 
+        // Keep every normal tab in its original order.
+        // A browser may legitimately have several tabs on the same URL.
         tabs.filter { !it.incognito }.forEach { tab ->
             val url = cleanUrl(tab.webView.url ?: tab.url)
-            if (url.isBlank() || !seenUrls.add(url)) return@forEach
+            if (url.isBlank()) return@forEach
 
             val groupId = groupStore.groupFor(url)
 
@@ -129,14 +130,13 @@ class TabSessionStore(context: Context) {
         entries: List<ClosedTabSnapshot>
     ) {
         val array = JSONArray()
-        val seenUrls = HashSet<String>()
 
         entries
             .filter { !it.incognito }
             .take(20)
             .forEach {
                 val url = cleanUrl(it.url)
-                if (url.isBlank() || !seenUrls.add(url)) return@forEach
+                if (url.isBlank()) return@forEach
 
                 array.put(
                     JSONObject()

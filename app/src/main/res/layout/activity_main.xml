@@ -54,7 +54,8 @@
                     android:textColorHint="#6B7280"
                     android:textSize="14sp"
                     android:padding="0dp"
-                    android:selectAllOnFocus="true" />
+                    android:selectAllOnFocus="true"
+                    android:importantForAutofill="no" />
 
                 <ImageButton
                     android:id="@+id/btnReload"
