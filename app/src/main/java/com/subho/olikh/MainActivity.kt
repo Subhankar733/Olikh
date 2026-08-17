@@ -3494,6 +3494,73 @@ a{text-decoration:none;color:inherit}
         android.widget.Toast.makeText(this, if (next) "Auto-Clear on Exit: ON" else "Auto-Clear on Exit: OFF", android.widget.Toast.LENGTH_SHORT).show()
     }
 
+    
+    private fun showUserAgentDialog() {
+        val agents = listOf(
+            "Default (Android Mobile)" to null,
+            "Desktop (Chrome Windows)" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+            "Apple iPhone (iOS Safari)" to "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+            "Tablet / iPad Mode" to "Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
+        )
+
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
+
+        val root = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(24))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.parseColor("#0F172A"))
+                cornerRadii = floatArrayOf(dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), 0f, 0f, 0f, 0f)
+            }
+        }
+
+        val titleView = android.widget.TextView(this).apply {
+            text = "User-Agent Switcher"
+            textSize = 18f
+            setTextColor(android.graphics.Color.parseColor("#F8FAFC"))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, dp(12))
+        }
+        root.addView(titleView)
+
+        agents.forEach { (name, ua) ->
+            val btn = android.widget.Button(this).apply {
+                text = name
+                isAllCaps = false
+                textSize = 14f
+                setTextColor(android.graphics.Color.parseColor("#F8FAFC"))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.parseColor("#1E293B"))
+                    cornerRadius = dp(10).toFloat()
+                }
+                setOnClickListener {
+                    webView.settings.userAgentString = ua
+                    webView.reload()
+                    android.widget.Toast.makeText(this@MainActivity, "Applied: $name", android.widget.Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+            }
+            root.addView(btn, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, dp(46)).apply {
+                bottomMargin = dp(8)
+            })
+        }
+
+        dialog.setContentView(root)
+        (root.parent as? android.view.View)?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        dialog.show()
+    }
+
+    private fun boostBrowserMemory() {
+        runCatching {
+            webView.freeMemory()
+            System.gc()
+            Runtime.getRuntime().gc()
+            android.widget.Toast.makeText(this, "Memory Optimised & Cache Trimmed!", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun showBrowserMenu(anchor: View) {
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
