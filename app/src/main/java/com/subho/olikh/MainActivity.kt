@@ -3357,6 +3357,45 @@ a{text-decoration:none;color:inherit}
         OlikhProTools.capturePageScreenshot(this, webView)
     }
 
+    
+    private fun launchBackupRestore() {
+        startActivity(android.content.Intent(this, BackupRestoreActivity::class.java))
+    }
+
+    private fun launchAdvancedHub() {
+        startActivity(android.content.Intent(this, AdvancedBrowserHubActivity::class.java))
+    }
+
+    private fun launchSavedPages() {
+        startActivity(android.content.Intent(this, SavedPagesActivity::class.java))
+    }
+
+    private fun launchReaderActivity() {
+        val current = webView.url.orEmpty()
+        if (current.isNotBlank() && !isOlikhStartPageUrl(current)) {
+            val intent = android.content.Intent(this, ReaderModeActivity::class.java).apply {
+                putExtra("url", current)
+                putExtra("title", webView.title.orEmpty())
+            }
+            startActivity(intent)
+        } else {
+            android.widget.Toast.makeText(this, "Open a web page first", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun launchPageTools() {
+        val current = webView.url.orEmpty()
+        val intent = android.content.Intent(this, PageToolsActivity::class.java).apply {
+            putExtra("url", current)
+            putExtra("title", webView.title.orEmpty())
+        }
+        startActivity(intent)
+    }
+
+    private fun launchDiagnostics() {
+        startActivity(android.content.Intent(this, BrowserDiagnosticsActivity::class.java))
+    }
+
     private fun showBrowserMenu(anchor: View) {
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
@@ -3492,8 +3531,10 @@ a{text-decoration:none;color:inherit}
         ))
 
         category("Pro Tools", "Reader, Translate & Capture", listOf(
-            "Reader Mode" to { handleReaderModeToggle() },
+            "Reader View (Distraction Free)" to { launchReaderActivity() },
+            "Quick Reader Mode" to { handleReaderModeToggle() },
             "Translate (BN)" to { handleTranslatePage() },
+            "Page Tools & Inspector" to { launchPageTools() },
             "Save as PDF" to { handleSavePdf() },
             "Capture Screenshot" to { handleScreenshot() }
         ))
@@ -3511,6 +3552,8 @@ a{text-decoration:none;color:inherit}
 
         category("Library", "Downloads, saved & history", listOf(
             "Downloads" to { showDownloads() },
+            "Saved Offline Pages" to { launchSavedPages() },
+            "Backup & Restore" to { launchBackupRestore() },
             "Quick access" to { showQuickAccessManager() },
             "Library & sessions" to { showLibrarySessionsV15() },
             "Bookmarks & history" to { showBookmarksHistoryV25() }
@@ -3531,6 +3574,8 @@ a{text-decoration:none;color:inherit}
         ))
 
         category("Advanced", "Navigation & developer", listOf(
+            "Advanced Control Hub" to { launchAdvancedHub() },
+            "System Diagnostics" to { launchDiagnostics() },
             "Navigation & tabs" to { showNavigationTabsV23() },
             "Session controls" to { showSessionControlsV24() },
             "Search & address" to { showSearchAddressV26() },
