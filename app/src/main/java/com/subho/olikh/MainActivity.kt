@@ -3396,6 +3396,64 @@ a{text-decoration:none;color:inherit}
         startActivity(android.content.Intent(this, BrowserDiagnosticsActivity::class.java))
     }
 
+    
+    private val olikhDnsEngine by lazy { OlikhDnsEngine(this) }
+
+    private fun showDnsSelectorSheet() {
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
+
+        val root = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(24))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.parseColor("#0F172A"))
+                cornerRadii = floatArrayOf(dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), 0f, 0f, 0f, 0f)
+            }
+        }
+
+        val titleView = android.widget.TextView(this).apply {
+            text = "DNS-over-HTTPS (DoH)"
+            textSize = 18f
+            setTextColor(android.graphics.Color.parseColor("#F8FAFC"))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, dp(12))
+        }
+        root.addView(titleView)
+
+        val current = olikhDnsEngine.getProvider()
+        DnsProvider.values().forEach { provider ->
+            val isSelected = provider == current
+            val btn = android.widget.Button(this).apply {
+                text = if (isSelected) "${provider.title} ✓" else provider.title
+                isAllCaps = false
+                textSize = 14f
+                setTextColor(android.graphics.Color.parseColor(if (isSelected) "#4ADE80" else "#F8FAFC"))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.parseColor(if (isSelected) "#1E293B" else "#141E33"))
+                    cornerRadius = dp(10).toFloat()
+                }
+                setOnClickListener {
+                    olikhDnsEngine.setProvider(provider)
+                    android.widget.Toast.makeText(this@MainActivity, "Applied: ${provider.title}", android.widget.Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+            }
+            root.addView(btn, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, dp(46)).apply {
+                bottomMargin = dp(8)
+            })
+        }
+
+        dialog.setContentView(root)
+        (root.parent as? android.view.View)?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        dialog.show()
+    }
+
+    private fun launchDownloadManager() {
+        startActivity(android.content.Intent(this, DownloadManagerActivity::class.java))
+    }
+
     private fun showBrowserMenu(anchor: View) {
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
@@ -3562,6 +3620,7 @@ a{text-decoration:none;color:inherit}
         category("Privacy & security", "Protection & cleanup", listOf(
             "Security center" to { showSecurityCenterV17() },
             "Privacy dashboard" to { showPrivacyDashboardV20() },
+            "DoH Network Security" to { showDnsSelectorSheet() },
             "Clear browsing data" to { confirmClearBrowsingData() }
         ))
 
