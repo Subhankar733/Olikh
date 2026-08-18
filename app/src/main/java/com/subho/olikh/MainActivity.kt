@@ -1444,7 +1444,7 @@ a{text-decoration:none;color:inherit}
                     isDesktopViewportEnabled() || isOverviewModeEnabled()
                 setSupportZoom(areZoomGesturesEnabled())
                 builtInZoomControls = areZoomGesturesEnabled()
-                mediaPlaybackRequiresUserGesture = !asAutoplayEnabled()
+                mediaPlaybackRequiresUserGesture = !isAutoplayEnabled()
                 allowContentAccess = isContentAccessEnabled()
                 allowFileAccess = isFileAccessEnabled()
                 javaScriptCanOpenWindowsAutomatically = areJsPopupsEnabled()
