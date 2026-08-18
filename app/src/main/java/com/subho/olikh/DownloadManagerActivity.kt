@@ -322,7 +322,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 textSize = 11f
                 setTextColor(Color.WHITE)
                 background = panel(Color.parseColor("#2563EB"), 8)
-                setOnClickListener { openDownloadedFile(localUri, mediaType) }
+                setOnClickListener { openDownloadedFile(id, localUri, mediaType) }
             }
             btnRow.addView(openBtn, LinearLayout.LayoutParams(dp(68), dp(32)).apply {
                 marginEnd = dp(8)
@@ -380,41 +380,70 @@ class DownloadManagerActivity : AppCompatActivity() {
         listContainer.addView(emptyView)
     }
 
-    private fun openDownloadedFile(localUri: String?, mediaType: String?) {
-        if (localUri.isNullOrBlank()) {
-            Toast.makeText(this, "File path unavailable", Toast.LENGTH_SHORT).show()
+    private fun openDownloadedFile(
+        downloadId: Long,
+        localUri: String?,
+        mediaType: String?
+    ) {
+        val downloadedUri = runCatching {
+            downloadManager.getUriForDownloadedFile(downloadId)
+        }.getOrNull()
+
+        if (downloadedUri == null) {
+            Toast.makeText(
+                this,
+                "Downloaded file URI unavailable",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
-        val uri = Uri.parse(localUri)
-        val file = if (uri.scheme == "file") File(uri.path ?: "") else File(localUri)
-        val resolvedMime = mediaType?.takeIf { it.isNotBlank() }
-            ?: MimeTypeMap.getFileExtensionFromUrl(localUri)?.let {
-                MimeTypeMap.getSingleton().getMimeTypeFromExtension(it.lowercase())
-            } ?: "*/*"
+        val uriMime = runCatching {
+            contentResolver.getType(downloadedUri)
+        }.getOrNull()?.takeIf { it.isNotBlank() }
 
-        val targetUri = if (file.exists()) {
-            runCatching {
-                androidx.core.content.FileProvider.getUriForFile(
-                    this,
-                    "${applicationContext.packageName}.provider",
-                    file
+        val extensionMime = localUri
+            ?.takeIf { it.isNotBlank() }
+            ?.let {
+                MimeTypeMap.getFileExtensionFromUrl(it)
+                    ?.takeIf { ext -> ext.isNotBlank() }
+                    ?.let { ext ->
+                        MimeTypeMap.getSingleton()
+                            .getMimeTypeFromExtension(ext.lowercase())
+                    }
+            }
+
+        val resolvedMime = uriMime
+            ?: extensionMime
+            ?: mediaType?.takeIf { it.isNotBlank() }
+            ?: "*/*"
+
+        fun launch(mime: String): Boolean {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(downloadedUri, mime)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = android.content.ClipData.newRawUri(
+                    "Downloaded file",
+                    downloadedUri
                 )
-            }.getOrNull() ?: uri
-        } else {
-            uri
+            }
+
+            return runCatching {
+                if (intent.resolveActivity(packageManager) == null) {
+                    false
+                } else {
+                    startActivity(intent)
+                    true
+                }
+            }.getOrDefault(false)
         }
 
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(targetUri, resolvedMime)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-
-        runCatching {
-            startActivity(intent)
-        }.onFailure {
-            Toast.makeText(this, "No app found to open this file", Toast.LENGTH_SHORT).show()
+        if (!launch(resolvedMime) && resolvedMime != "*/*" && !launch("*/*")) {
+            Toast.makeText(
+                this,
+                "No app found to open this file",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
