@@ -12,6 +12,7 @@
 
         <!-- Unified Top App Bar -->
         <LinearLayout
+            android:id="@+id/browserTopBar"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:gravity="center_vertical"
@@ -123,6 +124,7 @@
 
         <!-- Modern Bottom Navigation Dock -->
         <LinearLayout
+            android:id="@+id/browserBottomDock"
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:gravity="center_vertical"

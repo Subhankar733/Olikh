@@ -66,6 +66,9 @@ import android.widget.LinearLayout
 import android.graphics.drawable.GradientDrawable
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import java.net.URLEncoder
 
 class MainActivity : AppCompatActivity() {
@@ -979,9 +982,68 @@ a{text-decoration:none;color:inherit}
             }
         }
 
+    private fun installWindowInsetsHandling() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+
+        val root = findViewById<View>(android.R.id.content)
+        val topBar = findViewById<View>(R.id.browserTopBar)
+        val bottomDock = findViewById<View>(R.id.browserBottomDock)
+
+        val topBaseHeight = dp(56)
+        val bottomBaseHeight = dp(52)
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val systemBars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars()
+            )
+            val ime = insets.getInsets(
+                WindowInsetsCompat.Type.ime()
+            )
+
+            val topInset = systemBars.top
+            val bottomInset = maxOf(
+                systemBars.bottom,
+                ime.bottom
+            )
+
+            topBar.layoutParams =
+                topBar.layoutParams.apply {
+                    height = topBaseHeight + topInset
+                }
+
+            topBar.setPadding(
+                topBar.paddingLeft,
+                topInset,
+                topBar.paddingRight,
+                dp(6)
+            )
+
+            bottomDock.layoutParams =
+                bottomDock.layoutParams.apply {
+                    height = bottomBaseHeight + bottomInset
+                }
+
+            bottomDock.setPadding(
+                bottomDock.paddingLeft,
+                dp(6),
+                bottomDock.paddingRight,
+                bottomInset
+            )
+
+            ViewCompat.requestApplyInsets(root)
+            insets
+        }
+
+        ViewCompat.requestApplyInsets(root)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        installWindowInsetsHandling()
         webView = findViewById(R.id.webView)
         addressBar = findViewById(R.id.addressBar)
 
