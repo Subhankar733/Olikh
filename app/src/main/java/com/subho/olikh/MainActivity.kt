@@ -4086,7 +4086,7 @@ a{text-decoration:none;color:inherit}
     }
     private fun navigateInputV26(raw:String){
         val v=raw.trim();if(v.isBlank())return
-        val target=when{v.startsWith("http://",true)||v.startsWith("https://",true)->v;v.startsWith("about:",true)->v;v.contains(".")&&!v.contains(" ")->"https://"+v;else->"https://www.google.com/search?q="+URLEncoder.encode(v,"UTF-8")}
+        val target=when{v.startsWith("http://",true)||v.startsWith("https://",true)->v;v.startsWith("about:",true)->v;v.contains(".")&&!v.contains(" ")->"https://"+v;else->buildSearchUrl(v)}
         webView.loadUrl(target)
     }
     private fun promptEngineV26(name:String,base:String){
@@ -4887,7 +4887,7 @@ Blocker: ${olikhBlocker.isEnabled()}"""
         webView.evaluateJavascript("window.getSelection().toString()"){r->
             val t=r.trim('"').replace("\\n"," ").trim()
             if(t.isBlank())toastV18("Select text first")
-            else if(mode=="search")createNewTab(initialUrl="https://www.google.com/search?q="+android.net.Uri.encode(t))
+            else if(mode=="search")createNewTab(initialUrl=buildSearchUrl(t))
             else megaCopy("OLIKH selection",t,"Selection copied")
         }
     }
