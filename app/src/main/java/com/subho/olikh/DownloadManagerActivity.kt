@@ -329,6 +329,64 @@ class DownloadManagerActivity : AppCompatActivity() {
             })
         }
 
+        if (status == DownloadManager.STATUS_RUNNING ||
+            status == DownloadManager.STATUS_PENDING ||
+            status == DownloadManager.STATUS_PAUSED
+        ) {
+            val cancelBtn = Button(this).apply {
+                text = "Cancel"
+                isAllCaps = false
+                textSize = 11f
+                setTextColor(Color.parseColor("#F87171"))
+                background = panel(Color.parseColor("#1E293B"), 8, Color.parseColor("#334155"))
+                setOnClickListener {
+                    downloadManager.remove(id)
+                    speedTracker.remove(id)
+                    refreshDownloads()
+                    Toast.makeText(
+                        this@DownloadManagerActivity,
+                        "Download cancelled",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            btnRow.addView(cancelBtn, LinearLayout.LayoutParams(dp(72), dp(32)).apply {
+                marginEnd = dp(8)
+            })
+        }
+
+        if (status == DownloadManager.STATUS_FAILED) {
+            val retryBtn = Button(this).apply {
+                text = "Retry"
+                isAllCaps = false
+                textSize = 11f
+                setTextColor(Color.WHITE)
+                background = panel(Color.parseColor("#2563EB"), 8)
+                setOnClickListener {
+                    if (sourceUri.isNullOrBlank()) {
+                        Toast.makeText(
+                            this@DownloadManagerActivity,
+                            "Original download URL unavailable",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        DownloadHelper(this@DownloadManagerActivity)
+                            .downloadFile(
+                                sourceUri,
+                                null,
+                                title,
+                                mediaType
+                            )
+                        downloadManager.remove(id)
+                        refreshDownloads()
+                    }
+                }
+            }
+            btnRow.addView(retryBtn, LinearLayout.LayoutParams(dp(68), dp(32)).apply {
+                marginEnd = dp(8)
+            })
+        }
+
         if (!sourceUri.isNullOrBlank()) {
             val copyLinkBtn = Button(this).apply {
                 text = "Link"
