@@ -5182,15 +5182,20 @@ Blocker: ${olikhBlocker.isEnabled()}"""
     }
 
     private fun toggleDesktopSiteV16(){
-        val h=hostV16();if(h.isBlank()){toastV16("No website");return}
-        val key="desktop_"+h
-        val now=!prefsV16().getBoolean(key,false)
-        prefsV16().edit().putBoolean(key,now).apply()
-        if(now){
-            val ua=webView.settings.userAgentString.orEmpty()
-            webView.settings.userAgentString=ua.replace("Mobile","").replace("Android","X11; Linux x86_64")
-        }else webView.settings.userAgentString=null
-        webView.reload();toastV16("Desktop mode: "+if(now)"ON" else "OFF")
+        val targetWebView = activeTab?.webView ?: webView
+        val h = hostV16()
+        if (h.isBlank()) { toastV16("No website"); return }
+        val key = "desktop_" + h
+        val now = !prefsV16().getBoolean(key, false)
+        prefsV16().edit().putBoolean(key, now).apply()
+        if (now) {
+            val ua = targetWebView.settings.userAgentString.orEmpty()
+            targetWebView.settings.userAgentString = ua.replace("Mobile", "").replace("Android", "X11; Linux x86_64")
+        } else {
+            targetWebView.settings.userAgentString = android.webkit.WebSettings.getDefaultUserAgent(this)
+        }
+        targetWebView.reload()
+        toastV16("Desktop mode: " + if (now) "ON" else "OFF")
     }
 
     private fun rememberSiteSettingsV16(){
