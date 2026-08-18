@@ -473,7 +473,9 @@ class LibraryDialog(
             isFocusable = true
 
             setOnClickListener {
-                action()
+                animate().scaleX(0.96f).scaleY(0.96f).setDuration(60L).withEndAction {
+                    action()
+                }.start()
             }
 
             setOnLongClickListener {
