@@ -164,6 +164,7 @@ class DownloadManagerActivity : AppCompatActivity() {
             val uriIndex = it.getColumnIndex(DownloadManager.COLUMN_URI)
             val localUriIndex = it.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
             val mediaIndex = it.getColumnIndex(DownloadManager.COLUMN_MEDIA_TYPE)
+            val reasonIndex = it.getColumnIndex(DownloadManager.COLUMN_REASON)
 
             if (idIndex < 0 || titleIndex < 0 || statusIndex < 0 || bytesIndex < 0 || totalBytesIndex < 0) {
                 summary.text = "Downloads unavailable"
@@ -182,6 +183,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 val sourceUri = if (uriIndex >= 0) it.getString(uriIndex) else null
                 val localUri = if (localUriIndex >= 0) it.getString(localUriIndex) else null
                 val mediaType = if (mediaIndex >= 0) it.getString(mediaIndex) else null
+                val reason = if (reasonIndex >= 0) it.getInt(reasonIndex) else 0
 
                 // Speed calculation
                 var speedString = ""
@@ -205,7 +207,10 @@ class DownloadManagerActivity : AppCompatActivity() {
                 if (status == DownloadManager.STATUS_SUCCESSFUL) completed++
                 if (status == DownloadManager.STATUS_RUNNING || status == DownloadManager.STATUS_PENDING) active++
 
-                addDownloadCard(id, title, status, bytes, totalBytes, timestamp, sourceUri, localUri, mediaType, speedString)
+                addDownloadCard(
+                    id, title, status, bytes, totalBytes, timestamp,
+                    sourceUri, localUri, mediaType, reason, speedString
+                )
             }
         }
 
@@ -235,6 +240,7 @@ class DownloadManagerActivity : AppCompatActivity() {
         sourceUri: String?,
         localUri: String?,
         mediaType: String?,
+        reason: Int,
         speedString: String
     ) {
         val card = LinearLayout(this).apply {
@@ -288,8 +294,9 @@ class DownloadManagerActivity : AppCompatActivity() {
         }
 
         val dateText = if (timestamp > 0L) " • " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(timestamp)) else ""
+        val reasonText = downloadReasonLabel(status, reason)
         val subInfo = TextView(this).apply {
-            text = "$sizeText$dateText"
+            text = "$sizeText$reasonText$dateText"
             textSize = 11f
             setTextColor(Color.parseColor("#94A3B8"))
             setPadding(0, dp(8), 0, dp(8))
@@ -531,6 +538,65 @@ class DownloadManagerActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun downloadReasonLabel(status: Int, reason: Int): String {
+        if (status != DownloadManager.STATUS_FAILED &&
+            status != DownloadManager.STATUS_PAUSED
+        ) return ""
+
+        val label = when {
+            status == DownloadManager.STATUS_PAUSED &&
+                reason == DownloadManager.PAUSED_WAITING_TO_RETRY ->
+                "Waiting to retry"
+
+            status == DownloadManager.STATUS_PAUSED &&
+                reason == DownloadManager.PAUSED_WAITING_FOR_NETWORK ->
+                "Waiting for network"
+
+            status == DownloadManager.STATUS_PAUSED &&
+                reason == DownloadManager.PAUSED_QUEUED_FOR_WIFI ->
+                "Waiting for Wi-Fi"
+
+            status == DownloadManager.STATUS_FAILED &&
+                reason == DownloadManager.ERROR_INSUFFICIENT_SPACE ->
+                "Insufficient storage"
+
+            status == DownloadManager.STATUS_FAILED &&
+                reason == DownloadManager.ERROR_FILE_ALREADY_EXISTS ->
+                "File already exists"
+
+            status == DownloadManager.STATUS_FAILED &&
+                reason == DownloadManager.ERROR_CANNOT_RESUME ->
+                "Cannot resume"
+
+            status == DownloadManager.STATUS_FAILED &&
+                reason == DownloadManager.ERROR_UNHANDLED_HTTP_CODE ->
+                "HTTP error"
+
+            status == DownloadManager.STATUS_FAILED &&
+                reason == DownloadManager.ERROR_HTTP_DATA_ERROR ->
+                "HTTP data error"
+
+            status == DownloadManager.STATUS_FAILED &&
+                reason == DownloadManager.ERROR_TOO_MANY_REDIRECTS ->
+                "Too many redirects"
+
+            status == DownloadManager.STATUS_FAILED &&
+                reason == DownloadManager.ERROR_DEVICE_NOT_FOUND ->
+                "Storage device unavailable"
+
+            status == DownloadManager.STATUS_FAILED &&
+                reason == DownloadManager.ERROR_FILE_ERROR ->
+                "File error"
+
+            else -> if (status == DownloadManager.STATUS_FAILED)
+                "Download failed"
+            else
+                "Paused"
+        }
+
+        return " • $label"
     }
 
     private fun statusLabel(status: Int): String = when (status) {
