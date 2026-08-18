@@ -60,6 +60,10 @@
             android:name=".BackupRestoreActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".BrowserSettingsActivity"
+            android:exported="false" />
+
 
     </application>
 

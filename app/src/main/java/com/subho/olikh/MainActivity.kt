@@ -1419,6 +1419,48 @@ a{text-decoration:none;color:inherit}
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        if (!::webView.isInitialized) return
+
+        runCatching {
+            val cookieManager = android.webkit.CookieManager.getInstance()
+            cookieManager.setAcceptCookie(areCookiesEnabled())
+            cookieManager.setAcceptThirdPartyCookies(
+                webView,
+                areCookiesEnabled() && areThirdPartyCookiesEnabled()
+            )
+
+            webView.settings.apply {
+                javaScriptEnabled = isJavaScriptEnabled()
+                domStorageEnabled = isDomStorageEnabled()
+                databaseEnabled = isDatabaseStorageEnabled()
+                loadsImagesAutomatically = areImagesEnabled()
+                blockNetworkImage = !areImagesEnabled()
+                useWideViewPort =
+                    isDesktopViewportEnabled() || isWideViewportEnabled()
+                loadWithOverviewMode =
+                    isDesktopViewportEnabled() || isOverviewModeEnabled()
+                setSupportZoom(areZoomGesturesEnabled())
+                builtInZoomControls = areZoomGesturesEnabled()
+                mediaPlaybackRequiresUserGesture = !asAutoplayEnabled()
+                allowContentAccess = isContentAccessEnabled()
+                allowFileAccess = isFileAccessEnabled()
+                javaScriptCanOpenWindowsAutomatically = areJsPopupsEnabled()
+                setSupportMultipleWindows(areMultipleWindowsEnabled())
+                cacheMode =
+                    if (isCacheEnabled()) {
+                        android.webkit.WebSettings.LOAD_DEFAULT
+                    } else {
+                        android.webkit.WebSettings.LOAD_NO_CACHE
+                    }
+            }
+
+            applyReadingDisplaySettings(webView)
+        }
+    }
+
     override fun onPause() {
         persistTabSession()
         super.onPause()
