@@ -3248,6 +3248,22 @@ a{text-decoration:none;color:inherit}
             }
         }
 
+        val topBar = findViewById<View?>(R.id.browserTopBar)
+        val bottomDock = findViewById<View?>(R.id.browserBottomDock)
+        webView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+            val delta = scrollY - oldScrollY
+            if (scrollY <= 10) {
+                topBar?.animate()?.translationY(0f)?.setDuration(200L)?.start()
+                bottomDock?.animate()?.translationY(0f)?.setDuration(200L)?.start()
+            } else if (delta > 12) {
+                topBar?.animate()?.translationY(-(topBar.height.toFloat().coerceAtLeast(140f)))?.setDuration(220L)?.start()
+                bottomDock?.animate()?.translationY(bottomDock.height.toFloat().coerceAtLeast(140f))?.setDuration(220L)?.start()
+            } else if (delta < -12) {
+                topBar?.animate()?.translationY(0f)?.setDuration(200L)?.start()
+                bottomDock?.animate()?.translationY(0f)?.setDuration(200L)?.start()
+            }
+        }
+
         addressBar.setOnFocusChangeListener { view, focused ->
             view.animate().cancel()
 
