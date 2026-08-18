@@ -334,6 +334,18 @@ class DownloadManagerActivity : AppCompatActivity() {
             btnRow.addView(openBtn, LinearLayout.LayoutParams(dp(68), dp(32)).apply {
                 marginEnd = dp(8)
             })
+
+            val shareBtn = Button(this).apply {
+                text = "Share"
+                isAllCaps = false
+                textSize = 11f
+                setTextColor(Color.WHITE)
+                background = panel(Color.parseColor("#0F766E"), 8)
+                setOnClickListener { shareDownloadedFile(id, mediaType) }
+            }
+            btnRow.addView(shareBtn, LinearLayout.LayoutParams(dp(68), dp(32)).apply {
+                marginEnd = dp(8)
+            })
         }
 
         if (status == DownloadManager.STATUS_RUNNING ||
@@ -443,6 +455,50 @@ class DownloadManagerActivity : AppCompatActivity() {
             setPadding(0, dp(48), 0, dp(48))
         }
         listContainer.addView(emptyView)
+    }
+
+    private fun shareDownloadedFile(
+        downloadId: Long,
+        mediaType: String?
+    ) {
+        val downloadedUri = runCatching {
+            downloadManager.getUriForDownloadedFile(downloadId)
+        }.getOrNull()
+
+        if (downloadedUri == null) {
+            Toast.makeText(
+                this,
+                "Downloaded file URI unavailable",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val resolvedMime = runCatching {
+            contentResolver.getType(downloadedUri)
+        }.getOrNull()?.takeIf { it.isNotBlank() }
+            ?: mediaType?.takeIf { it.isNotBlank() }
+            ?: "*/*"
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = resolvedMime
+            putExtra(Intent.EXTRA_STREAM, downloadedUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = ClipData.newRawUri(
+                "Downloaded file",
+                downloadedUri
+            )
+        }
+
+        runCatching {
+            startActivity(Intent.createChooser(intent, "Share file"))
+        }.onFailure {
+            Toast.makeText(
+                this,
+                "No app found to share this file",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun openDownloadedFile(
