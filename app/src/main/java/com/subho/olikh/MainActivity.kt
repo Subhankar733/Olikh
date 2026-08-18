@@ -957,11 +957,12 @@ a{text-decoration:none;color:inherit}
                 progressBar.animate().cancel()
                 progressBar.progress = newProgress
 
+                val reloadBtn = findViewById<android.widget.ImageButton?>(R.id.btnReload)
                 if (newProgress in 1..99) {
-                    btnReload.animate().rotationBy(360f).setDuration(800L).start()
+                    reloadBtn?.animate()?.rotationBy(360f)?.setDuration(800L)?.start()
                 } else if (newProgress >= 100) {
-                    btnReload.animate().cancel()
-                    btnReload.rotation = 0f
+                    reloadBtn?.animate()?.cancel()
+                    reloadBtn?.rotation = 0f
                     progressBar.animate()
                         .alpha(0f)
                         .setDuration(180L)
