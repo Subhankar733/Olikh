@@ -99,8 +99,10 @@ class TabManagerDialog(
                 if (isActive) 2 else 1
             )
             setOnClickListener {
-                dismiss()
-                onSelectTab(index)
+                animate().scaleX(0.95f).scaleY(0.95f).setDuration(70L).withEndAction {
+                    dismiss()
+                    onSelectTab(index)
+                }.start()
             }
         }
 
@@ -138,8 +140,10 @@ class TabManagerDialog(
             setPadding(dp(4), dp(4), dp(4), dp(4))
             contentDescription = "Close tab"
             setOnClickListener {
-                dismiss()
-                onCloseTab(index)
+                card.animate().alpha(0f).scaleX(0.85f).scaleY(0.85f).setDuration(120L).withEndAction {
+                    dismiss()
+                    onCloseTab(index)
+                }.start()
             }
         }
         cardHeader.addView(closeBtn)
