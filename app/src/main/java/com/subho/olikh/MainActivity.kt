@@ -957,7 +957,11 @@ a{text-decoration:none;color:inherit}
                 progressBar.animate().cancel()
                 progressBar.progress = newProgress
 
-                if (newProgress >= 100) {
+                if (newProgress in 1..99) {
+                    btnReload.animate().rotationBy(360f).setDuration(800L).start()
+                } else if (newProgress >= 100) {
+                    btnReload.animate().cancel()
+                    btnReload.rotation = 0f
                     progressBar.animate()
                         .alpha(0f)
                         .setDuration(180L)
@@ -981,6 +985,13 @@ a{text-decoration:none;color:inherit}
                 )
             }
         }
+
+    private fun updateTabCounterBadge() {
+        btnTabs.text = tabs.size.toString()
+        btnTabs.animate().scaleX(1.18f).scaleY(1.18f).setDuration(110L).withEndAction {
+            btnTabs.animate().scaleX(1f).scaleY(1f).setDuration(110L).start()
+        }.start()
+    }
 
     private fun installWindowInsetsHandling() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -1090,7 +1101,7 @@ a{text-decoration:none;color:inherit}
             )
         )
         activeTabIndex = 0
-        btnTabs.text = tabs.size.toString()
+        updateTabCounterBadge()
 
         installUiAnimations()
 
@@ -1970,7 +1981,7 @@ a{text-decoration:none;color:inherit}
             onSelectTab = { index -> switchToTab(index) },
             onChanged = {
                 persistTabSession()
-                btnTabs.text = tabs.size.toString()
+                updateTabCounterBadge()
             }
         ).show()
     }
@@ -2192,7 +2203,7 @@ a{text-decoration:none;color:inherit}
                 activeTabIndex--
             }
 
-            btnTabs.text = tabs.size.toString()
+            updateTabCounterBadge()
         }
     }
 
@@ -2362,7 +2373,7 @@ a{text-decoration:none;color:inherit}
             webView.url ?: tab.url.ifBlank { homePage }
         )
 
-        btnTabs.text = tabs.size.toString()
+        updateTabCounterBadge()
 
         showingErrorPage = tab.showingError
         failedUrl = tab.failedUrl
@@ -10517,7 +10528,7 @@ Blocker: ${olikhBlocker.isEnabled()}"""
             tab.webView.loadUrl(tab.url)
         }
 
-        btnTabs.text = tabs.size.toString()
+        updateTabCounterBadge()
         return true
     }
 
