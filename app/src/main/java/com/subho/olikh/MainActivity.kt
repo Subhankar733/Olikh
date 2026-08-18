@@ -992,8 +992,8 @@ a{text-decoration:none;color:inherit}
         val topBar = findViewById<View>(R.id.browserTopBar)
         val bottomDock = findViewById<View>(R.id.browserBottomDock)
 
-        val topBaseHeight = dp(56)
-        val bottomBaseHeight = dp(52)
+        val topBaseHeight = 56.dp()
+        val bottomBaseHeight = 52.dp()
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val systemBars = insets.getInsets(
@@ -1018,7 +1018,7 @@ a{text-decoration:none;color:inherit}
                 topBar.paddingLeft,
                 topInset,
                 topBar.paddingRight,
-                dp(6)
+                6.dp()
             )
 
             bottomDock.layoutParams =
@@ -1028,7 +1028,7 @@ a{text-decoration:none;color:inherit}
 
             bottomDock.setPadding(
                 bottomDock.paddingLeft,
-                dp(6),
+                6.dp(),
                 bottomDock.paddingRight,
                 bottomInset
             )
