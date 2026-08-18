@@ -938,9 +938,33 @@ a{text-decoration:none;color:inherit}
                 view: WebView?,
                 newProgress: Int
             ) {
+                if (newProgress <= 0) {
+                    progressBar.animate().cancel()
+                    progressBar.alpha = 1f
+                    progressBar.progress = 0
+                    progressBar.visibility = View.VISIBLE
+                    return
+                }
+
+                if (progressBar.visibility != View.VISIBLE) {
+                    progressBar.alpha = 1f
+                    progressBar.visibility = View.VISIBLE
+                }
+
+                progressBar.animate().cancel()
                 progressBar.progress = newProgress
-                progressBar.visibility =
-                    if (newProgress >= 100) View.GONE else View.VISIBLE
+
+                if (newProgress >= 100) {
+                    progressBar.animate()
+                        .alpha(0f)
+                        .setDuration(180L)
+                        .withEndAction {
+                            progressBar.visibility = View.GONE
+                            progressBar.alpha = 1f
+                            progressBar.progress = 0
+                        }
+                        .start()
+                }
             }
 
             override fun onShowFileChooser(
@@ -3086,16 +3110,12 @@ a{text-decoration:none;color:inherit}
                 MotionEvent.ACTION_DOWN -> {
                     v.animate().cancel()
 
-                    val tilt =
-                        if (v.id == R.id.btnNewTab) 8f else 5f
-
                     v.animate()
-                        .scaleX(0.78f)
-                        .scaleY(0.78f)
-                        .rotation(tilt)
-                        .alpha(0.68f)
-                        .translationY(3f)
-                        .setDuration(85L)
+                        .scaleX(0.92f)
+                        .scaleY(0.92f)
+                        .alpha(0.78f)
+                        .translationY(1f)
+                        .setDuration(70L)
                         .start()
                 }
 
@@ -3103,20 +3123,18 @@ a{text-decoration:none;color:inherit}
                     v.animate().cancel()
 
                     v.animate()
-                        .scaleX(1.16f)
-                        .scaleY(1.16f)
-                        .rotation(-3f)
+                        .scaleX(1.04f)
+                        .scaleY(1.04f)
                         .alpha(1f)
-                        .translationY(-2f)
-                        .setDuration(110L)
+                        .translationY(0f)
+                        .setDuration(90L)
                         .withEndAction {
                             v.animate()
                                 .scaleX(1f)
                                 .scaleY(1f)
-                                .rotation(0f)
-                                .translationY(0f)
                                 .alpha(1f)
-                                .setDuration(150L)
+                                .translationY(0f)
+                                .setDuration(110L)
                                 .start()
                         }
                         .start()
@@ -3128,10 +3146,9 @@ a{text-decoration:none;color:inherit}
                     v.animate()
                         .scaleX(1f)
                         .scaleY(1f)
-                        .rotation(0f)
-                        .translationY(0f)
                         .alpha(1f)
-                        .setDuration(140L)
+                        .translationY(0f)
+                        .setDuration(100L)
                         .start()
                 }
             }
@@ -7117,25 +7134,44 @@ Blocker: ${olikhBlocker.isEnabled()}"""
             object : WebChromeClient() {
 
                 override fun onProgressChanged(
-                    view: WebView?,
-                    newProgress: Int
+                view: WebView?,
+                newProgress: Int
+            ) {
+                if (
+                    tab == null ||
+                    activeTab === tab
                 ) {
-                    if (
-                        tab == null ||
-                        activeTab === tab
-                    ) {
-                        progressBar.progress = newProgress
+                    if (newProgress <= 0) {
+                        progressBar.animate().cancel()
+                        progressBar.alpha = 1f
+                        progressBar.progress = 0
+                        progressBar.visibility = View.VISIBLE
+                        return
+                    }
 
-                        progressBar.visibility =
-                            if (newProgress >= 100) {
-                                View.GONE
-                            } else {
-                                View.VISIBLE
+                    if (progressBar.visibility != View.VISIBLE) {
+                        progressBar.alpha = 1f
+                        progressBar.visibility = View.VISIBLE
+                    }
+
+                    progressBar.animate().cancel()
+                    progressBar.progress = newProgress
+
+                    if (newProgress >= 100) {
+                        progressBar.animate()
+                            .alpha(0f)
+                            .setDuration(180L)
+                            .withEndAction {
+                                progressBar.visibility = View.GONE
+                                progressBar.alpha = 1f
+                                progressBar.progress = 0
                             }
+                            .start()
                     }
                 }
+            }
 
-                override fun onReceivedTitle(
+            override fun onReceivedTitle(
                     view: WebView?,
                     pageTitle: String?
                 ) {
