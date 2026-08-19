@@ -53,6 +53,9 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
 
+    // Local Unit Testing (JUnit)
+    testImplementation("junit:junit:4.13.2")
+
     // Android instrumentation / UI testing
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test:rules:1.6.1")
