@@ -40,12 +40,13 @@ jobs:
         id: emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
           target: google_apis
           arch: x86_64
           profile: pixel_2
-          emulator-options: -no-window -no-audio -no-boot-anim -camera-back none
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -camera-back none -gpu swiftshader_indirect
           disable-animations: true
+          emulator-boot-timeout: 900
           script: |
             set +e
             adb install -r app/build/outputs/apk/debug/app-debug.apk
