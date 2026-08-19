@@ -38,10 +38,13 @@ class DownloadManagerActivity : AppCompatActivity() {
     private val speedTracker = mutableMapOf<Long, Pair<Long, Long>>()
 
     private val refreshIntervalMs = 1000L
+    private var hasActiveDownloads = false
     private val refreshRunnable = object : Runnable {
         override fun run() {
             refreshDownloads()
-            root.postDelayed(this, refreshIntervalMs)
+            if (hasActiveDownloads) {
+                root.postDelayed(this, refreshIntervalMs)
+            }
         }
     }
 
@@ -194,6 +197,9 @@ class DownloadManagerActivity : AppCompatActivity() {
                 val id = it.getLong(idIndex)
                 val title = it.getString(titleIndex).orEmpty().ifBlank { "Download #$id" }
                 val status = it.getInt(statusIndex)
+            if (status == DownloadManager.STATUS_RUNNING || status == DownloadManager.STATUS_PAUSED || status == DownloadManager.STATUS_PENDING) {
+                hasActiveDownloads = true
+            }
                 val bytes = it.getLong(bytesIndex)
                 val totalBytes = it.getLong(totalBytesIndex)
                 val timestamp = if (dateIndex >= 0) it.getLong(dateIndex) else 0L
