@@ -1,18 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background">
 
-    <LinearLayout
+    <!-- Web Content Surface (Always Full Screen) -->
+    <FrameLayout
+        android:id="@+id/browserContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
-        <!-- Unified Top App Bar -->
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+
+    <!-- Top Container: Bar + Progress -->
+    <LinearLayout
+        android:id="@+id/browserTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="vertical"
+        android:background="@color/background">
+
         <LinearLayout
-            android:id="@+id/browserTopBar"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:gravity="center_vertical"
@@ -107,100 +122,87 @@
             android:max="100"
             android:progressTint="#60A5FA"
             android:visibility="gone" />
+    </LinearLayout>
 
-        <!-- Web Content Surface -->
-        <FrameLayout
-            android:id="@+id/browserContainer"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="@color/background">
+    <!-- Modern Bottom Navigation Dock -->
+    <LinearLayout
+        android:id="@+id/browserBottomDock"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:background="@drawable/bg_modern_bottom">
 
-            <WebView
-                android:id="@+id/webView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-        </FrameLayout>
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_modern_icon"
+            android:src="@drawable/ic_back"
+            app:tint="#D1D5DB"
+            android:padding="9dp"
+            android:contentDescription="Back" />
 
-        <!-- Modern Bottom Navigation Dock -->
-        <LinearLayout
-            android:id="@+id/browserBottomDock"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:background="@drawable/bg_modern_bottom">
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
-            <ImageButton
-                android:id="@+id/btnBack"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/bg_modern_icon"
-                android:src="@drawable/ic_back"
-                app:tint="#D1D5DB"
-                android:padding="9dp"
-                android:contentDescription="Back" />
+        <ImageButton
+            android:id="@+id/btnForward"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_modern_icon"
+            android:src="@drawable/ic_forward"
+            app:tint="#D1D5DB"
+            android:padding="9dp"
+            android:contentDescription="Forward" />
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
-            <ImageButton
-                android:id="@+id/btnForward"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/bg_modern_icon"
-                android:src="@drawable/ic_forward"
-                app:tint="#D1D5DB"
-                android:padding="9dp"
-                android:contentDescription="Forward" />
+        <ImageButton
+            android:id="@+id/btnBookmark"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_modern_icon"
+            android:src="@drawable/ic_bookmark"
+            app:tint="#D1D5DB"
+            android:padding="9dp"
+            android:contentDescription="Bookmark" />
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
-            <ImageButton
-                android:id="@+id/btnBookmark"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/bg_modern_icon"
-                android:src="@drawable/ic_bookmark"
-                app:tint="#D1D5DB"
-                android:padding="9dp"
-                android:contentDescription="Bookmark" />
+        <ImageButton
+            android:id="@+id/btnHome"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_modern_icon"
+            android:src="@drawable/ic_home"
+            app:tint="#D1D5DB"
+            android:padding="9dp"
+            android:contentDescription="Home" />
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
-            <ImageButton
-                android:id="@+id/btnHome"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/bg_modern_icon"
-                android:src="@drawable/ic_home"
-                app:tint="#D1D5DB"
-                android:padding="9dp"
-                android:contentDescription="Home" />
-
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-
-            <ImageButton
-                android:id="@+id/btnNewTab"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/bg_modern_accent"
-                android:src="@drawable/ic_add"
-                app:tint="#FFFFFF"
-                android:padding="8dp"
-                android:contentDescription="New tab" />
-        </LinearLayout>
+        <ImageButton
+            android:id="@+id/btnNewTab"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_modern_accent"
+            android:src="@drawable/ic_add"
+            app:tint="#FFFFFF"
+            android:padding="8dp"
+            android:contentDescription="New tab" />
     </LinearLayout>
 </FrameLayout>
