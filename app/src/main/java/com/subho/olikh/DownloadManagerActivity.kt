@@ -45,6 +45,20 @@ class DownloadManagerActivity : AppCompatActivity() {
         }
     }
 
+    private fun attachButtonAnim(v: View) {
+        v.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    view.animate().scaleX(0.94f).scaleY(0.94f).alpha(0.85f).setDuration(80L).start()
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    view.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(120L).start()
+                }
+            }
+            false
+        }
+    }
+
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
     private fun panel(color: Int, radius: Int = 14, strokeColor: Int? = null, strokeWidth: Int = 1) =
@@ -76,6 +90,7 @@ class DownloadManagerActivity : AppCompatActivity() {
             setColorFilter(Color.WHITE)
             background = panel(Color.parseColor("#1E293B"), 10)
             setPadding(dp(8), dp(8), dp(8), dp(8))
+            attachButtonAnim(this)
             setOnClickListener { finish() }
         }
         header.addView(backBtn, LinearLayout.LayoutParams(dp(38), dp(38)))
@@ -105,7 +120,9 @@ class DownloadManagerActivity : AppCompatActivity() {
             textSize = 12f
             setTextColor(Color.parseColor("#EF4444"))
             background = panel(Color.parseColor("#1E293B"), 10, Color.parseColor("#334155"))
-            setOnClickListener { confirmClearCompleted() }
+            attachButtonAnim(this)
+            attachButtonAnim(this)
+                setOnClickListener { confirmClearCompleted() }
         }
         header.addView(clearBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)))
         root.addView(header)
@@ -246,7 +263,10 @@ class DownloadManagerActivity : AppCompatActivity() {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), dp(14), dp(14), dp(14))
-            background = panel(Color.parseColor("#111827"), 16, Color.parseColor("#1F2937"))
+            background = panel(Color.parseColor("#121722"), 16, Color.parseColor("#1E2738"))
+            alpha = 0f
+            translationY = dp(6).toFloat()
+            animate().alpha(1f).translationY(0f).setDuration(180L).start()
         }
 
         // Top Row: Icon + Title + Status Pill
@@ -305,11 +325,19 @@ class DownloadManagerActivity : AppCompatActivity() {
 
         // Progress Bar
         if (status == DownloadManager.STATUS_RUNNING || status == DownloadManager.STATUS_PENDING) {
+            val bgDrawable = panel(Color.parseColor("#1B2333"), 4)
+            val progressDrawable = panel(Color.parseColor("#38BDF8"), 4)
+            val clipProgress = android.graphics.drawable.ClipDrawable(progressDrawable, Gravity.START, android.graphics.drawable.ClipDrawable.HORIZONTAL)
+            val layerDrawable = android.graphics.drawable.LayerDrawable(arrayOf(bgDrawable, clipProgress)).apply {
+                setId(0, android.R.id.background)
+                setId(1, android.R.id.progress)
+            }
+
             val pBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
                 isIndeterminate = totalBytes <= 0L
-                progress = progressPercent
                 max = 100
-                progressDrawable = panel(Color.parseColor("#3B82F6"), 4)
+                progressDrawable = layerDrawable
+                setProgressBarSmooth(this, progressPercent)
             }
             card.addView(pBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(5)).apply {
                 bottomMargin = dp(10)
@@ -329,6 +357,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 textSize = 11f
                 setTextColor(Color.WHITE)
                 background = panel(Color.parseColor("#2563EB"), 8)
+                attachButtonAnim(this)
                 setOnClickListener { openDownloadedFile(id, localUri, mediaType) }
             }
             btnRow.addView(openBtn, LinearLayout.LayoutParams(dp(68), dp(32)).apply {
@@ -341,6 +370,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 textSize = 11f
                 setTextColor(Color.WHITE)
                 background = panel(Color.parseColor("#0F766E"), 8)
+                attachButtonAnim(this)
                 setOnClickListener { shareDownloadedFile(id, mediaType) }
             }
             btnRow.addView(shareBtn, LinearLayout.LayoutParams(dp(68), dp(32)).apply {
@@ -358,15 +388,18 @@ class DownloadManagerActivity : AppCompatActivity() {
                 textSize = 11f
                 setTextColor(Color.parseColor("#F87171"))
                 background = panel(Color.parseColor("#1E293B"), 8, Color.parseColor("#334155"))
+                attachButtonAnim(this)
                 setOnClickListener {
-                    downloadManager.remove(id)
-                    speedTracker.remove(id)
-                    refreshDownloads()
-                    Toast.makeText(
-                        this@DownloadManagerActivity,
-                        "Download cancelled",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    card.animate().alpha(0f).scaleY(0.85f).setDuration(120L).withEndAction {
+                        downloadManager.remove(id)
+                        speedTracker.remove(id)
+                        refreshDownloads()
+                        Toast.makeText(
+                            this@DownloadManagerActivity,
+                            "Download cancelled",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }.start()
                 }
             }
             btnRow.addView(cancelBtn, LinearLayout.LayoutParams(dp(72), dp(32)).apply {
@@ -381,6 +414,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 textSize = 11f
                 setTextColor(Color.WHITE)
                 background = panel(Color.parseColor("#2563EB"), 8)
+                attachButtonAnim(this)
                 setOnClickListener {
                     if (sourceUri.isNullOrBlank()) {
                         Toast.makeText(
@@ -413,6 +447,7 @@ class DownloadManagerActivity : AppCompatActivity() {
                 textSize = 11f
                 setTextColor(Color.parseColor("#94A3B8"))
                 background = panel(Color.parseColor("#1E293B"), 8, Color.parseColor("#334155"))
+                attachButtonAnim(this)
                 setOnClickListener {
                     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     clipboard.setPrimaryClip(ClipData.newPlainText("URL", sourceUri))
@@ -430,9 +465,12 @@ class DownloadManagerActivity : AppCompatActivity() {
             textSize = 11f
             setTextColor(Color.parseColor("#EF4444"))
             background = panel(Color.parseColor("#1E293B"), 8, Color.parseColor("#334155"))
+            attachButtonAnim(this)
             setOnClickListener {
-                downloadManager.remove(id)
-                refreshDownloads()
+                card.animate().alpha(0f).scaleY(0.85f).setDuration(120L).withEndAction {
+                    downloadManager.remove(id)
+                    refreshDownloads()
+                }.start()
             }
         }
         btnRow.addView(deleteBtn, LinearLayout.LayoutParams(dp(68), dp(32)))
@@ -678,6 +716,14 @@ class DownloadManagerActivity : AppCompatActivity() {
         DownloadManager.STATUS_PAUSED -> Color.parseColor("#451A03")
         DownloadManager.STATUS_FAILED -> Color.parseColor("#450A0A")
         else -> Color.parseColor("#1E293B")
+    }
+
+    private fun setProgressBarSmooth(progressBar: ProgressBar, progress: Int) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            progressBar.setProgress(progress, true)
+        } else {
+            progressBar.progress = progress
+        }
     }
 
     private fun formatBytes(bytes: Long): String {
