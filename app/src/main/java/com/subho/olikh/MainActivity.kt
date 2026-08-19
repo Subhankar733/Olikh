@@ -394,10 +394,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showOlikhStartPage() {
-        showingErrorPage = false
-        failedUrl = null
-
+    private fun buildStartPageHtml(): String {
         val protection = if (olikhBlocker.isEnabled()) "Shield Active" else "Shield Off"
         val blocked = olikhBlocker.blockedRequests()
 
@@ -439,7 +436,7 @@ class MainActivity : AppCompatActivity() {
         }
         val finalRecent = if (recentHtml.isNotEmpty()) recentHtml.toString() else "<div class=\"empty\">No recent activity</div>"
 
-        val html = """
+        return """
 <!doctype html>
 <html>
 <head>
@@ -657,8 +654,12 @@ a{text-decoration:none;color:inherit}
 </body>
 </html>
 """.trimIndent()
+    }
 
-        val startHtml: String = html
+    private fun showOlikhStartPage() {
+        showingErrorPage = false
+        failedUrl = null
+        val startHtml = buildStartPageHtml()
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         webView.isVerticalScrollBarEnabled = false
         webView.overScrollMode = View.OVER_SCROLL_NEVER
@@ -1169,6 +1170,15 @@ a{text-decoration:none;color:inherit}
                 val url = request?.url?.toString()
                     ?: return super.shouldInterceptRequest(view, request)
 
+                if (url.startsWith("https://olikh.local/start") || url == "https://olikh.local/") {
+                    val html = buildStartPageHtml()
+                    return WebResourceResponse(
+                        "text/html",
+                        "UTF-8",
+                        java.io.ByteArrayInputStream(html.toByteArray(Charsets.UTF_8))
+                    )
+                }
+
                 if (olikhBlocker.shouldBlock(url)) {
                     return WebResourceResponse(
                         "text/plain",
@@ -1243,7 +1253,6 @@ a{text-decoration:none;color:inherit}
             ) {
                 val failingUrl = request?.url?.toString().orEmpty()
                 if (failingUrl.contains("olikh.local") || failingUrl.startsWith("olikh://")) {
-                    showOlikhStartPage()
                     return
                 }
                 super.onReceivedError(view, request, error)
