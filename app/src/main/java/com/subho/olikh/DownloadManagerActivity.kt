@@ -325,18 +325,10 @@ class DownloadManagerActivity : AppCompatActivity() {
 
         // Progress Bar
         if (status == DownloadManager.STATUS_RUNNING || status == DownloadManager.STATUS_PENDING) {
-            val bgDrawable = panel(Color.parseColor("#1B2333"), 4)
-            val progressDrawable = panel(Color.parseColor("#38BDF8"), 4)
-            val clipProgress = android.graphics.drawable.ClipDrawable(progressDrawable, Gravity.START, android.graphics.drawable.ClipDrawable.HORIZONTAL)
-            val layerDrawable = android.graphics.drawable.LayerDrawable(arrayOf(bgDrawable, clipProgress)).apply {
-                setId(0, android.R.id.background)
-                setId(1, android.R.id.progress)
-            }
-
             val pBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
                 isIndeterminate = totalBytes <= 0L
                 max = 100
-                progressDrawable = layerDrawable
+                progressDrawable = panel(Color.parseColor("#38BDF8"), 4)
                 setProgressBarSmooth(this, progressPercent)
             }
             card.addView(pBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(5)).apply {
