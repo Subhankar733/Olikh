@@ -1,7 +1,21 @@
 package com.subho.olikh
 
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
+
+enum class MockDownloadStatus { PENDING, DOWNLOADING, COMPLETED, FAILED, CANCELLED }
+
+data class MockTab(val id: String, var url: String, var title: String)
+
+data class MockDownloadItem(
+    val id: Long,
+    val url: String,
+    var progress: Int,
+    var status: MockDownloadStatus,
+    var isPolling: Boolean
+)
 
 class BrowserCoreSmokeTest {
 
@@ -35,8 +49,6 @@ class BrowserCoreSmokeTest {
 
     @Test
     fun testTabCreationAndSwitchLogic() {
-        data class MockTab(val id: String, var url: String, var title: String)
-
         val tabList = mutableListOf<MockTab>()
         
         // 1. Initial Tab
@@ -69,37 +81,27 @@ class BrowserCoreSmokeTest {
 
     @Test
     fun testDownloadStateTransitions_noEndlessLoop() {
-        enum class DownloadStatus { PENDING, DOWNLOADING, COMPLETED, FAILED, CANCELLED }
-
-        data class MockDownloadItem(
-            val id: Long,
-            val url: String,
-            var progress: Int,
-            var status: DownloadStatus,
-            var isPolling: Boolean
-        )
-
         val item = MockDownloadItem(
             id = 1001L,
             url = "https://example.com/testfile.zip",
             progress = 0,
-            status = DownloadStatus.PENDING,
+            status = MockDownloadStatus.PENDING,
             isPolling = true
         )
 
         // Progress Update
-        item.status = DownloadStatus.DOWNLOADING
+        item.status = MockDownloadStatus.DOWNLOADING
         item.progress = 50
         assertTrue(item.isPolling)
 
         // Completion - Polling MUST stop
         item.progress = 100
-        item.status = DownloadStatus.COMPLETED
-        if (item.status == DownloadStatus.COMPLETED || item.status == DownloadStatus.FAILED) {
+        item.status = MockDownloadStatus.COMPLETED
+        if (item.status == MockDownloadStatus.COMPLETED || item.status == MockDownloadStatus.FAILED) {
             item.isPolling = false
         }
 
-        assertEquals(DownloadStatus.COMPLETED, item.status)
+        assertEquals(MockDownloadStatus.COMPLETED, item.status)
         assertFalse("Polling loop must terminate immediately upon completion", item.isPolling)
     }
 
