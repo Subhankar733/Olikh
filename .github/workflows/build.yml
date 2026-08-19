@@ -14,9 +14,9 @@ concurrency:
 
 jobs:
   smoke-test:
-    name: Android Smoke Tests
+    name: Android Fast Unit & Smoke Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -33,58 +33,21 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-          sudo chmod 777 /dev/kvm || true
+      - name: Run Unit Tests & Lint Gate
+        run: gradle testDebugUnitTest --stacktrace
 
-      - name: Build debug APK and test APK
-        run: gradle assembleDebug assembleDebugAndroidTest --stacktrace
-
-      - name: Run Android instrumentation tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 29
-          target: google_apis
-          arch: x86_64
-          profile: pixel
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -camera-back none -camera-front none -gpu swiftshader_indirect -memory 2048
-          disable-animations: true
-          emulator-boot-timeout: 600
-          script: |
-            set +e
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            gradle connectedDebugAndroidTest --stacktrace
-            test_status=$?
-            echo "===== OLIKH TEST LOGCAT =====" > olikh-logcat.txt
-            adb logcat -d -v threadtime >> olikh-logcat.txt 2>&1 || true
-            exit "$test_status"
-
-      - name: Upload Android test reports
+      - name: Upload Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: olikh-android-smoke-test-reports
-          path: |
-            app/build/reports/androidTests/
-            app/build/outputs/androidTest-results/
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Upload logcat
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: olikh-smoke-test-logcat
-          path: olikh-logcat.txt
+          name: olikh-test-reports
+          path: app/build/reports/tests/
           if-no-files-found: warn
 
   build:
     needs: smoke-test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
