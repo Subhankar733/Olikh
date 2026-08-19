@@ -19,7 +19,7 @@
             android:overScrollMode="never" />
     </FrameLayout>
 
-    <!-- Top Glow Progress Indicator -->
+    <!-- Top Progress Indicator -->
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -30,15 +30,23 @@
         android:progressTint="#38BDF8"
         android:visibility="gone" />
 
-    <!-- Floating Dynamic Island Capsule (Bottom Center) -->
+    <!-- Legacy Top Bar Reference (Zero Height for backward compatibility) -->
     <LinearLayout
-        android:id="@+id/floatingCapsule"
+        android:id="@+id/browserTopBar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        android:orientation="horizontal" />
+
+    <!-- Floating Dynamic Island Capsule (Bottom Center Dock) -->
+    <LinearLayout
+        android:id="@+id/browserBottomDock"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="16dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="@drawable/bg_glass_capsule"
@@ -55,18 +63,30 @@
             android:padding="9dp"
             android:contentDescription="Back" />
 
+        <!-- Navigation: Forward -->
+        <ImageButton
+            android:id="@+id/btnForward"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_capsule_pill"
+            android:src="@drawable/ic_forward"
+            app:tint="#94A3B8"
+            android:padding="9dp"
+            android:contentDescription="Forward" />
+
         <!-- Center Dynamic Address / Command Bar -->
         <LinearLayout
             android:id="@+id/addressBarContainer"
             android:layout_width="0dp"
             android:layout_height="38dp"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
             android:gravity="center_vertical"
             android:background="@drawable/bg_capsule_pill"
-            android:paddingStart="10dp"
-            android:paddingEnd="8dp">
+            android:paddingStart="8dp"
+            android:paddingEnd="6dp">
 
             <ImageView
                 android:id="@+id/sslLockIcon"
@@ -98,20 +118,32 @@
 
             <ImageButton
                 android:id="@+id/btnReload"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_reload"
                 app:tint="#94A3B8"
-                android:padding="5dp"
+                android:padding="4dp"
                 android:contentDescription="Reload" />
         </LinearLayout>
+
+        <!-- New Tab Quick Button -->
+        <ImageButton
+            android:id="@+id/btnNewTab"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_capsule_pill"
+            android:src="@drawable/ic_add"
+            app:tint="#38BDF8"
+            android:padding="9dp"
+            android:contentDescription="New tab" />
 
         <!-- Tab Switcher Badge Button -->
         <Button
             android:id="@+id/btnTabs"
             android:layout_width="38dp"
             android:layout_height="38dp"
+            android:layout_marginStart="4dp"
             android:minWidth="0dp"
             android:minHeight="0dp"
             android:padding="0dp"
@@ -127,12 +159,29 @@
             android:id="@+id/btnMenu"
             android:layout_width="38dp"
             android:layout_height="38dp"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="4dp"
             android:background="@drawable/bg_capsule_pill"
             android:src="@drawable/ic_more_vertical"
             app:tint="#94A3B8"
             android:padding="9dp"
             android:contentDescription="Menu" />
+
+        <!-- Hidden Legacy Reference for Home & Bookmark -->
+        <ImageButton
+            android:id="@+id/btnHome"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            android:src="@drawable/ic_home"
+            android:contentDescription="Home" />
+
+        <ImageButton
+            android:id="@+id/btnBookmark"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            android:src="@drawable/ic_bookmark"
+            android:contentDescription="Bookmark" />
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
