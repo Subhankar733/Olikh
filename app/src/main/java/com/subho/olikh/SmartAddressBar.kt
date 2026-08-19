@@ -136,8 +136,10 @@ class SmartAddressBar(
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(12), dp(9), dp(12), dp(9))
                 setOnClickListener {
-                    dismiss()
-                    onSuggestionSelected(item)
+                    animate().scaleX(0.97f).scaleY(0.97f).setDuration(60L).withEndAction {
+                        dismiss()
+                        onSuggestionSelected(item)
+                    }.start()
                 }
             }
 
