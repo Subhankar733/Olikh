@@ -47,8 +47,30 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
+            set +e
             adb install -r app/build/outputs/apk/debug/app-debug.apk
-            gradle connectedDebugAndroidTest --stacktrace
+            install_status=$?
+
+            if [ "$install_status" -ne 0 ]; then
+              adb logcat -d -v threadtime > olikh-logcat.txt 2>&1 || true
+              exit "$install_status"
+            fi
+
+            timeout --signal=TERM --kill-after=30s 8m gradle connectedDebugAndroidTest --stacktrace
+            test_status=$?
+
+            if [ "$test_status" -eq 124 ] || [ "$test_status" -eq 137 ]; then
+              echo "ERROR: Android instrumentation tests timed out after 8 minutes."
+            fi
+
+            echo "===== OLIKH TEST LOGCAT =====" > olikh-logcat.txt
+            adb logcat -d -v threadtime >> olikh-logcat.txt 2>&1 || true
+
+            echo "===== OLIKH DEVICE STATE =====" >> olikh-logcat.txt
+            adb shell getprop ro.build.version.release >> olikh-logcat.txt 2>&1 || true
+            adb shell getprop ro.build.version.sdk >> olikh-logcat.txt 2>&1 || true
+
+            exit "$test_status"
 
       - name: Upload Android test reports
         if: always()
@@ -60,10 +82,6 @@ jobs:
             app/build/outputs/androidTest-results/
           if-no-files-found: warn
           retention-days: 7
-
-      - name: Dump logcat on emulator failure
-        if: failure() && steps.emulator.outcome == 'failure'
-        run: adb logcat -d > olikh-logcat.txt
 
       - name: Upload logcat
         if: failure()
