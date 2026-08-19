@@ -37,6 +37,7 @@ jobs:
         run: gradle assembleDebug assembleDebugAndroidTest --stacktrace
 
       - name: Run Android instrumentation tests
+        id: emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -60,8 +61,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Dump logcat on failure
-        if: failure()
+      - name: Dump logcat on emulator failure
+        if: failure() && steps.emulator.outcome == 'failure'
         run: adb logcat -d > olikh-logcat.txt
 
       - name: Upload logcat
