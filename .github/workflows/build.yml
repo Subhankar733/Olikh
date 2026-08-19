@@ -16,7 +16,7 @@ jobs:
   smoke-test:
     name: Android Smoke Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -33,7 +33,7 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Enable KVM Hardware Acceleration
+      - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
@@ -47,10 +47,10 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
-          target: default
+          target: google_apis
           arch: x86_64
           profile: pixel
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -camera-back none -camera-front none -gpu swiftshader_indirect
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -camera-back none -camera-front none -gpu swiftshader_indirect -memory 2048
           disable-animations: true
           emulator-boot-timeout: 600
           script: |
