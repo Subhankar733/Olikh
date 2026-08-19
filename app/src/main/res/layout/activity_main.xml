@@ -1,16 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#07090E">
+    android:background="#0B0F19">
 
-    <!-- Immersive Web Canvas -->
+    <!-- Top App Bar & Omnibox Container -->
+    <LinearLayout
+        android:id="@+id/browserTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentTop="true"
+        android:background="#0F172A"
+        android:elevation="6dp"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <LinearLayout
+            android:id="@+id/addressBarContainer"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_capsule_pill"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp">
+
+            <ImageView
+                android:id="@+id/sslLockIcon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_search"
+                app:tint="#38BDF8"
+                android:contentDescription="Search or Security" />
+
+            <EditText
+                android:id="@+id/addressBar"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="Search or type web address..."
+                android:imeOptions="actionGo"
+                android:importantForAutofill="no"
+                android:inputType="textUri"
+                android:selectAllOnFocus="true"
+                android:singleLine="true"
+                android:textColor="#F8FAFC"
+                android:textColorHint="#64748B"
+                android:textSize="14sp" />
+
+            <ImageButton
+                android:id="@+id/btnReload"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Reload"
+                android:padding="6dp"
+                android:src="@drawable/ic_reload"
+                app:tint="#94A3B8" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Top Loading Indicator -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_below="@id/browserTopBar"
+        android:max="100"
+        android:progressTint="#38BDF8"
+        android:visibility="gone" />
+
+    <!-- Web Content Surface (Bounded between Top & Bottom bars) -->
     <FrameLayout
         android:id="@+id/browserContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_above="@id/browserBottomDock"
+        android:layout_below="@id/progressBar">
 
         <WebView
             android:id="@+id/webView"
@@ -19,166 +91,86 @@
             android:overScrollMode="never" />
     </FrameLayout>
 
-    <!-- Glowing Top Progress Indicator -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="3dp"
-        android:layout_gravity="top"
-        android:max="100"
-        android:progressTint="#00F0FF"
-        android:visibility="gone" />
-
-    <!-- Legacy Reference Holder -->
-    <LinearLayout
-        android:id="@+id/browserTopBar"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone"
-        android:orientation="horizontal" />
-
-    <!-- Modern 2-Tier Floating HUD Control Deck -->
+    <!-- Sleek Bottom Action Deck -->
     <LinearLayout
         android:id="@+id/browserBottomDock"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:orientation="vertical"
-        android:background="@drawable/bg_glass_capsule"
-        android:elevation="14dp"
-        android:padding="8dp">
+        android:layout_height="52dp"
+        android:layout_alignParentBottom="true"
+        android:background="#0F172A"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:weightSum="5">
 
-        <!-- Tier 1: Spacious Smart Omnibox -->
-        <LinearLayout
-            android:id="@+id/addressBarContainer"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:gravity="center_vertical"
-            android:background="@drawable/bg_capsule_pill"
-            android:paddingStart="12dp"
-            android:paddingEnd="10dp">
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:padding="13dp"
+            android:src="@drawable/ic_back"
+            app:tint="#94A3B8" />
 
-            <ImageView
-                android:id="@+id/sslLockIcon"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_search"
-                app:tint="#00F0FF"
-                android:contentDescription="Status" />
+        <ImageButton
+            android:id="@+id/btnForward"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Forward"
+            android:padding="13dp"
+            android:src="@drawable/ic_forward"
+            app:tint="#94A3B8" />
 
-            <EditText
-                android:id="@+id/addressBar"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="6dp"
-                android:background="@android:color/transparent"
-                android:hint="Search or enter web address..."
-                android:inputType="textUri"
-                android:imeOptions="actionGo"
-                android:singleLine="true"
-                android:ellipsize="middle"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#64748B"
-                android:textSize="14sp"
-                android:padding="0dp"
-                android:selectAllOnFocus="true"
-                android:importantForAutofill="no" />
-
-            <ImageButton
-                android:id="@+id/btnReload"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_reload"
-                app:tint="#94A3B8"
-                android:padding="6dp"
-                android:contentDescription="Reload" />
-        </LinearLayout>
-
-        <!-- Tier 2: Balanced Navigation & Tool Matrix -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="46dp"
-            android:layout_marginTop="6dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:weightSum="5">
-
-            <ImageButton
-                android:id="@+id/btnBack"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_back"
-                app:tint="#94A3B8"
-                android:padding="11dp"
-                android:contentDescription="Back" />
-
-            <ImageButton
-                android:id="@+id/btnForward"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_forward"
-                app:tint="#94A3B8"
-                android:padding="11dp"
-                android:contentDescription="Forward" />
-
-            <ImageButton
-                android:id="@+id/btnNewTab"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_add"
-                app:tint="#00F0FF"
-                android:padding="11dp"
-                android:contentDescription="New Tab" />
-
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
-
-                <Button
-                    android:id="@+id/btnTabs"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_gravity="center"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp"
-                    android:padding="0dp"
-                    android:background="@drawable/bg_capsule_pill"
-                    android:text="1"
-                    android:textColor="#00F0FF"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:contentDescription="Tabs" />
-            </FrameLayout>
-
-            <ImageButton
-                android:id="@+id/btnMenu"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_more_vertical"
-                app:tint="#94A3B8"
-                android:padding="11dp"
-                android:contentDescription="Menu" />
-        </LinearLayout>
-
-        <!-- Hidden Legacy Hooks -->
         <ImageButton
             android:id="@+id/btnHome"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Home"
+            android:padding="13dp"
+            android:src="@drawable/ic_home"
+            app:tint="#38BDF8" />
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <Button
+                android:id="@+id/btnTabs"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_capsule_pill"
+                android:contentDescription="Tabs"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:text="1"
+                android:textColor="#38BDF8"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <ImageButton
+            android:id="@+id/btnMenu"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Menu"
+            android:padding="13dp"
+            android:src="@drawable/ic_more_vertical"
+            app:tint="#94A3B8" />
+
+        <!-- Hidden hooks for activity compatibility -->
+        <ImageButton
+            android:id="@+id/btnNewTab"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:visibility="gone" />
@@ -190,4 +182,4 @@
             android:visibility="gone" />
     </LinearLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</RelativeLayout>
