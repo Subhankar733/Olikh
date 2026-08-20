@@ -10,6 +10,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.hamcrest.Matchers.anyOf
 
 @RunWith(AndroidJUnit4::class)
 class BrowserChromeUiTest {
@@ -73,7 +74,9 @@ class BrowserChromeUiTest {
         onView(withContentDescription("Home"))
             .check(matches(isDisplayed()))
 
-        onView(withContentDescription("Bookmark"))
-            .check(matches(isDisplayed()))
+        onView(anyOf(
+            withContentDescription("Add bookmark"),
+            withContentDescription("Remove bookmark")
+        )).check(matches(isDisplayed()))
     }
 }
