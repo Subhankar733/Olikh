@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:background="#0B0B0C">
 
-    <!-- Premium top browser chrome -->
+    <!-- TOP BROWSER CHROME -->
+
     <LinearLayout
         android:id="@+id/browserTopBar"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_alignParentTop="true"
-        android:background="#000000"
+        android:background="#0B0B0C"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="8dp"
@@ -20,33 +23,33 @@
 
         <ImageButton
             android:id="@+id/btnNewTab"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="New Tab"
             android:padding="10dp"
             android:src="@drawable/ic_add"
-            app:tint="#FFFFFF" />
+            app:tint="#F5F5F5" />
 
         <LinearLayout
             android:id="@+id/addressBarContainer"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="42dp"
             android:layout_weight="1"
-            android:layout_marginStart="2dp"
+            android:layout_marginStart="4dp"
             android:layout_marginEnd="6dp"
             android:background="@drawable/bg_capsule_pill"
             android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="6dp">
+            android:paddingStart="13dp"
+            android:paddingEnd="5dp">
 
             <ImageView
                 android:id="@+id/sslLockIcon"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
                 android:contentDescription="Security"
                 android:src="@drawable/ic_search"
-                app:tint="#8E8E93" />
+                app:tint="#9A9A9F" />
 
             <EditText
                 android:id="@+id/addressBar"
@@ -54,7 +57,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:layout_marginEnd="4dp"
+                android:layout_marginEnd="2dp"
                 android:background="@android:color/transparent"
                 android:ellipsize="middle"
                 android:gravity="center_vertical"
@@ -64,19 +67,20 @@
                 android:inputType="textUri"
                 android:selectAllOnFocus="true"
                 android:singleLine="true"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#8E8E93"
-                android:textSize="13sp" />
+                android:textColor="#F5F5F5"
+                android:textColorHint="#858589"
+                android:textSize="14sp" />
 
             <ImageButton
                 android:id="@+id/btnReload"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Reload"
                 android:padding="7dp"
                 android:src="@drawable/ic_reload"
-                app:tint="#8E8E93" />
+                app:tint="#A2A2A7" />
+
         </LinearLayout>
 
         <Button
@@ -89,23 +93,24 @@
             android:minHeight="0dp"
             android:padding="0dp"
             android:text="1"
-            android:textColor="#FFFFFF"
+            android:textColor="#F5F5F5"
             android:textSize="12sp"
             android:textStyle="bold" />
 
         <ImageButton
             android:id="@+id/btnMenu"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Menu"
             android:padding="10dp"
             android:src="@drawable/ic_more_vertical"
-            app:tint="#FFFFFF" />
+            app:tint="#F5F5F5" />
 
     </LinearLayout>
 
-    <!-- Thin Safari-style loading indicator -->
+    <!-- LOADING LINE -->
+
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -113,17 +118,18 @@
         android:layout_height="2dp"
         android:layout_below="@id/browserTopBar"
         android:max="100"
-        android:progressTint="#0A84FF"
+        android:progressTint="#FF6422"
         android:visibility="gone" />
 
-    <!-- Web viewport -->
+    <!-- WEB CONTENT -->
+
     <FrameLayout
         android:id="@+id/browserContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/progressBar"
         android:layout_above="@id/browserBottomDock"
-        android:background="#000000">
+        android:background="#0B0B0C">
 
         <WebView
             android:id="@+id/webView"
@@ -133,64 +139,73 @@
 
     </FrameLayout>
 
-    <!-- Premium bottom browser controls -->
-    <LinearLayout
+    <!-- FLOATING BOTTOM DOCK -->
+
+    <FrameLayout
         android:id="@+id/browserBottomDock"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="60dp"
         android:layout_alignParentBottom="true"
-        android:background="#000000"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="6dp"
-        android:paddingEnd="6dp">
+        android:background="@android:color/transparent"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
 
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
-            android:padding="11dp"
-            android:src="@drawable/ic_back"
-            app:tint="#FFFFFF" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_browser_bottom_dock"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp">
 
-        <ImageButton
-            android:id="@+id/btnForward"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Forward"
-            android:padding="11dp"
-            android:src="@drawable/ic_forward"
-            app:tint="#FFFFFF" />
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:padding="11dp"
+                android:src="@drawable/ic_back"
+                app:tint="#E8E8EA" />
 
-        <ImageButton
-            android:id="@+id/btnHome"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_bottom_nav_home"
-            android:contentDescription="Home"
-            android:padding="11dp"
-            android:src="@drawable/ic_home"
-            app:tint="#FFFFFF" />
+            <ImageButton
+                android:id="@+id/btnForward"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Forward"
+                android:padding="11dp"
+                android:src="@drawable/ic_forward"
+                app:tint="#E8E8EA" />
 
-        <ImageButton
-            android:id="@+id/btnBookmark"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Bookmark"
-            android:padding="11dp"
-            android:src="@drawable/ic_bookmark"
-            app:tint="#FFFFFF" />
+            <ImageButton
+                android:id="@+id/btnHome"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_bottom_nav_home"
+                android:contentDescription="Home"
+                android:padding="11dp"
+                android:src="@drawable/ic_home"
+                app:tint="#FFFFFF" />
 
+            <ImageButton
+                android:id="@+id/btnBookmark"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Bookmark"
+                android:padding="11dp"
+                android:src="@drawable/ic_bookmark"
+                app:tint="#E8E8EA" />
 
+        </LinearLayout>
 
-    </LinearLayout>
+    </FrameLayout>
 
 </RelativeLayout>
