@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -17,6 +18,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="66dp"
+        android:id="@+id/browserTopBar"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingStart="10dp"
@@ -85,6 +87,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="68dp"
+        android:id="@+id/browserBottomDock"
         android:orientation="horizontal"
         android:gravity="center"
         android:background="#0B1019"
