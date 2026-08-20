@@ -34,7 +34,7 @@ jobs:
           gradle-version: '8.9'
 
       - name: Run Unit Tests & Lint Gate
-        run: gradle testDebugUnitTest --stacktrace
+        run: ./gradlew testDebugUnitTest --stacktrace
 
       - name: Upload Test Reports
         if: always()
@@ -79,7 +79,7 @@ jobs:
           OLIKH_KEY_ALIAS: ${{ secrets.OLIKH_KEY_ALIAS }}
           OLIKH_KEY_PASSWORD: ${{ secrets.OLIKH_KEY_PASSWORD }}
         run: |
-          gradle assembleRelease --stacktrace
+          ./gradlew assembleRelease --stacktrace
           test -s app/build/outputs/apk/release/app-release.apk
 
       - name: Verify APK
