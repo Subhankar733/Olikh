@@ -397,67 +397,163 @@ class MainActivity : AppCompatActivity() {
     private fun buildStartPageHtml(): String {
         val blocked = adBlockStats.blockedTotal.get()
         val protection = if (isAdBlockEnabled) "Shield Active" else "Shield Paused"
-        
+
         return """
-        <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
             <style>
-                * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-                body { background-color: #0B0F19; color: #F8FAFC; padding: 24px 16px; user-select: none; }
-                .hero { text-align: center; margin-top: 10px; margin-bottom: 24px; }
-                .logo { font-size: 32px; font-weight: 900; letter-spacing: -1px; color: #FFFFFF; }
-                .logo span { color: #38BDF8; }
-                .shield-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #38BDF8; margin-top: 10px; }
-                .dot { width: 8px; height: 8px; background: #38BDF8; border-radius: 50%; box-shadow: 0 0 8px #38BDF8; }
-                
-                .section-title { font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; margin-left: 4px; }
-                .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-                .tile { display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; }
-                .icon-box { width: 56px; height: 56px; border-radius: 16px; background: #1E293B; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #FFFFFF; }
-                .tile-name { font-size: 12px; font-weight: 500; color: #94A3B8; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 64px; }
-                
-                .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-                .action-btn { background: #1E293B; border: 1px solid #334155; border-radius: 12px; padding: 12px 6px; text-align: center; font-size: 12px; font-weight: 600; color: #E2E8F0; }
-                .action-btn:active { background: #334155; }
+                * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; }
+                body {
+                    background: linear-gradient(180deg, #0B0F19 0%, #111827 100%);
+                    color: #F8FAFC;
+                    padding: 36px 18px 120px 18px;
+                    user-select: none;
+                    min-height: 100vh;
+                }
+                .header {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    margin-bottom: 28px;
+                }
+                .brand {
+                    font-size: 30px;
+                    font-weight: 800;
+                    letter-spacing: -0.5px;
+                    color: #FFFFFF;
+                }
+                .brand span { color: #38BDF8; }
+                .privacy-pill {
+                    margin-top: 10px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: rgba(30, 41, 59, 0.6);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(56, 189, 248, 0.2);
+                    padding: 5px 12px;
+                    border-radius: 999px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: #38BDF8;
+                }
+                .privacy-dot {
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background: #38BDF8;
+                    box-shadow: 0 0 6px #38BDF8;
+                }
+                .section-header {
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: #94A3B8;
+                    margin: 20px 0 12px 4px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.8px;
+                }
+                .grid-favorites {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 14px;
+                }
+                .fav-item {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-decoration: none;
+                    gap: 6px;
+                }
+                .fav-icon {
+                    width: 58px;
+                    height: 58px;
+                    border-radius: 16px;
+                    background: rgba(30, 41, 59, 0.7);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #F8FAFC;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+                }
+                .fav-title {
+                    font-size: 11px;
+                    color: #CBD5E1;
+                    font-weight: 500;
+                    text-align: center;
+                }
+                .safari-card-list {
+                    background: rgba(30, 41, 59, 0.6);
+                    border-radius: 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    overflow: hidden;
+                    margin-top: 14px;
+                }
+                .safari-card-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 13px 16px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #E2E8F0;
+                }
+                .safari-card-row:last-child {
+                    border-bottom: none;
+                }
+                .safari-card-row:active {
+                    background: rgba(255, 255, 255, 0.05);
+                }
             </style>
         </head>
         <body>
-            <div class="hero">
-                <div class="logo">OLIKH<span>.</span></div>
-                <div class="shield-badge">
-                    <span class="dot"></span>
-                    <span>$protection • $blocked Blocked</span>
+            <div class="header">
+                <div class="brand">OLIKH<span>.</span></div>
+                <div class="privacy-pill">
+                    <span class="privacy-dot"></span>
+                    <span> •  Trackers Blocked</span>
                 </div>
             </div>
 
-            <div class="section-title">Favorites</div>
-            <div class="grid">
-                <a class="tile" href="https://www.google.com">
-                    <div class="icon-box" style="color:#4285F4;">G</div>
-                    <div class="tile-name">Google</div>
+            <div class="section-header">Favorites</div>
+            <div class="grid-favorites">
+                <a class="fav-item" href="https://www.google.com">
+                    <div class="fav-icon" style="color: #4285F4;">G</div>
+                    <span class="fav-title">Google</span>
                 </a>
-                <a class="tile" href="https://m.youtube.com">
-                    <div class="icon-box" style="color:#FF0000;">Y</div>
-                    <div class="tile-name">YouTube</div>
+                <a class="fav-item" href="https://m.youtube.com">
+                    <div class="fav-icon" style="color: #EF4444;">YT</div>
+                    <span class="fav-title">YouTube</span>
                 </a>
-                <a class="tile" href="https://github.com">
-                    <div class="icon-box" style="color:#FFFFFF;">Git</div>
-                    <div class="tile-name">GitHub</div>
+                <a class="fav-item" href="https://github.com">
+                    <div class="fav-icon" style="color: #F8FAFC;">Git</div>
+                    <span class="fav-title">GitHub</span>
                 </a>
-                <a class="tile" href="https://en.m.wikipedia.org">
-                    <div class="icon-box" style="color:#38BDF8;">W</div>
-                    <div class="tile-name">Wikipedia</div>
+                <a class="fav-item" href="https://en.m.wikipedia.org">
+                    <div class="fav-icon" style="color: #38BDF8;">W</div>
+                    <span class="fav-title">Wiki</span>
                 </a>
             </div>
 
-            <div class="section-title">Manage</div>
-            <div class="quick-actions">
-                <div class="action-btn" onclick="OlikhNative.openInternal('bookmarks')">Bookmarks</div>
-                <div class="action-btn" onclick="OlikhNative.openInternal('history')">History</div>
-                <div class="action-btn" onclick="OlikhNative.openInternal('downloads')">Downloads</div>
+            <div class="section-header">Privacy & Quick Links</div>
+            <div class="safari-card-list">
+                <div class="safari-card-row" onclick="OlikhNative.openInternal('bookmarks')">
+                    <span>Bookmarks</span>
+                    <span style="color:#64748B;">›</span>
+                </div>
+                <div class="safari-card-row" onclick="OlikhNative.openInternal('history')">
+                    <span>History</span>
+                    <span style="color:#64748B;">›</span>
+                </div>
+                <div class="safari-card-row" onclick="OlikhNative.openInternal('downloads')">
+                    <span>Downloads</span>
+                    <span style="color:#64748B;">›</span>
+                </div>
             </div>
         </body>
         </html>
@@ -805,60 +901,26 @@ class MainActivity : AppCompatActivity() {
 
     private fun installWindowInsetsHandling() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
         window.statusBarColor = Color.TRANSPARENT
-        window.navigationBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.parseColor("#1E293B")
 
-        val root = findViewById<View>(android.R.id.content)
-        val topBar = findViewById<View>(R.id.browserTopBar)
-        val bottomDock = findViewById<View>(R.id.browserBottomDock)
-
-        val topBaseHeight = 56.dp()
-        val bottomBaseHeight = 52.dp()
+        val root = findViewById<View>(R.id.rootContainer)
+        val browserContainer = findViewById<View>(R.id.browserContainer)
+        val safariDock = findViewById<View>(R.id.safariDockContainer)
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
-            val systemBars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars()
-            )
-            val ime = insets.getInsets(
-                WindowInsetsCompat.Type.ime()
-            )
+            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
 
-            val topInset = systemBars.top
-            val bottomInset = maxOf(
-                systemBars.bottom,
-                ime.bottom
-            )
+            val topInset = statusBars.top
+            val bottomInset = maxOf(navBars.bottom, ime.bottom)
 
-            topBar.layoutParams =
-                topBar.layoutParams.apply {
-                    height = topBaseHeight + topInset
-                }
+            browserContainer.setPadding(0, topInset, 0, 0)
+            safariDock.setPadding(0, 8.dp(), 0, bottomInset + 4.dp())
 
-            topBar.setPadding(
-                topBar.paddingLeft,
-                topInset,
-                topBar.paddingRight,
-                6.dp()
-            )
-
-            bottomDock.layoutParams =
-                bottomDock.layoutParams.apply {
-                    height = bottomBaseHeight + bottomInset
-                }
-
-            bottomDock.setPadding(
-                bottomDock.paddingLeft,
-                6.dp(),
-                bottomDock.paddingRight,
-                bottomInset
-            )
-
-            ViewCompat.requestApplyInsets(root)
             insets
         }
-
-        ViewCompat.requestApplyInsets(root)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

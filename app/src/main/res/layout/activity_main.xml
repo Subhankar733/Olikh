@@ -4,46 +4,75 @@
     android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B0F19">
+    android:background="#0F172A">
 
-    <!-- Top App Bar & Omnibox Container -->
-    <LinearLayout
-        android:id="@+id/browserTopBar"
+    <!-- Top Loading Indicator -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="3dp"
         android:layout_alignParentTop="true"
-        android:background="#0F172A"
-        android:elevation="6dp"
-        android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp">
+        android:max="100"
+        android:progressTint="#38BDF8"
+        android:visibility="gone" />
 
+    <!-- Web Viewport: Edge to edge -->
+    <FrameLayout
+        android:id="@+id/browserContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/safariDockContainer">
+
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:overScrollMode="never" />
+    </FrameLayout>
+
+    <!-- Safari Dock Area (Floating Omnibox + Action Bar) -->
+    <LinearLayout
+        android:id="@+id/safariDockContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#1E293B"
+        android:elevation="12dp"
+        android:orientation="vertical"
+        android:paddingTop="8dp">
+
+        <!-- Safari Style Floating Address Bar -->
         <LinearLayout
             android:id="@+id/addressBarContainer"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginBottom="6dp"
             android:background="@drawable/bg_capsule_pill"
             android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="8dp">
+            android:paddingStart="14dp"
+            android:paddingEnd="10dp">
 
             <ImageView
                 android:id="@+id/sslLockIcon"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:contentDescription="Security"
                 android:src="@drawable/ic_search"
-                app:tint="#38BDF8"
-                android:contentDescription="Search or Security" />
+                app:tint="#94A3B8" />
 
             <EditText
                 android:id="@+id/addressBar"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="4dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="6dp"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
-                android:hint="Search or type web address..."
+                android:gravity="center"
+                android:hint="Search or enter website"
                 android:imeOptions="actionGo"
                 android:importantForAutofill="no"
                 android:inputType="textUri"
@@ -55,131 +84,109 @@
 
             <ImageButton
                 android:id="@+id/btnReload"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="@android:color/transparent"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Reload"
-                android:padding="6dp"
+                android:padding="5dp"
                 android:src="@drawable/ic_reload"
                 app:tint="#94A3B8" />
         </LinearLayout>
-    </LinearLayout>
 
-    <!-- Top Loading Indicator -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="3dp"
-        android:layout_below="@id/browserTopBar"
-        android:max="100"
-        android:progressTint="#38BDF8"
-        android:visibility="gone" />
-
-    <!-- Web Content Surface (Bounded between Top & Bottom bars) -->
-    <FrameLayout
-        android:id="@+id/browserContainer"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/browserBottomDock"
-        android:layout_below="@id/progressBar">
-
-        <WebView
-            android:id="@+id/webView"
+        <!-- Bottom Action Bar (Safari 5-tab style) -->
+        <LinearLayout
+            android:id="@+id/browserBottomDock"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:overScrollMode="never" />
-    </FrameLayout>
+            android:layout_height="46dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:weightSum="5">
 
-    <!-- Sleek Bottom Action Deck -->
-    <LinearLayout
-        android:id="@+id/browserBottomDock"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:layout_alignParentBottom="true"
-        android:background="#0F172A"
-        android:elevation="8dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:weightSum="5">
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:padding="12dp"
+                android:src="@drawable/ic_back"
+                app:tint="#CBD5E1" />
 
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
-            android:padding="13dp"
-            android:src="@drawable/ic_back"
-            app:tint="#94A3B8" />
+            <ImageButton
+                android:id="@+id/btnForward"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Forward"
+                android:padding="12dp"
+                android:src="@drawable/ic_forward"
+                app:tint="#CBD5E1" />
 
-        <ImageButton
-            android:id="@+id/btnForward"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Forward"
-            android:padding="13dp"
-            android:src="@drawable/ic_forward"
-            app:tint="#94A3B8" />
+            <ImageButton
+                android:id="@+id/btnHome"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Home"
+                android:padding="12dp"
+                android:src="@drawable/ic_home"
+                app:tint="#CBD5E1" />
 
-        <ImageButton
-            android:id="@+id/btnHome"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Home"
-            android:padding="13dp"
-            android:src="@drawable/ic_home"
-            app:tint="#38BDF8" />
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1">
+                <Button
+                    android:id="@+id/btnTabs"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_capsule_pill"
+                    android:contentDescription="Tabs"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:padding="0dp"
+                    android:text="1"
+                    android:textColor="#38BDF8"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
 
-            <Button
-                android:id="@+id/btnTabs"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_gravity="center"
-                android:background="@drawable/bg_capsule_pill"
-                android:contentDescription="Tabs"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:padding="0dp"
-                android:text="1"
-                android:textColor="#38BDF8"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </FrameLayout>
+            <ImageButton
+                android:id="@+id/btnMenu"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Menu"
+                android:padding="12dp"
+                android:src="@drawable/ic_more_vertical"
+                app:tint="#CBD5E1" />
 
-        <ImageButton
-            android:id="@+id/btnMenu"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Menu"
-            android:padding="13dp"
-            android:src="@drawable/ic_more_vertical"
-            app:tint="#94A3B8" />
+            <!-- Hidden compatibility stubs -->
+            <ImageButton
+                android:id="@+id/btnNewTab"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
 
-        <!-- Hidden hooks for activity compatibility -->
-        <ImageButton
-            android:id="@+id/btnNewTab"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone" />
-
-        <ImageButton
-            android:id="@+id/btnBookmark"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone" />
+            <ImageButton
+                android:id="@+id/btnBookmark"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+        </LinearLayout>
     </LinearLayout>
+
+    <!-- Invisible stub for browserTopBar compatibility -->
+    <View
+        android:id="@+id/browserTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 
 </RelativeLayout>
