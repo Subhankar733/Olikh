@@ -934,7 +934,7 @@ private fun injectYouTubeAdBlocker(view: WebView?) {
 
         val root = findViewById<View>(R.id.rootContainer)
         val browserContainer = findViewById<View>(R.id.browserContainer)
-        val safariDock = findViewById<View>(R.id.safariDockContainer)
+        val safariDock = findViewById<View>(R.id.browserBottomDock)
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
