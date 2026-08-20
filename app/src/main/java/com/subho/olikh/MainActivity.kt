@@ -396,8 +396,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildStartPageHtml(): String {
         val blocked = olikhBlocker.blockedRequests()
-        val protection = if (olikhBlocker.isEnabled()) "SHIELD ACTIVE" else "SHIELD OFF"
-        val shieldBg = if (olikhBlocker.isEnabled()) "linear-gradient(135deg, #059669, #10B981)" else "linear-gradient(135deg, #475569, #334155)"
 
         return """
         <html>
@@ -405,195 +403,169 @@ class MainActivity : AppCompatActivity() {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
             <style>
-                * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+                * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; }
                 body {
-                    background: radial-gradient(circle at 50% 10%, #1e1b4b 0%, #030712 60%);
+                    background-color: #000000;
                     color: #FFFFFF;
-                    padding: 30px 20px 140px 20px;
+                    padding: 44px 20px 140px 20px;
                     user-select: none;
-                    min-height: 100vh;
+                    -webkit-user-select: none;
                 }
-                .hero {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    margin-bottom: 32px;
-                }
-                .logo-ring {
-                    width: 64px;
-                    height: 64px;
-                    border-radius: 22px;
-                    background: linear-gradient(135deg, #6366F1 0%, #A855F7 50%, #EC4899 100%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 12px 28px rgba(168, 85, 247, 0.4);
-                    margin-bottom: 14px;
-                }
-                .logo-text {
-                    font-size: 26px;
-                    font-weight: 900;
+                .page-title {
+                    font-size: 34px;
+                    font-weight: 700;
+                    letter-spacing: -0.5px;
                     color: #FFFFFF;
-                    letter-spacing: -1px;
+                    margin-bottom: 28px;
                 }
-                .brand-title {
-                    font-size: 26px;
-                    font-weight: 900;
-                    letter-spacing: 2px;
-                    background: linear-gradient(90deg, #FFFFFF, #E2E8F0);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                }
-                .stats-badge {
-                    margin-top: 10px;
-                    background: ;
-                    padding: 6px 16px;
-                    border-radius: 99px;
-                    font-size: 11px;
-                    font-weight: 800;
-                    letter-spacing: 0.5px;
-                    color: #FFFFFF;
-                    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
-                }
-                .section-tag {
-                    font-size: 12px;
-                    font-weight: 800;
-                    letter-spacing: 1.5px;
-                    text-transform: uppercase;
-                    color: #818CF8;
-                    margin-bottom: 14px;
+                .section-header {
                     display: flex;
+                    justify-content: space-between;
                     align-items: center;
-                    gap: 8px;
+                    margin-bottom: 12px;
                 }
-                .section-tag::after {
-                    content: '';
-                    flex: 1;
-                    height: 1px;
-                    background: rgba(255, 255, 255, 0.08);
+                .section-title {
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: #FFFFFF;
+                    letter-spacing: -0.3px;
                 }
-                
-                /* Favorites Grid */
-                .fav-grid {
+                .grid {
                     display: grid;
                     grid-template-columns: repeat(4, 1fr);
-                    gap: 12px;
-                    margin-bottom: 30px;
+                    gap: 16px 12px;
+                    margin-bottom: 32px;
                 }
-                .fav-card {
+                .fav-item {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     gap: 8px;
                     text-decoration: none;
                 }
-                .fav-icon-box {
-                    width: 58px;
-                    height: 58px;
-                    border-radius: 18px;
+                .fav-icon {
+                    width: 60px;
+                    height: 60px;
+                    border-radius: 14px;
+                    background-color: #1C1C1E;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 20px;
-                    font-weight: 900;
-                    color: #FFFFFF;
-                    transition: transform 0.15s ease;
-                }
-                .fav-card:active .fav-icon-box {
-                    transform: scale(0.92);
-                }
-                .fav-g { background: linear-gradient(135deg, #4285F4, #1D4ED8); box-shadow: 0 8px 20px rgba(66, 133, 244, 0.35); }
-                .fav-yt { background: linear-gradient(135deg, #EF4444, #991B1B); box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35); }
-                .fav-gh { background: linear-gradient(135deg, #24292F, #0F172A); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
-                .fav-wk { background: linear-gradient(135deg, #0EA5E9, #0369A1); box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35); }
-
-                .fav-label {
-                    font-size: 11px;
+                    font-size: 22px;
                     font-weight: 600;
-                    color: #CBD5E1;
+                    color: #FFFFFF;
+                }
+                .fav-item:active .fav-icon {
+                    background-color: #2C2C2E;
+                }
+                .fav-label {
+                    font-size: 12px;
+                    font-weight: 400;
+                    color: #FFFFFF;
+                    text-align: center;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    width: 64px;
                 }
 
-                /* Management / Features Grid */
-                .tools-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 12px;
+                .card {
+                    background-color: #1C1C1E;
+                    border-radius: 14px;
+                    padding: 16px;
+                    margin-bottom: 32px;
                 }
-                .tool-tile {
-                    background: rgba(255, 255, 255, 0.04);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    border-radius: 18px;
-                    padding: 16px 10px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 8px;
-                    text-align: center;
-                    backdrop-filter: blur(12px);
+                .card-title {
+                    font-size: 15px;
+                    font-weight: 600;
+                    color: #FFFFFF;
+                    margin-bottom: 4px;
                 }
-                .tool-tile:active {
-                    background: rgba(255, 255, 255, 0.1);
-                    transform: scale(0.96);
+                .card-desc {
+                    font-size: 13px;
+                    color: #8E8E93;
+                    line-height: 1.4;
                 }
-                .tool-icon {
-                    width: 38px;
-                    height: 38px;
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 16px;
-                    font-weight: bold;
-                }
-                .tool-title {
-                    font-size: 12px;
+                .card-stat {
+                    font-size: 24px;
                     font-weight: 700;
-                    color: #F1F5F9;
+                    color: #0A84FF;
+                    margin-top: 8px;
+                }
+
+                .list-group {
+                    background-color: #1C1C1E;
+                    border-radius: 14px;
+                    overflow: hidden;
+                }
+                .list-item {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 14px 16px;
+                    border-bottom: 0.5px solid #2C2C2E;
+                    color: #FFFFFF;
+                    font-size: 16px;
+                    font-weight: 400;
+                }
+                .list-item:last-child {
+                    border-bottom: none;
+                }
+                .list-item:active {
+                    background-color: #2C2C2E;
+                }
+                .arrow {
+                    color: #8E8E93;
+                    font-size: 18px;
                 }
             </style>
         </head>
         <body>
-            <div class="hero">
-                <div class="logo-ring">
-                    <span class="logo-text">O</span>
-                </div>
-                <div class="brand-title">OLIKH</div>
-                <div class="stats-badge"> •  BLOCKED</div>
-            </div>
+            <div class="page-title">Favorites</div>
 
-            <div class="section-tag">Favorites</div>
-            <div class="fav-grid">
-                <a class="fav-card" href="https://www.google.com">
-                    <div class="fav-icon-box fav-g">G</div>
+            <div class="grid">
+                <a class="fav-item" href="https://www.google.com">
+                    <div class="fav-icon" style="color: #4285F4;">G</div>
                     <span class="fav-label">Google</span>
                 </a>
-                <a class="fav-card" href="https://m.youtube.com">
-                    <div class="fav-icon-box fav-yt">▶</div>
+                <a class="fav-item" href="https://m.youtube.com">
+                    <div class="fav-icon" style="color: #FF0000;">YT</div>
                     <span class="fav-label">YouTube</span>
                 </a>
-                <a class="fav-card" href="https://github.com">
-                    <div class="fav-icon-box fav-gh">⌘</div>
+                <a class="fav-item" href="https://github.com">
+                    <div class="fav-icon">⌘</div>
                     <span class="fav-label">GitHub</span>
                 </a>
-                <a class="fav-card" href="https://en.m.wikipedia.org">
-                    <div class="fav-icon-box fav-wk">W</div>
-                    <span class="fav-label">Wiki</span>
+                <a class="fav-item" href="https://en.m.wikipedia.org">
+                    <div class="fav-icon" style="color: #FFFFFF;">W</div>
+                    <span class="fav-label">Wikipedia</span>
                 </a>
             </div>
 
-            <div class="section-tag">Quick Control</div>
-            <div class="tools-grid">
-                <div class="tool-tile" onclick="OlikhNative.openInternal('bookmarks')">
-                    <div class="tool-icon" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">★</div>
-                    <span class="tool-title">Saved</span>
+            <div class="section-header">
+                <div class="section-title">Privacy Report</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Trackers Prevented</div>
+                <div class="card-desc">OLIKH Shield prevented trackers from profiling you across websites.</div>
+                <div class="card-stat"></div>
+            </div>
+
+            <div class="section-header">
+                <div class="section-title">Reading List & Tools</div>
+            </div>
+            <div class="list-group">
+                <div class="list-item" onclick="OlikhNative.openInternal('bookmarks')">
+                    <span>Bookmarks</span>
+                    <span class="arrow">›</span>
                 </div>
-                <div class="tool-tile" onclick="OlikhNative.openInternal('history')">
-                    <div class="tool-icon" style="background: rgba(99, 102, 241, 0.15); color: #818CF8;">◷</div>
-                    <span class="tool-title">History</span>
+                <div class="list-item" onclick="OlikhNative.openInternal('history')">
+                    <span>History</span>
+                    <span class="arrow">›</span>
                 </div>
-                <div class="tool-tile" onclick="OlikhNative.openInternal('downloads')">
-                    <div class="tool-icon" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">↓</div>
-                    <span class="tool-title">Files</span>
+                <div class="list-item" onclick="OlikhNative.openInternal('downloads')">
+                    <span>Downloads</span>
+                    <span class="arrow">›</span>
                 </div>
             </div>
         </body>
@@ -609,7 +581,7 @@ class MainActivity : AppCompatActivity() {
         webView.isVerticalScrollBarEnabled = false
         webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.addJavascriptInterface(StartPageInterface(), "OlikhNative")
-        addressBar.setText("OLIKH")
+        addressBar.setText("")
         webView.loadDataWithBaseURL("https://olikh.local/start", startHtml, "text/html", "UTF-8", null)
     }
 
