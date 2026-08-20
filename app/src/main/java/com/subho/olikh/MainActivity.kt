@@ -151,12 +151,7 @@ class MainActivity : AppCompatActivity() {
     )
 
     private fun defaultQuickAccessItems(): List<QuickAccessItem> {
-        return listOf(
-            QuickAccessItem("Google", "https://www.google.com"),
-            QuickAccessItem("YouTube", "https://www.youtube.com"),
-            QuickAccessItem("Wikipedia", "https://en.wikipedia.org"),
-            QuickAccessItem("GitHub", "https://github.com")
-        )
+        return emptyList()
     }
 
     private fun getQuickAccessItems(): MutableList<QuickAccessItem> {
@@ -395,193 +390,331 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildStartPageHtml(): String {
-        val blocked = olikhBlocker.blockedRequests()
+        val lastUsedUrl = browserPrefs
+            .getString("last_used_url", "")
+            ?.trim()
+            .orEmpty()
+
+        val lastUsedTitle = browserPrefs
+            .getString("last_used_title", "")
+            ?.trim()
+            .orEmpty()
+
+        val shortcuts = getQuickAccessItems()
+
+        fun esc(value: String): String =
+            escapeHtml(value)
+
+        val heroHtml =
+            if (lastUsedUrl.isNotBlank()) {
+                val title = if (lastUsedTitle.isNotBlank()) {
+                    lastUsedTitle
+                } else {
+                    try {
+                        Uri.parse(lastUsedUrl).host
+                            ?.removePrefix("www.")
+                            ?: lastUsedUrl
+                    } catch (_: Exception) {
+                        lastUsedUrl
+                    }
+                }
+
+                val host = try {
+                    Uri.parse(lastUsedUrl).host
+                        ?.removePrefix("www.")
+                        ?: lastUsedUrl
+                } catch (_: Exception) {
+                    lastUsedUrl
+                }
+
+                """
+                <a class="hero" href="${esc(lastUsedUrl)}">
+                    <div class="hero-top">
+                        <span class="hero-kicker">LAST USED</span>
+                        <span class="hero-arrow">↗</span>
+                    </div>
+                    <div class="hero-title">${esc(title)}</div>
+                    <div class="hero-url">${esc(host)}</div>
+                    <div class="hero-open">CONTINUE</div>
+                </a>
+                """.trimIndent()
+            } else {
+                """
+                <div class="hero empty-hero">
+                    <div class="hero-top">
+                        <span class="hero-kicker">OLIKH</span>
+                        <span class="hero-dot">●</span>
+                    </div>
+                    <div class="hero-title">Ready when you are.</div>
+                    <div class="hero-url">No recent site yet</div>
+                    <div class="hero-open">START BROWSING</div>
+                </div>
+                """.trimIndent()
+            }
+
+        val shortcutHtml = shortcuts
+            .mapIndexed { index, item ->
+                val icon = esc(quickAccessIcon(item.name))
+                val name = esc(item.name)
+                val url = esc(item.url)
+
+                """
+                <a class="shortcut shortcut-$index" href="$url">
+                    <div class="shortcut-icon">$icon</div>
+                    <div class="shortcut-name">$name</div>
+                </a>
+                """.trimIndent()
+            }
+            .shuffled()
+            .joinToString("\n")
 
         return """
         <html>
         <head>
             <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0, user-scalable=no">
+
             <style>
-                * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, system-ui, Roboto, sans-serif; }
+                * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                    font-family: -apple-system, system-ui, Roboto, sans-serif;
+                    -webkit-tap-highlight-color: transparent;
+                }
+
                 body {
-                    background: #0D0F12;
-                    color: #ECEFF4;
-                    padding: 12px 12px 92px 12px;
+                    background: #090A0C;
+                    color: #F4F4F5;
+                    padding: 18px 14px 100px;
                     user-select: none;
                     -webkit-user-select: none;
                 }
-                
-                /* Dynamic Status Card */
-                .hud-card {
-                    background: linear-gradient(145deg, #161A20, #0E1116);
-                    border: 1px solid rgba(255, 255, 255, 0.07);
-                    border-radius: 18px;
-                    padding: 16px;
-                    margin-bottom: 14px;
-                    box-shadow: 0 8px 20px rgba(0,0,0,0.38);
+
+                .brand {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 4px 4px 16px;
+                }
+
+                .brand-name {
+                    font-size: 20px;
+                    font-weight: 850;
+                    letter-spacing: -0.7px;
+                }
+
+                .brand-sub {
+                    font-size: 10px;
+                    color: #62666D;
+                    letter-spacing: 1.2px;
+                    text-transform: uppercase;
+                    margin-top: 3px;
+                }
+
+                .hero {
+                    display: block;
+                    min-height: 270px;
+                    padding: 22px;
+                    border-radius: 30px;
+                    text-decoration: none;
+                    color: #FFFFFF;
+                    background:
+                        linear-gradient(145deg, #222326 0%, #111214 58%, #0C0D0F 100%);
+                    border: 1px solid #2D2E31;
+                    box-shadow: 0 16px 40px rgba(0,0,0,.42);
+                    margin-bottom: 22px;
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .hero:active {
+                    transform: scale(.985);
+                }
+
+                .hero::after {
+                    content: "";
+                    position: absolute;
+                    width: 170px;
+                    height: 170px;
+                    right: -65px;
+                    bottom: -70px;
+                    border-radius: 50%;
+                    background: rgba(255,255,255,.035);
+                }
+
+                .empty-hero {
+                    opacity: .92;
+                }
+
+                .hero-top {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                 }
-                .hud-title {
-                    font-size: 21px;
-                    font-weight: 800;
-                    letter-spacing: -0.6px;
-                    background: linear-gradient(90deg, #FFFFFF, #94A3B8);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                }
-                .hud-sub {
-                    font-size: 11px;
-                    color: #64748B;
-                    margin-top: 3px;
-                    font-weight: 500;
-                }
-                .shield-stat {
-                    text-align: right;
-                }
-                .shield-lbl {
+
+                .hero-kicker {
                     font-size: 10px;
-                    font-weight: 700;
-                    color: #64748B;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-
-                /* Section Titles */
-                .sec-title {
-                    font-size: 12px;
                     font-weight: 800;
-                    color: #475569;
-                    letter-spacing: 1.2px;
-                    text-transform: uppercase;
-                    margin: 0 0 9px 4px;
+                    letter-spacing: 1.8px;
+                    color: #777A80;
                 }
 
-                /* Hex / Modern Grid */
-                .deck-grid {
-                    display: grid;
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 6px;
-                    margin-bottom: 15px;
+                .hero-arrow {
+                    font-size: 25px;
+                    color: #A9AAAE;
                 }
-                .deck-item {
-                    background: #14171E;
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    border-radius: 14px;
-                    padding: 8px 3px;
+
+                .hero-dot {
+                    color: #FF6422;
+                    font-size: 11px;
+                }
+
+                .hero-title {
+                    margin-top: 72px;
+                    font-size: 34px;
+                    line-height: 1.02;
+                    font-weight: 850;
+                    letter-spacing: -1.5px;
+                    max-width: 92%;
+                }
+
+                .hero-url {
+                    margin-top: 9px;
+                    color: #74777D;
+                    font-size: 12px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                .hero-open {
+                    position: absolute;
+                    left: 22px;
+                    bottom: 20px;
+                    font-size: 10px;
+                    font-weight: 800;
+                    letter-spacing: 1.2px;
+                    color: #FF6422;
+                }
+
+                .section {
+                    font-size: 10px;
+                    font-weight: 800;
+                    letter-spacing: 1.7px;
+                    color: #565A61;
+                    text-transform: uppercase;
+                    margin: 0 4px 10px;
+                }
+
+                .shortcut-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 10px;
+                }
+
+                .shortcut {
+                    min-height: 112px;
+                    padding: 15px;
+                    border-radius: 21px;
+                    background: #141518;
+                    border: 1px solid #242529;
+                    text-decoration: none;
+                    color: #F1F1F2;
                     display: flex;
                     flex-direction: column;
-                    align-items: center;
-                    gap: 4px;
-                    text-decoration: none;
+                    justify-content: space-between;
                 }
-                .deck-item:active {
-                    background: #1B202A;
-                    transform: scale(0.96);
+
+                .shortcut:active {
+                    transform: scale(.97);
+                    background: #1B1C1F;
                 }
-                .deck-glyph {
-                    width: 34px;
-                    height: 34px;
-                    border-radius: 9px;
+
+                .shortcut-icon {
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 13px;
+                    background: #222328;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 15px;
+                    font-size: 17px;
                     font-weight: 800;
-                }
-                .g-google { background: rgba(59, 130, 246, 0.11); color: #60A5FA; border: 1px solid rgba(96,165,250,0.08); }
-                .g-yt { background: rgba(239, 68, 68, 0.12); color: #F87171; }
-                .g-git { background: rgba(255, 255, 255, 0.08); color: #F1F5F9; }
-                .g-wiki { background: rgba(56, 189, 248, 0.10); color: #38BDF8; border: 1px solid rgba(56,189,248,0.08); }
-
-                .deck-lbl {
-                    font-size: 11px;
-                    font-weight: 650;
-                    color: #A1AEC0;
+                    color: #FF6422;
                 }
 
-                /* Compact Action Hub */
-                .action-hub {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 8px;
+                .shortcut-name {
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: #D9DADF;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                 }
-                .hub-card {
-                    background: #14171E;
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    border-radius: 12px;
-                    padding: 8px 5px;
+
+                .empty-shortcuts {
+                    padding: 28px 18px;
                     text-align: center;
-                }
-                .hub-card:active {
-                    background: #1C222D;
-                }
-                .hub-icon {
-                    font-size: 15px;
-                    margin-bottom: 3px;
-                    display: block;
-                }
-                .hub-name {
-                    font-size: 11px;
-                    font-weight: 650;
-                    color: #E2E8F0;
+                    border-radius: 21px;
+                    border: 1px dashed #292B30;
+                    color: #5E6269;
+                    font-size: 12px;
+                    line-height: 1.5;
                 }
             </style>
         </head>
+
         <body>
-            <div class="hud-card">
+
+            <div class="brand">
                 <div>
-                    <div class="hud-title">OLIKH</div>
-                    <div class="hud-sub">Zero-Telemetry Deck</div>
-                </div>
-                <div class="shield-stat">
-                    <div class="shield-lbl">Blocked</div>
+                    <div class="brand-name">OLIKH</div>
+                    <div class="brand-sub">Private browser</div>
                 </div>
             </div>
 
-            <div class="sec-title">Shortcuts</div>
-            <div class="deck-grid">
-                <a class="deck-item" href="https://www.google.com">
-                    <div class="deck-glyph g-google">G</div>
-                    <span class="deck-lbl">Google</span>
-                </a>
-                <a class="deck-item" href="https://m.youtube.com">
-                    <div class="deck-glyph g-yt">▶</div>
-                    <span class="deck-lbl">YouTube</span>
-                </a>
-                <a class="deck-item" href="https://github.com">
-                    <div class="deck-glyph g-git">⌘</div>
-                    <span class="deck-lbl">GitHub</span>
-                </a>
-                <a class="deck-item" href="https://en.m.wikipedia.org">
-                    <div class="deck-glyph g-wiki">W</div>
-                    <span class="deck-lbl">Wiki</span>
-                </a>
+            $heroHtml
+
+            <div class="section">Your space</div>
+
+            <div class="shortcut-grid">
+                ${
+                    if (shortcutHtml.isBlank()) {
+                        """
+                        <div class="empty-shortcuts">
+                            Shortcuts can be added later.<br>
+                            This space stays clean until then.
+                        </div>
+                        """.trimIndent()
+                    } else {
+                        shortcutHtml
+                    }
+                }
             </div>
 
-            <div class="sec-title">Vault</div>
-            <div class="action-hub">
-                <div class="hub-card" onclick="OlikhNative.openInternal('bookmarks')">
-                    <span class="hub-icon" style="color:#F59E0B;">★</span>
-                    <span class="hub-name">Saved</span>
-                </div>
-                <div class="hub-card" onclick="OlikhNative.openInternal('history')">
-                    <span class="hub-icon" style="color:#818CF8;">◷</span>
-                    <span class="hub-name">History</span>
-                </div>
-                <div class="hub-card" onclick="OlikhNative.openInternal('downloads')">
-                    <span class="hub-icon" style="color:#10B981;">↓</span>
-                    <span class="hub-name">Files</span>
-                </div>
-            </div>
         </body>
         </html>
         """.trimIndent()
     }
 
         private fun showOlikhStartPage() {
+        val leavingUrl = webView.url.orEmpty()
+
+        if (leavingUrl.isNotBlank() &&
+            !leavingUrl.startsWith("about:") &&
+            !leavingUrl.contains("olikh.local/start")
+        ) {
+            browserPrefs.edit()
+                .putString("last_used_url", leavingUrl)
+                .putString(
+                    "last_used_title",
+                    webView.title.orEmpty()
+                )
+                .apply()
+        }
+
         showingErrorPage = false
         failedUrl = null
         val startHtml = buildStartPageHtml()
