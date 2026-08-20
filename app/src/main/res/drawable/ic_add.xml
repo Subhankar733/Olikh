@@ -3,8 +3,7 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <path
-        android:fillColor="@android:color/transparent"
+    <path android:fillColor="@android:color/transparent"
         android:strokeColor="#F5F7FA"
         android:strokeWidth="1.8"
         android:strokeLineCap="round"
