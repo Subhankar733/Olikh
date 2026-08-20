@@ -4,7 +4,7 @@
     android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0F172A">
+    android:background="#030712">
 
     <!-- Top Loading Indicator -->
     <ProgressBar
@@ -14,10 +14,10 @@
         android:layout_height="3dp"
         android:layout_alignParentTop="true"
         android:max="100"
-        android:progressTint="#38BDF8"
+        android:progressTint="#818CF8"
         android:visibility="gone" />
 
-    <!-- Web Viewport: Edge to edge -->
+    <!-- Web Viewport -->
     <FrameLayout
         android:id="@+id/browserContainer"
         android:layout_width="match_parent"
@@ -37,12 +37,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="#1E293B"
-        android:elevation="12dp"
+        android:background="#0B0F19"
+        android:elevation="14dp"
         android:orientation="vertical"
         android:paddingTop="8dp">
 
-        <!-- Safari Style Floating Address Bar -->
+        <!-- Neo Floating Address Bar -->
         <LinearLayout
             android:id="@+id/addressBarContainer"
             android:layout_width="match_parent"
@@ -61,7 +61,7 @@
                 android:layout_height="16dp"
                 android:contentDescription="Security"
                 android:src="@drawable/ic_search"
-                app:tint="#94A3B8" />
+                app:tint="#818CF8" />
 
             <EditText
                 android:id="@+id/addressBar"
@@ -72,7 +72,7 @@
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:gravity="center"
-                android:hint="Search or enter website"
+                android:hint="Search or type URL"
                 android:imeOptions="actionGo"
                 android:importantForAutofill="no"
                 android:inputType="textUri"
@@ -97,7 +97,7 @@
         <LinearLayout
             android:id="@+id/browserBottomDock"
             android:layout_width="match_parent"
-            android:layout_height="46dp"
+            android:layout_height="48dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:weightSum="5">
@@ -111,7 +111,7 @@
                 android:contentDescription="Back"
                 android:padding="12dp"
                 android:src="@drawable/ic_back"
-                app:tint="#CBD5E1" />
+                app:tint="#E2E8F0" />
 
             <ImageButton
                 android:id="@+id/btnForward"
@@ -122,7 +122,7 @@
                 android:contentDescription="Forward"
                 android:padding="12dp"
                 android:src="@drawable/ic_forward"
-                app:tint="#CBD5E1" />
+                app:tint="#E2E8F0" />
 
             <ImageButton
                 android:id="@+id/btnHome"
@@ -133,7 +133,7 @@
                 android:contentDescription="Home"
                 android:padding="12dp"
                 android:src="@drawable/ic_home"
-                app:tint="#CBD5E1" />
+                app:tint="#818CF8" />
 
             <FrameLayout
                 android:layout_width="0dp"
@@ -142,8 +142,8 @@
 
                 <Button
                     android:id="@+id/btnTabs"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:layout_gravity="center"
                     android:background="@drawable/bg_capsule_pill"
                     android:contentDescription="Tabs"
@@ -151,8 +151,8 @@
                     android:minHeight="0dp"
                     android:padding="0dp"
                     android:text="1"
-                    android:textColor="#38BDF8"
-                    android:textSize="11sp"
+                    android:textColor="#A855F7"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
             </FrameLayout>
 
@@ -165,7 +165,7 @@
                 android:contentDescription="Menu"
                 android:padding="12dp"
                 android:src="@drawable/ic_more_vertical"
-                app:tint="#CBD5E1" />
+                app:tint="#E2E8F0" />
 
             <!-- Hidden compatibility stubs -->
             <ImageButton

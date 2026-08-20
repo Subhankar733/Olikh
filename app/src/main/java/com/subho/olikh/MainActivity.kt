@@ -396,7 +396,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildStartPageHtml(): String {
         val blocked = olikhBlocker.blockedRequests()
-        val protection = if (olikhBlocker.isEnabled()) "Shield Active" else "Shield Paused"
+        val protection = if (olikhBlocker.isEnabled()) "SHIELD ACTIVE" else "SHIELD OFF"
+        val shieldBg = if (olikhBlocker.isEnabled()) "linear-gradient(135deg, #059669, #10B981)" else "linear-gradient(135deg, #475569, #334155)"
 
         return """
         <html>
@@ -404,155 +405,195 @@ class MainActivity : AppCompatActivity() {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
             <style>
-                * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; }
+                * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
                 body {
-                    background: linear-gradient(180deg, #0B0F19 0%, #111827 100%);
-                    color: #F8FAFC;
-                    padding: 36px 18px 120px 18px;
+                    background: radial-gradient(circle at 50% 10%, #1e1b4b 0%, #030712 60%);
+                    color: #FFFFFF;
+                    padding: 30px 20px 140px 20px;
                     user-select: none;
                     min-height: 100vh;
                 }
-                .header {
+                .hero {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    margin-bottom: 28px;
+                    margin-bottom: 32px;
                 }
-                .brand {
-                    font-size: 30px;
-                    font-weight: 800;
-                    letter-spacing: -0.5px;
-                    color: #FFFFFF;
-                }
-                .brand span { color: #38BDF8; }
-                .privacy-pill {
-                    margin-top: 10px;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    background: rgba(30, 41, 59, 0.6);
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(56, 189, 248, 0.2);
-                    padding: 5px 12px;
-                    border-radius: 999px;
-                    font-size: 11px;
-                    font-weight: 600;
-                    color: #38BDF8;
-                }
-                .privacy-dot {
-                    width: 6px;
-                    height: 6px;
-                    border-radius: 50%;
-                    background: #38BDF8;
-                    box-shadow: 0 0 6px #38BDF8;
-                }
-                .section-header {
-                    font-size: 13px;
-                    font-weight: 700;
-                    color: #94A3B8;
-                    margin: 20px 0 12px 4px;
-                    text-transform: uppercase;
-                    letter-spacing: 0.8px;
-                }
-                .grid-favorites {
-                    display: grid;
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 14px;
-                }
-                .fav-item {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    text-decoration: none;
-                    gap: 6px;
-                }
-                .fav-icon {
-                    width: 58px;
-                    height: 58px;
-                    border-radius: 16px;
-                    background: rgba(30, 41, 59, 0.7);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
+                .logo-ring {
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 22px;
+                    background: linear-gradient(135deg, #6366F1 0%, #A855F7 50%, #EC4899 100%);
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 18px;
-                    font-weight: 700;
-                    color: #F8FAFC;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+                    box-shadow: 0 12px 28px rgba(168, 85, 247, 0.4);
+                    margin-bottom: 14px;
                 }
-                .fav-title {
+                .logo-text {
+                    font-size: 26px;
+                    font-weight: 900;
+                    color: #FFFFFF;
+                    letter-spacing: -1px;
+                }
+                .brand-title {
+                    font-size: 26px;
+                    font-weight: 900;
+                    letter-spacing: 2px;
+                    background: linear-gradient(90deg, #FFFFFF, #E2E8F0);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+                .stats-badge {
+                    margin-top: 10px;
+                    background: ;
+                    padding: 6px 16px;
+                    border-radius: 99px;
                     font-size: 11px;
-                    color: #CBD5E1;
-                    font-weight: 500;
-                    text-align: center;
+                    font-weight: 800;
+                    letter-spacing: 0.5px;
+                    color: #FFFFFF;
+                    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
                 }
-                .safari-card-list {
-                    background: rgba(30, 41, 59, 0.6);
-                    border-radius: 16px;
-                    border: 1px solid rgba(255, 255, 255, 0.06);
-                    overflow: hidden;
-                    margin-top: 14px;
-                }
-                .safari-card-row {
+                .section-tag {
+                    font-size: 12px;
+                    font-weight: 800;
+                    letter-spacing: 1.5px;
+                    text-transform: uppercase;
+                    color: #818CF8;
+                    margin-bottom: 14px;
                     display: flex;
                     align-items: center;
-                    justify-content: space-between;
-                    padding: 13px 16px;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-                    font-size: 13px;
+                    gap: 8px;
+                }
+                .section-tag::after {
+                    content: '';
+                    flex: 1;
+                    height: 1px;
+                    background: rgba(255, 255, 255, 0.08);
+                }
+                
+                /* Favorites Grid */
+                .fav-grid {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 12px;
+                    margin-bottom: 30px;
+                }
+                .fav-card {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 8px;
+                    text-decoration: none;
+                }
+                .fav-icon-box {
+                    width: 58px;
+                    height: 58px;
+                    border-radius: 18px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 20px;
+                    font-weight: 900;
+                    color: #FFFFFF;
+                    transition: transform 0.15s ease;
+                }
+                .fav-card:active .fav-icon-box {
+                    transform: scale(0.92);
+                }
+                .fav-g { background: linear-gradient(135deg, #4285F4, #1D4ED8); box-shadow: 0 8px 20px rgba(66, 133, 244, 0.35); }
+                .fav-yt { background: linear-gradient(135deg, #EF4444, #991B1B); box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35); }
+                .fav-gh { background: linear-gradient(135deg, #24292F, #0F172A); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
+                .fav-wk { background: linear-gradient(135deg, #0EA5E9, #0369A1); box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35); }
+
+                .fav-label {
+                    font-size: 11px;
                     font-weight: 600;
-                    color: #E2E8F0;
+                    color: #CBD5E1;
                 }
-                .safari-card-row:last-child {
-                    border-bottom: none;
+
+                /* Management / Features Grid */
+                .tools-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 12px;
                 }
-                .safari-card-row:active {
-                    background: rgba(255, 255, 255, 0.05);
+                .tool-tile {
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 18px;
+                    padding: 16px 10px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 8px;
+                    text-align: center;
+                    backdrop-filter: blur(12px);
+                }
+                .tool-tile:active {
+                    background: rgba(255, 255, 255, 0.1);
+                    transform: scale(0.96);
+                }
+                .tool-icon {
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                .tool-title {
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: #F1F5F9;
                 }
             </style>
         </head>
         <body>
-            <div class="header">
-                <div class="brand">OLIKH<span>.</span></div>
-                <div class="privacy-pill">
-                    <span class="privacy-dot"></span>
-                    <span> •  Trackers Blocked</span>
+            <div class="hero">
+                <div class="logo-ring">
+                    <span class="logo-text">O</span>
                 </div>
+                <div class="brand-title">OLIKH</div>
+                <div class="stats-badge"> •  BLOCKED</div>
             </div>
 
-            <div class="section-header">Favorites</div>
-            <div class="grid-favorites">
-                <a class="fav-item" href="https://www.google.com">
-                    <div class="fav-icon" style="color: #4285F4;">G</div>
-                    <span class="fav-title">Google</span>
+            <div class="section-tag">Favorites</div>
+            <div class="fav-grid">
+                <a class="fav-card" href="https://www.google.com">
+                    <div class="fav-icon-box fav-g">G</div>
+                    <span class="fav-label">Google</span>
                 </a>
-                <a class="fav-item" href="https://m.youtube.com">
-                    <div class="fav-icon" style="color: #EF4444;">YT</div>
-                    <span class="fav-title">YouTube</span>
+                <a class="fav-card" href="https://m.youtube.com">
+                    <div class="fav-icon-box fav-yt">▶</div>
+                    <span class="fav-label">YouTube</span>
                 </a>
-                <a class="fav-item" href="https://github.com">
-                    <div class="fav-icon" style="color: #F8FAFC;">Git</div>
-                    <span class="fav-title">GitHub</span>
+                <a class="fav-card" href="https://github.com">
+                    <div class="fav-icon-box fav-gh">⌘</div>
+                    <span class="fav-label">GitHub</span>
                 </a>
-                <a class="fav-item" href="https://en.m.wikipedia.org">
-                    <div class="fav-icon" style="color: #38BDF8;">W</div>
-                    <span class="fav-title">Wiki</span>
+                <a class="fav-card" href="https://en.m.wikipedia.org">
+                    <div class="fav-icon-box fav-wk">W</div>
+                    <span class="fav-label">Wiki</span>
                 </a>
             </div>
 
-            <div class="section-header">Privacy & Quick Links</div>
-            <div class="safari-card-list">
-                <div class="safari-card-row" onclick="OlikhNative.openInternal('bookmarks')">
-                    <span>Bookmarks</span>
-                    <span style="color:#64748B;">›</span>
+            <div class="section-tag">Quick Control</div>
+            <div class="tools-grid">
+                <div class="tool-tile" onclick="OlikhNative.openInternal('bookmarks')">
+                    <div class="tool-icon" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">★</div>
+                    <span class="tool-title">Saved</span>
                 </div>
-                <div class="safari-card-row" onclick="OlikhNative.openInternal('history')">
-                    <span>History</span>
-                    <span style="color:#64748B;">›</span>
+                <div class="tool-tile" onclick="OlikhNative.openInternal('history')">
+                    <div class="tool-icon" style="background: rgba(99, 102, 241, 0.15); color: #818CF8;">◷</div>
+                    <span class="tool-title">History</span>
                 </div>
-                <div class="safari-card-row" onclick="OlikhNative.openInternal('downloads')">
-                    <span>Downloads</span>
-                    <span style="color:#64748B;">›</span>
+                <div class="tool-tile" onclick="OlikhNative.openInternal('downloads')">
+                    <div class="tool-icon" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">↓</div>
+                    <span class="tool-title">Files</span>
                 </div>
             </div>
         </body>
