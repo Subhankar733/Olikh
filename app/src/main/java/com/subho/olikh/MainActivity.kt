@@ -395,8 +395,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildStartPageHtml(): String {
-        val blocked = adBlockStats.blockedTotal.get()
-        val protection = if (isAdBlockEnabled) "Shield Active" else "Shield Paused"
+        val blocked = olikhBlocker.blockedRequests()
+        val protection = if (olikhBlocker.isEnabled()) "Shield Active" else "Shield Paused"
 
         return """
         <html>
