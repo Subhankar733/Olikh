@@ -403,169 +403,184 @@ class MainActivity : AppCompatActivity() {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
             <style>
-                * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; }
+                * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, system-ui, Roboto, sans-serif; }
                 body {
-                    background-color: #000000;
-                    color: #FFFFFF;
-                    padding: 44px 20px 140px 20px;
+                    background: #0D0F12;
+                    color: #ECEFF4;
+                    padding: 32px 18px 120px 18px;
                     user-select: none;
                     -webkit-user-select: none;
                 }
-                .page-title {
-                    font-size: 34px;
-                    font-weight: 700;
-                    letter-spacing: -0.5px;
-                    color: #FFFFFF;
-                    margin-bottom: 28px;
-                }
-                .section-header {
+                
+                /* Dynamic Status Card */
+                .hud-card {
+                    background: linear-gradient(145deg, #161A20, #0E1116);
+                    border: 1px solid rgba(255, 255, 255, 0.07);
+                    border-radius: 20px;
+                    padding: 20px;
+                    margin-bottom: 24px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 12px;
                 }
-                .section-title {
-                    font-size: 20px;
+                .hud-title {
+                    font-size: 22px;
+                    font-weight: 800;
+                    letter-spacing: -0.5px;
+                    background: linear-gradient(90deg, #FFFFFF, #94A3B8);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+                .hud-sub {
+                    font-size: 12px;
+                    color: #64748B;
+                    margin-top: 2px;
+                    font-weight: 500;
+                }
+                .shield-stat {
+                    text-align: right;
+                }
+                .shield-val {
+                    font-size: 24px;
+                    font-weight: 900;
+                    color: #38BDF8;
+                    font-variant-numeric: tabular-nums;
+                }
+                .shield-lbl {
+                    font-size: 10px;
                     font-weight: 700;
-                    color: #FFFFFF;
-                    letter-spacing: -0.3px;
+                    color: #64748B;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }
-                .grid {
+
+                /* Section Titles */
+                .sec-title {
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #475569;
+                    letter-spacing: 1.2px;
+                    text-transform: uppercase;
+                    margin: 0 0 12px 6px;
+                }
+
+                /* Hex / Modern Grid */
+                .deck-grid {
                     display: grid;
                     grid-template-columns: repeat(4, 1fr);
-                    gap: 16px 12px;
-                    margin-bottom: 32px;
+                    gap: 12px;
+                    margin-bottom: 24px;
                 }
-                .fav-item {
+                .deck-item {
+                    background: #14171E;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-radius: 16px;
+                    padding: 14px 6px;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     gap: 8px;
                     text-decoration: none;
                 }
-                .fav-icon {
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 14px;
-                    background-color: #1C1C1E;
+                .deck-item:active {
+                    background: #1B202A;
+                    transform: scale(0.96);
+                }
+                .deck-glyph {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 12px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 22px;
-                    font-weight: 600;
-                    color: #FFFFFF;
-                }
-                .fav-item:active .fav-icon {
-                    background-color: #2C2C2E;
-                }
-                .fav-label {
-                    font-size: 12px;
-                    font-weight: 400;
-                    color: #FFFFFF;
-                    text-align: center;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    width: 64px;
-                }
-
-                .card {
-                    background-color: #1C1C1E;
-                    border-radius: 14px;
-                    padding: 16px;
-                    margin-bottom: 32px;
-                }
-                .card-title {
-                    font-size: 15px;
-                    font-weight: 600;
-                    color: #FFFFFF;
-                    margin-bottom: 4px;
-                }
-                .card-desc {
-                    font-size: 13px;
-                    color: #8E8E93;
-                    line-height: 1.4;
-                }
-                .card-stat {
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: #0A84FF;
-                    margin-top: 8px;
-                }
-
-                .list-group {
-                    background-color: #1C1C1E;
-                    border-radius: 14px;
-                    overflow: hidden;
-                }
-                .list-item {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    padding: 14px 16px;
-                    border-bottom: 0.5px solid #2C2C2E;
-                    color: #FFFFFF;
-                    font-size: 16px;
-                    font-weight: 400;
-                }
-                .list-item:last-child {
-                    border-bottom: none;
-                }
-                .list-item:active {
-                    background-color: #2C2C2E;
-                }
-                .arrow {
-                    color: #8E8E93;
                     font-size: 18px;
+                    font-weight: 800;
+                }
+                .g-google { background: rgba(66, 133, 244, 0.12); color: #60A5FA; }
+                .g-yt { background: rgba(239, 68, 68, 0.12); color: #F87171; }
+                .g-git { background: rgba(255, 255, 255, 0.08); color: #F1F5F9; }
+                .g-wiki { background: rgba(14, 165, 233, 0.12); color: #38BDF8; }
+
+                .deck-lbl {
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: #94A3B8;
+                }
+
+                /* Compact Action Hub */
+                .action-hub {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 10px;
+                }
+                .hub-card {
+                    background: #14171E;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-radius: 14px;
+                    padding: 14px 8px;
+                    text-align: center;
+                }
+                .hub-card:active {
+                    background: #1C222D;
+                }
+                .hub-icon {
+                    font-size: 18px;
+                    margin-bottom: 4px;
+                    display: block;
+                }
+                .hub-name {
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #E2E8F0;
                 }
             </style>
         </head>
         <body>
-            <div class="page-title">Favorites</div>
-
-            <div class="grid">
-                <a class="fav-item" href="https://www.google.com">
-                    <div class="fav-icon" style="color: #4285F4;">G</div>
-                    <span class="fav-label">Google</span>
-                </a>
-                <a class="fav-item" href="https://m.youtube.com">
-                    <div class="fav-icon" style="color: #FF0000;">YT</div>
-                    <span class="fav-label">YouTube</span>
-                </a>
-                <a class="fav-item" href="https://github.com">
-                    <div class="fav-icon">⌘</div>
-                    <span class="fav-label">GitHub</span>
-                </a>
-                <a class="fav-item" href="https://en.m.wikipedia.org">
-                    <div class="fav-icon" style="color: #FFFFFF;">W</div>
-                    <span class="fav-label">Wikipedia</span>
-                </a>
-            </div>
-
-            <div class="section-header">
-                <div class="section-title">Privacy Report</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Trackers Prevented</div>
-                <div class="card-desc">OLIKH Shield prevented trackers from profiling you across websites.</div>
-                <div class="card-stat"></div>
-            </div>
-
-            <div class="section-header">
-                <div class="section-title">Reading List & Tools</div>
-            </div>
-            <div class="list-group">
-                <div class="list-item" onclick="OlikhNative.openInternal('bookmarks')">
-                    <span>Bookmarks</span>
-                    <span class="arrow">›</span>
+            <div class="hud-card">
+                <div>
+                    <div class="hud-title">OLIKH</div>
+                    <div class="hud-sub">Zero-Telemetry Deck</div>
                 </div>
-                <div class="list-item" onclick="OlikhNative.openInternal('history')">
-                    <span>History</span>
-                    <span class="arrow">›</span>
+                <div class="shield-stat">
+                    <div class="shield-val"></div>
+                    <div class="shield-lbl">Blocked</div>
                 </div>
-                <div class="list-item" onclick="OlikhNative.openInternal('downloads')">
-                    <span>Downloads</span>
-                    <span class="arrow">›</span>
+            </div>
+
+            <div class="sec-title">Shortcuts</div>
+            <div class="deck-grid">
+                <a class="deck-item" href="https://www.google.com">
+                    <div class="deck-glyph g-google">G</div>
+                    <span class="deck-lbl">Google</span>
+                </a>
+                <a class="deck-item" href="https://m.youtube.com">
+                    <div class="deck-glyph g-yt">▶</div>
+                    <span class="deck-lbl">YouTube</span>
+                </a>
+                <a class="deck-item" href="https://github.com">
+                    <div class="deck-glyph g-git">⌘</div>
+                    <span class="deck-lbl">GitHub</span>
+                </a>
+                <a class="deck-item" href="https://en.m.wikipedia.org">
+                    <div class="deck-glyph g-wiki">W</div>
+                    <span class="deck-lbl">Wiki</span>
+                </a>
+            </div>
+
+            <div class="sec-title">Vault</div>
+            <div class="action-hub">
+                <div class="hub-card" onclick="OlikhNative.openInternal('bookmarks')">
+                    <span class="hub-icon" style="color:#F59E0B;">★</span>
+                    <span class="hub-name">Saved</span>
+                </div>
+                <div class="hub-card" onclick="OlikhNative.openInternal('history')">
+                    <span class="hub-icon" style="color:#818CF8;">◷</span>
+                    <span class="hub-name">History</span>
+                </div>
+                <div class="hub-card" onclick="OlikhNative.openInternal('downloads')">
+                    <span class="hub-icon" style="color:#10B981;">↓</span>
+                    <span class="hub-name">Files</span>
                 </div>
             </div>
         </body>
@@ -573,7 +588,7 @@ class MainActivity : AppCompatActivity() {
         """.trimIndent()
     }
 
-    private fun showOlikhStartPage() {
+        private fun showOlikhStartPage() {
         showingErrorPage = false
         failedUrl = null
         val startHtml = buildStartPageHtml()
@@ -582,11 +597,11 @@ class MainActivity : AppCompatActivity() {
         webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.addJavascriptInterface(StartPageInterface(), "OlikhNative")
         addressBar.setText("")
-        webView.loadDataWithBaseURL("https://olikh.local/start", startHtml, "text/html", "UTF-8", null)
+        addressBar.clearFocus()
+        webView.loadDataWithBaseURL("about:blank", startHtml, "text/html", "UTF-8", null)
     }
 
-    
-    private fun injectYouTubeAdBlocker(view: WebView?) {
+private fun injectYouTubeAdBlocker(view: WebView?) {
         val currentUrl = view?.url.orEmpty()
         if (!currentUrl.contains("youtube.com") && !currentUrl.contains("youtu.be")) return
 
