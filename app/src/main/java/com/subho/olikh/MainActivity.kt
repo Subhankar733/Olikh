@@ -997,6 +997,7 @@ private fun injectYouTubeAdBlocker(view: WebView?) {
         val btnHome = findViewById<ImageButton>(R.id.btnHome)
         val btnReload = findViewById<ImageButton>(R.id.btnReload)
         btnBookmark = findViewById(R.id.btnBookmark)
+        btnBookmark.contentDescription = "Bookmark"
 
         tabs.add(
             BrowserTab(
@@ -2166,6 +2167,7 @@ private fun injectYouTubeAdBlocker(view: WebView?) {
         restoreGroupId: String? = null
     ) {
         val newWebView = WebView(this)
+        newWebView.id = R.id.webView
 
         newWebView.layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -10389,6 +10391,7 @@ Blocker: ${olikhBlocker.isEnabled()}"""
 
         urls.forEachIndexed { index, url ->
             val restoredWebView = WebView(this)
+            restoredWebView.id = R.id.webView
 
             restoredWebView.layoutParams =
                 FrameLayout.LayoutParams(
