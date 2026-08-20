@@ -996,6 +996,9 @@ private fun injectYouTubeAdBlocker(view: WebView?) {
         val btnForward = findViewById<ImageButton>(R.id.btnForward)
         val btnHome = findViewById<ImageButton>(R.id.btnHome)
         val btnReload = findViewById<ImageButton>(R.id.btnReload)
+        btnBack.contentDescription = "Back"
+        btnForward.contentDescription = "Forward"
+        btnHome.contentDescription = "Home"
         btnBookmark = findViewById(R.id.btnBookmark)
         btnBookmark.contentDescription = "Bookmark"
 
