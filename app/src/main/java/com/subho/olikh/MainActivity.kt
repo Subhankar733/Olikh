@@ -407,7 +407,7 @@ class MainActivity : AppCompatActivity() {
                 body {
                     background: #0D0F12;
                     color: #ECEFF4;
-                    padding: 16px 14px 110px 14px;
+                    padding: 12px 12px 92px 12px;
                     user-select: none;
                     -webkit-user-select: none;
                 }
@@ -416,36 +416,30 @@ class MainActivity : AppCompatActivity() {
                 .hud-card {
                     background: linear-gradient(145deg, #161A20, #0E1116);
                     border: 1px solid rgba(255, 255, 255, 0.07);
-                    border-radius: 20px;
-                    padding: 20px;
-                    margin-bottom: 18px;
-                    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                    border-radius: 18px;
+                    padding: 16px;
+                    margin-bottom: 14px;
+                    box-shadow: 0 8px 20px rgba(0,0,0,0.38);
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                 }
                 .hud-title {
-                    font-size: 22px;
+                    font-size: 21px;
                     font-weight: 800;
-                    letter-spacing: -0.5px;
+                    letter-spacing: -0.6px;
                     background: linear-gradient(90deg, #FFFFFF, #94A3B8);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
                 }
                 .hud-sub {
-                    font-size: 12px;
+                    font-size: 11px;
                     color: #64748B;
-                    margin-top: 2px;
+                    margin-top: 3px;
                     font-weight: 500;
                 }
                 .shield-stat {
                     text-align: right;
-                }
-                .shield-val {
-                    font-size: 24px;
-                    font-weight: 900;
-                    color: #38BDF8;
-                    font-variant-numeric: tabular-nums;
                 }
                 .shield-lbl {
                     font-size: 10px;
@@ -462,25 +456,25 @@ class MainActivity : AppCompatActivity() {
                     color: #475569;
                     letter-spacing: 1.2px;
                     text-transform: uppercase;
-                    margin: 0 0 12px 6px;
+                    margin: 0 0 9px 4px;
                 }
 
                 /* Hex / Modern Grid */
                 .deck-grid {
                     display: grid;
                     grid-template-columns: repeat(4, 1fr);
-                    gap: 5px;
-                    margin-bottom: 18px;
+                    gap: 6px;
+                    margin-bottom: 15px;
                 }
                 .deck-item {
                     background: #14171E;
                     border: 1px solid rgba(255, 255, 255, 0.05);
-                    border-radius: 16px;
-                    padding: 10px 4px;
+                    border-radius: 14px;
+                    padding: 8px 3px;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 5px;
+                    gap: 4px;
                     text-decoration: none;
                 }
                 .deck-item:active {
@@ -488,50 +482,50 @@ class MainActivity : AppCompatActivity() {
                     transform: scale(0.96);
                 }
                 .deck-glyph {
-                    width: 38px;
-                    height: 38px;
-                    border-radius: 10px;
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 9px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 16px;
+                    font-size: 15px;
                     font-weight: 800;
                 }
-                .g-google { background: rgba(66, 133, 244, 0.12); color: #60A5FA; }
+                .g-google { background: rgba(59, 130, 246, 0.11); color: #60A5FA; border: 1px solid rgba(96,165,250,0.08); }
                 .g-yt { background: rgba(239, 68, 68, 0.12); color: #F87171; }
                 .g-git { background: rgba(255, 255, 255, 0.08); color: #F1F5F9; }
-                .g-wiki { background: rgba(14, 165, 233, 0.12); color: #38BDF8; }
+                .g-wiki { background: rgba(56, 189, 248, 0.10); color: #38BDF8; border: 1px solid rgba(56,189,248,0.08); }
 
                 .deck-lbl {
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: #94A3B8;
+                    font-size: 11px;
+                    font-weight: 650;
+                    color: #A1AEC0;
                 }
 
                 /* Compact Action Hub */
                 .action-hub {
                     display: grid;
                     grid-template-columns: repeat(3, 1fr);
-                    gap: 10px;
+                    gap: 8px;
                 }
                 .hub-card {
                     background: #14171E;
                     border: 1px solid rgba(255, 255, 255, 0.05);
-                    border-radius: 14px;
-                    padding: 10px 6px;
+                    border-radius: 12px;
+                    padding: 8px 5px;
                     text-align: center;
                 }
                 .hub-card:active {
                     background: #1C222D;
                 }
                 .hub-icon {
-                    font-size: 16px;
-                    margin-bottom: 4px;
+                    font-size: 15px;
+                    margin-bottom: 3px;
                     display: block;
                 }
                 .hub-name {
-                    font-size: 12px;
-                    font-weight: 600;
+                    font-size: 11px;
+                    font-weight: 650;
                     color: #E2E8F0;
                 }
             </style>
@@ -543,7 +537,6 @@ class MainActivity : AppCompatActivity() {
                     <div class="hud-sub">Zero-Telemetry Deck</div>
                 </div>
                 <div class="shield-stat">
-                    <div class="shield-val"></div>
                     <div class="shield-lbl">Blocked</div>
                 </div>
             </div>
