@@ -407,7 +407,7 @@ class MainActivity : AppCompatActivity() {
                 body {
                     background: #0D0F12;
                     color: #ECEFF4;
-                    padding: 32px 18px 120px 18px;
+                    padding: 16px 14px 110px 14px;
                     user-select: none;
                     -webkit-user-select: none;
                 }
@@ -418,7 +418,7 @@ class MainActivity : AppCompatActivity() {
                     border: 1px solid rgba(255, 255, 255, 0.07);
                     border-radius: 20px;
                     padding: 20px;
-                    margin-bottom: 24px;
+                    margin-bottom: 18px;
                     box-shadow: 0 10px 25px rgba(0,0,0,0.5);
                     display: flex;
                     justify-content: space-between;
@@ -457,7 +457,7 @@ class MainActivity : AppCompatActivity() {
 
                 /* Section Titles */
                 .sec-title {
-                    font-size: 11px;
+                    font-size: 12px;
                     font-weight: 800;
                     color: #475569;
                     letter-spacing: 1.2px;
@@ -469,18 +469,18 @@ class MainActivity : AppCompatActivity() {
                 .deck-grid {
                     display: grid;
                     grid-template-columns: repeat(4, 1fr);
-                    gap: 12px;
-                    margin-bottom: 24px;
+                    gap: 5px;
+                    margin-bottom: 18px;
                 }
                 .deck-item {
                     background: #14171E;
                     border: 1px solid rgba(255, 255, 255, 0.05);
                     border-radius: 16px;
-                    padding: 14px 6px;
+                    padding: 10px 4px;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 8px;
+                    gap: 5px;
                     text-decoration: none;
                 }
                 .deck-item:active {
@@ -488,13 +488,13 @@ class MainActivity : AppCompatActivity() {
                     transform: scale(0.96);
                 }
                 .deck-glyph {
-                    width: 44px;
-                    height: 44px;
-                    border-radius: 12px;
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 10px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 18px;
+                    font-size: 16px;
                     font-weight: 800;
                 }
                 .g-google { background: rgba(66, 133, 244, 0.12); color: #60A5FA; }
@@ -503,7 +503,7 @@ class MainActivity : AppCompatActivity() {
                 .g-wiki { background: rgba(14, 165, 233, 0.12); color: #38BDF8; }
 
                 .deck-lbl {
-                    font-size: 11px;
+                    font-size: 12px;
                     font-weight: 600;
                     color: #94A3B8;
                 }
@@ -518,14 +518,14 @@ class MainActivity : AppCompatActivity() {
                     background: #14171E;
                     border: 1px solid rgba(255, 255, 255, 0.05);
                     border-radius: 14px;
-                    padding: 14px 8px;
+                    padding: 10px 6px;
                     text-align: center;
                 }
                 .hub-card:active {
                     background: #1C222D;
                 }
                 .hub-icon {
-                    font-size: 18px;
+                    font-size: 16px;
                     margin-bottom: 4px;
                     display: block;
                 }
@@ -944,7 +944,19 @@ private fun injectYouTubeAdBlocker(view: WebView?) {
             val topInset = statusBars.top
             val bottomInset = maxOf(navBars.bottom, ime.bottom)
 
-            browserContainer.setPadding(0, topInset, 0, 0)
+            val topBar = findViewById<View>(R.id.browserTopBar)
+            topBar.setPadding(
+                topBar.paddingLeft,
+                topInset,
+                topBar.paddingRight,
+                0
+            )
+            topBar.layoutParams = topBar.layoutParams.apply {
+                height = 56.dp() + topInset
+            }
+            topBar.requestLayout()
+
+            browserContainer.setPadding(0, 0, 0, 0)
             safariDock.setPadding(0, 8.dp(), 0, bottomInset + 4.dp())
 
             insets
