@@ -1,135 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<RelativeLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B0B0C">
+    android:background="#070709">
 
-    <!-- TOP BROWSER CHROME -->
-
-    <LinearLayout
-        android:id="@+id/browserTopBar"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_alignParentTop="true"
-        android:background="#0B0B0C"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp">
-
-        <ImageButton
-            android:id="@+id/btnNewTab"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="New Tab"
-            android:padding="10dp"
-            android:src="@drawable/ic_add"
-            app:tint="#F5F5F5" />
-
-        <LinearLayout
-            android:id="@+id/addressBarContainer"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_capsule_pill"
-            android:gravity="center_vertical"
-            android:paddingStart="13dp"
-            android:paddingEnd="5dp">
-
-            <ImageView
-                android:id="@+id/sslLockIcon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:contentDescription="Security"
-                android:src="@drawable/ic_search"
-                app:tint="#9A9A9F" />
-
-            <EditText
-                android:id="@+id/addressBar"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="2dp"
-                android:background="@android:color/transparent"
-                android:ellipsize="middle"
-                android:gravity="center_vertical"
-                android:hint="Search or enter website"
-                android:imeOptions="actionGo"
-                android:importantForAutofill="no"
-                android:inputType="textUri"
-                android:selectAllOnFocus="true"
-                android:singleLine="true"
-                android:textColor="#F5F5F5"
-                android:textColorHint="#858589"
-                android:textSize="14sp" />
-
-            <ImageButton
-                android:id="@+id/btnReload"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Reload"
-                android:padding="7dp"
-                android:src="@drawable/ic_reload"
-                app:tint="#A2A2A7" />
-
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/btnTabs"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="@drawable/bg_capsule_pill"
-            android:contentDescription="Tabs"
-            android:minWidth="0dp"
-            android:minHeight="0dp"
-            android:padding="0dp"
-            android:text="1"
-            android:textColor="#F5F5F5"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <ImageButton
-            android:id="@+id/btnMenu"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Menu"
-            android:padding="10dp"
-            android:src="@drawable/ic_more_vertical"
-            app:tint="#F5F5F5" />
-
-    </LinearLayout>
-
-    <!-- LOADING LINE -->
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="2dp"
-        android:layout_below="@id/browserTopBar"
-        android:max="100"
-        android:progressTint="#FF6422"
-        android:visibility="gone" />
-
-    <!-- WEB CONTENT -->
-
+    <!-- WEB CONTENT AREA (Full immersive behind floating bars) -->
     <FrameLayout
         android:id="@+id/browserContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/progressBar"
-        android:layout_above="@id/browserBottomDock"
-        android:background="#0B0B0C">
+        android:background="#070709">
 
         <WebView
             android:id="@+id/webView"
@@ -139,73 +22,171 @@
 
     </FrameLayout>
 
-    <!-- FLOATING BOTTOM DOCK -->
-
-    <FrameLayout
-        android:id="@+id/browserBottomDock"
+    <!-- FLOATING TOP OMNIBOX (Dynamic Island / Capsule Style) -->
+    <LinearLayout
+        android:id="@+id/browserTopBar"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:background="@android:color/transparent"
+        android:layout_height="56dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_glass_capsule"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:paddingStart="12dp"
         android:paddingEnd="12dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_gravity="center"
-            android:background="@drawable/bg_browser_bottom_dock"
+        <ImageView
+            android:id="@+id/sslLockIcon"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:contentDescription="Security"
+            android:src="@drawable/ic_search"
+            app:tint="#A0A0AB" />
+
+        <EditText
+            android:id="@+id/addressBar"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="8dp"
+            android:background="@android:color/transparent"
+            android:ellipsize="middle"
             android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="5dp"
-            android:paddingEnd="5dp">
+            android:hint="Search or type URL"
+            android:imeOptions="actionGo"
+            android:importantForAutofill="no"
+            android:inputType="textUri"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#6E6E79"
+            android:textSize="14sp" />
 
-            <ImageButton
-                android:id="@+id/btnBack"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Back"
-                android:padding="11dp"
-                android:src="@drawable/ic_back"
-                app:tint="#E8E8EA" />
+        <ImageButton
+            android:id="@+id/btnReload"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Reload"
+            android:padding="8dp"
+            android:src="@drawable/ic_reload"
+            app:tint="#A0A0AB" />
 
-            <ImageButton
-                android:id="@+id/btnForward"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Forward"
-                android:padding="11dp"
-                android:src="@drawable/ic_forward"
-                app:tint="#E8E8EA" />
+        <ImageButton
+            android:id="@+id/btnMenu"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Menu"
+            android:padding="8dp"
+            android:src="@drawable/ic_more_vertical"
+            app:tint="#FFFFFF" />
 
-            <ImageButton
-                android:id="@+id/btnHome"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_bottom_nav_home"
-                android:contentDescription="Home"
-                android:padding="11dp"
-                android:src="@drawable/ic_home"
-                app:tint="#FFFFFF" />
+    </LinearLayout>
 
-            <ImageButton
-                android:id="@+id/btnBookmark"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Bookmark"
-                android:padding="11dp"
-                android:src="@drawable/ic_bookmark"
-                app:tint="#E8E8EA" />
+    <!-- LOADING PROGRESS LINE -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_gravity="top"
+        android:layout_marginTop="74dp"
+        android:max="100"
+        android:progressTint="#6366F1"
+        android:visibility="gone" />
 
-        </LinearLayout>
+    <!-- FLOATING BOTTOM COMMAND DOCK -->
+    <LinearLayout
+        android:id="@+id/browserBottomDock"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bg_glass_capsule"
+        android:elevation="12dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
 
-    </FrameLayout>
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:padding="10dp"
+            android:src="@drawable/ic_back"
+            app:tint="#D0D0D8" />
 
-</RelativeLayout>
+        <ImageButton
+            android:id="@+id/btnForward"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Forward"
+            android:padding="10dp"
+            android:src="@drawable/ic_forward"
+            app:tint="#D0D0D8" />
+
+        <ImageButton
+            android:id="@+id/btnHome"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Home"
+            android:padding="10dp"
+            android:src="@drawable/ic_home"
+            app:tint="#6366F1" />
+
+        <Button
+            android:id="@+id/btnTabs"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_capsule_pill"
+            android:contentDescription="Tabs"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="0dp"
+            android:text="1"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnBookmark"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Bookmark"
+            android:padding="10dp"
+            android:src="@drawable/ic_bookmark"
+            app:tint="#D0D0D8" />
+
+        <ImageButton
+            android:id="@+id/btnNewTab"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="New Tab"
+            android:padding="10dp"
+            android:src="@drawable/ic_add"
+            app:tint="#D0D0D8" />
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
