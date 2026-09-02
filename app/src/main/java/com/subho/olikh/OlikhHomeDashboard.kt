@@ -48,17 +48,17 @@ object OlikhHomeDashboard {
         <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
         <style>
         *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
-        body{background:#08090A;color:#F5F5F5;padding:18px 16px 110px;user-select:none}
-        .brand{padding:2px 2px 18px}.name{font-size:23px;font-weight:850;letter-spacing:-.8px}.sub{margin-top:3px;color:#66686D;font-size:10px;letter-spacing:1.8px;text-transform:uppercase}
-        .card{background:#18191B;border:1px solid #2A2B2E;border-radius:28px;box-shadow:0 14px 32px rgba(0,0,0,.28);overflow:hidden}
-        .recent{min-height:245px;padding:23px;position:relative;margin-bottom:14px;background:linear-gradient(145deg,#202124,#121315 65%,#0D0E10)}
-        .recent:after{content:"";position:absolute;width:145px;height:145px;right:-48px;bottom:-62px;border-radius:50%;background:#202125}
-        .row{display:flex;justify-content:space-between;align-items:center}.eyebrow{font-size:10px;letter-spacing:2px;color:#777A80;font-weight:800}.dot{color:#FF6422;font-size:15px}
-        .big{font-size:29px;line-height:1.05;font-weight:850;letter-spacing:-1px;margin-top:57px;max-width:92%}.muted{color:#777A80;font-size:12px;margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90%}
+        body{background:#070709;color:#F5F5F5;padding:18px 16px 110px;user-select:none}
+        .brand{padding:2px 2px 18px}.name{font-size:23px;font-weight:850;letter-spacing:-.8px}.sub{margin-top:3px;color:#8E8E93;font-size:10px;letter-spacing:1.8px;text-transform:uppercase}
+        .card{background:rgba(24, 25, 27, 0.75);backdrop-filter: blur(16px);-webkit-backdrop-filter: blur(16px);border:1px solid rgba(255, 255, 255, 0.08);border-radius:28px;box-shadow:0 14px 32px rgba(0,0,0,.35);overflow:hidden}
+        .recent{min-height:245px;padding:23px;position:relative;margin-bottom:14px;background:linear-gradient(145deg, rgba(32, 33, 36, 0.8), rgba(18, 19, 21, 0.75) 65%, rgba(13, 14, 16, 0.8))}
+        .recent:after{content:"";position:absolute;width:145px;height:145px;right:-48px;bottom:-62px;border-radius:50%;background:rgba(255, 100, 34, 0.08)}
+        .row{display:flex;justify-content:space-between;align-items:center}.eyebrow{font-size:10px;letter-spacing:2px;color:#8E8E93;font-weight:800}.dot{color:#FF6422;font-size:15px}
+        .big{font-size:29px;line-height:1.05;font-weight:850;letter-spacing:-1px;margin-top:57px;max-width:92%}.muted{color:#8E8E93;font-size:12px;margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90%}
         .action{position:absolute;left:23px;bottom:21px;color:#FF6422;font-size:11px;font-weight:850;letter-spacing:1.4px}
         .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tile{min-height:128px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;position:relative}.tile:active,.recent:active{transform:scale(.985)}
-        .icon{width:35px;height:35px;border-radius:11px;background:#252629;display:flex;align-items:center;justify-content:center;color:#F4F4F5;font-size:16px;font-weight:800}.title{font-size:16px;font-weight:800;letter-spacing:-.25px}.hint{font-size:10px;color:#73767C;margin-top:4px}.wide{grid-column:1/3;min-height:104px}.orange{color:#FF6422}
-        .footer{text-align:center;color:#4F5258;font-size:9px;letter-spacing:1.5px;margin-top:22px;text-transform:uppercase}
+        .icon{width:35px;height:35px;border-radius:11px;background:rgba(37, 38, 41, 0.8);display:flex;align-items:center;justify-content:center;color:#F4F4F5;font-size:16px;font-weight:800}.title{font-size:16px;font-weight:800;letter-spacing:-.25px}.hint{font-size:10px;color:#8E8E93;margin-top:4px}.wide{grid-column:1/3;min-height:104px}.orange{color:#FF6422}
+        .footer{text-align:center;color:#6E6E79;font-size:9px;letter-spacing:1.5px;margin-top:22px;text-transform:uppercase}
         </style></head><body>
         <div class="brand"><div class="name">OLIKH</div><div class="sub">PRIVATE BROWSER</div></div>
         $recent
